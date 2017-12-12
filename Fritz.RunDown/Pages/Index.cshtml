@@ -1,0 +1,31 @@
+﻿@page
+@model Fritz.RunDown.Pages.IndexModel
+@{ 
+	var items = Model.Repository.Get();
+}
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Rundown for the Stream</title>
+	<style>
+		ul { margin-left: 0px; padding-left: 0px; }
+		li { list-style-type: none; margin-left: 0px; padding-left: 0px;}
+	</style>
+</head>
+<body>
+
+	<h2>Today's Stream</h2>
+
+	<ul>
+	@foreach (var item in items)
+	{
+		<li id="@item.ID">
+		<input type="checkbox" 
+					 checked="@item.IsCompleted" 
+					 name="item_@item.ID" /> @item.Text</li>
+	}
+	</ul>
+
+
+</body>
+</html>

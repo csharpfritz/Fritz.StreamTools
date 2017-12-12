@@ -1,0 +1,60 @@
+﻿@page
+@model Fritz.RunDown.Pages.AdminModel
+@{ 
+	var items = Model.Repository.Get();
+}
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Rundown for the Stream</title>
+	<style>
+		ul { margin-left: 0px; padding-left: 0px; }
+		li { list-style-type: none; margin-left: 0px; padding-left: 0px;}
+	</style>
+</head>
+<body>
+
+	<h2>Today's Stream</h2>
+
+	<ul>
+	@foreach (var item in items)
+	{
+		<li id="@item.ID">
+		<input type="checkbox" 
+					 checked="@item.IsCompleted" 
+					 name="item_@item.ID" class="checkItem" /> @item.Text</li>
+	}
+	</ul>
+
+	<script src="~/lib/jquery/dist/jquery.js"></script>
+	<script type="text/javascript"><!--
+
+		$().ready(function () {
+
+			$(".checkItem").change(function () {
+
+				var thisItem = $(this);
+				var thisListItem = thisItem.parent();
+				var itemToUpdate = {
+					ID: thisListItem.attr("id"),
+					Text: thisListItem.text(),
+					IsCompleted: thisItem[0].checked
+				}
+				console.log(thisItem);
+				console.log(thisListItem);
+				console.log('This item: ');
+				console.log(itemToUpdate);
+
+				$.ajax({
+					method: 'PUT',
+					url: '/api/items?id=' + itemToUpdate.ID
+				});
+
+			});
+
+		});
+
+
+		//--></script>
+</body>
+</html>

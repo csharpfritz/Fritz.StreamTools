@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  fritz.rundown:
+    image: fritz.rundown
+    build:
+      context: .
+      dockerfile: Fritz.RunDown/Dockerfile

@@ -1,31 +1,47 @@
 ﻿@page
 @model Fritz.RunDown.Pages.IndexModel
-@{ 
-	var items = Model.Repository.Get();
+@{
+    var items = Model.Repository.Get();
 }
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Rundown for the Stream</title>
-	<style>
-		ul { margin-left: 0px; padding-left: 0px; }
-		li { list-style-type: none; margin-left: 0px; padding-left: 0px;}
-	</style>
+    <title>Rundown for the Stream</title>
+    <style>
+        ul {
+            margin-left: 0px;
+            padding-left: 0px;
+        }
+
+        li {
+            list-style-type: none;
+            margin-left: 0px;
+            padding-left: 0px;
+        }
+
+        .glyphicon-check { color: darkgreen}
+
+    </style>
+    <link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap-theme.css" rel="stylesheet" />
 </head>
 <body>
 
-	<h2>Today's Stream</h2>
+    <div class="container">
 
-	<ul>
-	@foreach (var item in items)
-	{
-		<li id="@item.ID">
-		<input type="checkbox" 
-					 checked="@item.IsCompleted" 
-					 name="item_@item.ID" /> @item.Text</li>
-	}
-	</ul>
+        <h2>Today's Stream</h2>
 
+        <ul>
+            @foreach (var item in items)
+            {
+                <li id="@item.ID">
+                    <span class="glyphicon @(!item.IsCompleted ? "glyphicon-unchecked" : "glyphicon-check")" aria-hidden="true"></span>
+                    <label>@item.Text</label>
+                </li>
+            }
+        </ul>
+
+    </div>
 
 </body>
 </html>

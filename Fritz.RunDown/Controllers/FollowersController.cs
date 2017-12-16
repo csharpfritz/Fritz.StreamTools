@@ -10,16 +10,18 @@ namespace Fritz.RunDown.Controllers
   public class FollowersController : Controller
   {
 
-    public FollowersController(TwitchService twitch)
+    public FollowersController(TwitchService twitch, MixerService mixer)
     {
       this.TwitchService = twitch;
+      this.MixerService = mixer;
     }
 
     public TwitchService TwitchService { get; }
+    public MixerService MixerService { get; }
 
     public int Index()
     {
-      return TwitchService.CurrentFollowerCount;
+      return TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount;
     }
   }
 }

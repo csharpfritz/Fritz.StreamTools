@@ -25,9 +25,15 @@ namespace Fritz.RunDown
 		{
 
 			services.AddSingleton<Models.RundownRepository>();
+      
       var svc = new Services.TwitchService(Configuration);
       services.AddSingleton<IHostedService>(svc);
       services.AddSingleton(svc);
+
+      var mxr = new MixerService(Configuration);
+      services.AddSingleton<IHostedService>(mxr);
+      services.AddSingleton(mxr);
+
 
 			services.AddMvc();
 		}

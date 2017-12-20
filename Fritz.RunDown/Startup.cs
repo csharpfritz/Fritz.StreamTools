@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.RunDown.Models;
 using Fritz.RunDown.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -25,7 +26,9 @@ namespace Fritz.RunDown
 		{
 
 			services.AddSingleton<Models.RundownRepository>();
-      
+
+      services.Configure<FollowerGoalConfiguration>(Configuration.GetSection("FollowerGoal"));
+
       var svc = new Services.TwitchService(Configuration);
       services.AddSingleton<IHostedService>(svc);
       services.AddSingleton(svc);

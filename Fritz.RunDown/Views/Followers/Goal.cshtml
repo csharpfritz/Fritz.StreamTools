@@ -1,0 +1,66 @@
+﻿@model FollowerGoal
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Followers Goal</title>
+    <style>
+
+        .followerBar {
+            background: #ccc;
+            width: 100%;
+            display: flex;
+            flex-wrap: nowrap;
+            padding: 2px;
+        }
+
+        .followerBar span {
+            font-family: Arial;
+            font-size: 16pt;
+            font-weight: 600;
+        }
+
+        #progress {
+            overflow: hidden;
+            position: absolute;
+        }
+
+        #fill {
+            background-color: #00F;
+            color: #FFF;
+        }
+
+        .followerBar span {
+            flex: 1;
+        }
+
+        .current {
+            text-align: center;
+        }
+
+        .goal {
+            text-align: right;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="progress" style="width: @(ViewBag.Width * Model.CurrentValue / Model.GoalValue)px;">
+        <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
+            <span class="caption">@Model.Caption</span>
+            <span class="current">@Model.CurrentValue</span>
+            <span class="goal">@Model.GoalValue</span>
+        </div>
+    </div>
+    <div class="followerBar" style="width: @(ViewBag.Width)px">
+        <span class="caption">@Model.Caption</span>
+        <span class="current">@Model.CurrentValue</span>
+        <span class="goal">@Model.GoalValue</span>
+    </div>
+
+</body>
+</html>

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fritz.RunDown.Controllers
 {
+
   public class FollowersController : Controller
   {
 
@@ -19,9 +20,17 @@ namespace Fritz.RunDown.Controllers
     public TwitchService TwitchService { get; }
     public MixerService MixerService { get; }
 
-    public int Index()
+    [HttpGet("api/Followers")]
+    public int Get()
     {
       return TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount;
     }
+
+    public IActionResult Count() {
+
+      return View(TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount);
+
+    }
+
   }
 }

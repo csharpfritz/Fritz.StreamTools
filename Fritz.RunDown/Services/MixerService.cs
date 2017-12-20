@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Mixer.Base;
+using Mixer.Base.Model.Channel;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -24,7 +25,10 @@ namespace Fritz.RunDown.Services
 
     }
 
+    private ExpandedChannelModel _MyChannel;
     private static int _CurrentFollowerCount;
+    private Timer _Timer;
+
     public int CurrentFollowerCount { get { return _CurrentFollowerCount; } }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -34,7 +38,9 @@ namespace Fritz.RunDown.Services
     }
     public Task StopAsync(CancellationToken cancellationToken)
     {
-      // throw new NotImplementedException();
+
+      _Timer.Dispose();
+
       return Task.CompletedTask;
     }
 
@@ -42,10 +48,17 @@ namespace Fritz.RunDown.Services
     {
       var connection = await MixerConnection.ConnectViaLocalhostOAuthBrowser(
         Configuration["StreamServices:Mixer:ClientId"], _scopes);
-      var myChannel = await connection.Channels.GetChannel("csharpfritz");
-      _CurrentFollowerCount = (int)myChannel.numFollowers;
+      _MyChannel = await connection.Channels.GetChannel(Configuration["StreamServices:Mixer:Channel"]);
+      _CurrentFollowerCount = (int)_MyChannel.numFollowers;
+
+      _Timer = new Timer(NewFollowerCheck, null, 5000, 5000);
+
     }
 
+    private void NewFollowerCheck(object state)
+    {
+      _CurrentFollowerCount = Interlocked.Exchange(ref _CurrentFollowerCount, (int)_MyChannel.numFollowers);
+    }
   }
 
 }

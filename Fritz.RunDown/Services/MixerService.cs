@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Mixer.Base;
-using Mixer.Base.Model.Channel;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,22 +14,23 @@ namespace Fritz.RunDown.Services
 
     private IConfiguration Configuration;
 
-    private static readonly List<OAuthClientScopeEnum> _scopes = new List<OAuthClientScopeEnum>() {
-        OAuthClientScopeEnum.channel__details__self,
-        OAuthClientScopeEnum.channel__update__self
-    };
-
     public MixerService(IConfiguration configuration)
     {
       this.Configuration = configuration;
 
     }
 
-    private ExpandedChannelModel _MyChannel;
-    private static int _CurrentFollowerCount;
+    private static int _CurrentFollowerCount = 0;
     private Timer _Timer;
+    private HttpClient _Client;
 
     public int CurrentFollowerCount { get { return _CurrentFollowerCount; } }
+
+    public string ChannelUrl { get
+      {
+        return $"https://mixer.com/api/v1/channels/{Configuration["StreamServices:Mixer:Channel"]}";
+      }
+    }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -46,18 +47,23 @@ namespace Fritz.RunDown.Services
 
     private async Task ConnectToMixer()
     {
-      var connection = await MixerConnection.ConnectViaLocalhostOAuthBrowser(
-        Configuration["StreamServices:Mixer:ClientId"], _scopes);
-      _MyChannel = await connection.Channels.GetChannel(Configuration["StreamServices:Mixer:Channel"]);
-      _CurrentFollowerCount = (int)_MyChannel.numFollowers;
 
-      _Timer = new Timer(NewFollowerCheck, null, 5000, 5000);
+       _Timer = new Timer(NewFollowerCheck, null, 0, 5000);
 
     }
 
     private void NewFollowerCheck(object state)
     {
-      _CurrentFollowerCount = Interlocked.Exchange(ref _CurrentFollowerCount, (int)_MyChannel.numFollowers);
+
+      _Client = new HttpClient();
+      var myTask = _Client.GetStringAsync(ChannelUrl);
+      Task.WaitAll(myTask);
+      var response = myTask.Result;
+      var doc = JObject.Parse(response);
+      var localCount = doc["numFollowers"].Value<int>();
+
+      Interlocked.Exchange(ref _CurrentFollowerCount, localCount);
+
     }
   }
 

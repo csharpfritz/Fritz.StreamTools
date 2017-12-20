@@ -1,0 +1,1 @@
+docker build -t fritz.rundown:%1 -t fritz.rundown:latest -f Fritz.RunDown\Dockerfile .

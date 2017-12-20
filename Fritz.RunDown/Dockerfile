@@ -12,7 +12,7 @@ WORKDIR /src/Fritz.RunDown
 RUN dotnet build -c Release -o /app
 
 FROM build AS publish
-RUN dotnet publish -c Release -o /app
+RUN dotnet publish -c Release -o /app -r linux-x64 --self-contained
 
 FROM base AS final
 WORKDIR /app

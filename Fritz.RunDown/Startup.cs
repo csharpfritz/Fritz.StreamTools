@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.RunDown.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Fritz.RunDown
 {
@@ -23,6 +25,15 @@ namespace Fritz.RunDown
 		{
 
 			services.AddSingleton<Models.RundownRepository>();
+      
+      var svc = new Services.TwitchService(Configuration);
+      services.AddSingleton<IHostedService>(svc);
+      services.AddSingleton(svc);
+
+      var mxr = new MixerService(Configuration);
+      services.AddSingleton<IHostedService>(mxr);
+      services.AddSingleton(mxr);
+
 
 			services.AddMvc();
 		}

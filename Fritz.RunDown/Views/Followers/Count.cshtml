@@ -1,0 +1,62 @@
+﻿@model int
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Follower Count</title>
+    <style>
+
+        body {
+        background-color: #333;
+        }
+
+        #fg {
+            font-family: Arial;
+            font-size: 24pt;
+            font-weight: 600;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            background: -webkit-linear-gradient(#1500FF, #FFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px #FFF;
+            
+        }
+
+    </style>
+</head>
+<body>
+
+    <span id="fg">Followers: <span id="count">@Model</span></span>
+
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script type="text/javascript">
+<!--
+
+        $().ready(function () {
+
+            window.setInterval(function () {
+
+                $.ajax({
+                    url: "/api/Followers"
+                }).done(function (data) {
+
+                    document.getElementById("count").textContent = data;
+
+                })
+
+            }, 5000)
+
+        });
+
+//-->
+    </script>
+
+</body>
+</html>

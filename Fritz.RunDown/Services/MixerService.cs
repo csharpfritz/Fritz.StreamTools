@@ -19,13 +19,13 @@ namespace Fritz.RunDown.Services
         const string API_URL = "https://mixer.com/api/v1/";
         const string WS_URL = "wss://constellation.mixer.com";
 
-        private ClientWebSocket _ws;
-        private IConfiguration _config;
-        private HttpClient _client;
-        private int _nextCommandId = 0;
-        private int _channelId;
-        private int _numberOfFollowers;
-        private int _numberOfViewers;
+        ClientWebSocket _ws;
+        IConfiguration _config;
+        HttpClient _client;
+        int _nextCommandId;
+        int _channelId;
+        int _numberOfFollowers;
+        int _numberOfViewers;
 
         public event EventHandler Updated;
 
@@ -65,9 +65,9 @@ namespace Fritz.RunDown.Services
         /// <summary>
         /// Get our channel id number and current followers from the api
         /// </summary>
-        private async Task GetChannelInfo()
+        async Task GetChannelInfo()
         {
-            string channel = _config["StreamServices:Mixer:Channel"];
+            var channel = _config["StreamServices:Mixer:Channel"];
             var response = JObject.Parse(await _client.GetStringAsync($"channels/{channel}?fields=id,numFollowers,viewersCurrent"));
             _channelId = response["id"].Value<int>();
             _numberOfFollowers = response["numFollowers"].Value<int>();
@@ -77,7 +77,7 @@ namespace Fritz.RunDown.Services
         /// <summary>
         /// Receive JSON-RPC reply
         /// </summary>
-        private async Task<JToken> ReceiveReply()
+        async Task<JToken> ReceiveReply()
         {
             ArraySegment<byte> segment = new ArraySegment<byte>(new byte[1024]);
             var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
@@ -89,7 +89,7 @@ namespace Fritz.RunDown.Services
         /// <summary>
         /// Send command as JSON-RPC
         /// </summary>
-        private Task Send(string method, string events)
+        Task Send(string method, string events)
         {
             var data = new
             {
@@ -112,7 +112,7 @@ namespace Fritz.RunDown.Services
             return _ws.SendAsync(buf, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
-        private async Task MixerUpdater()
+        async Task MixerUpdater()
         {
             var ws = _ws;
             ArraySegment<byte> segment = new ArraySegment<byte>(new byte[1024]);
@@ -129,7 +129,6 @@ namespace Fritz.RunDown.Services
                         ParseEvent(doc["data"]["payload"]);
                     }
                 }
-
             }
             catch (ObjectDisposedException)
             {
@@ -137,13 +136,14 @@ namespace Fritz.RunDown.Services
             }
         }
 
-        private void ParseEvent(JToken data)
+        void ParseEvent(JToken data)
         {
             if (data["numFollowers"] != null)
             {
                 Interlocked.Exchange(ref _numberOfFollowers, data["numFollowers"].Value<int>());
                 Updated?.Invoke(this, EventArgs.Empty);
             }
+
             if (data["viewersCurrent"] != null)
             {
                 var n = data["viewersCurrent"].Value<int>();
@@ -154,5 +154,4 @@ namespace Fritz.RunDown.Services
             }
         }
     }
-
 }

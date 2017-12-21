@@ -62,5 +62,28 @@
         <span class="goal">@Model.GoalValue</span>
     </div>
 
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script type="text/javascript">
+<!--
+
+        $().ready(function () {
+
+            window.setInterval(function () {
+
+                $.ajax({
+                    url: "/api/Followers"
+                }).done(function (data) {
+
+                    document.getElementsByClassName("current").textContent = data;
+
+                })
+
+            }, 5000)
+
+        });
+
+//-->
+    </script>
+
 </body>
 </html>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
@@ -18,14 +19,16 @@ namespace Fritz.RunDown.Services
     {
         const string API_URL = "https://mixer.com/api/v1/";
         const string WS_URL = "wss://constellation.mixer.com";
+        const int RECONNECT_DELAY = 10;
 
-        ClientWebSocket _ws;
+        ClientWebSocket _webSocket;
         IConfiguration _config;
         HttpClient _client;
         int _nextCommandId;
         int _channelId;
         int _numberOfFollowers;
         int _numberOfViewers;
+        CancellationTokenSource _shutdownRequested;
 
         public event EventHandler Updated;
 
@@ -34,6 +37,7 @@ namespace Fritz.RunDown.Services
 
         public MixerService(IConfiguration config)
         {
+            _shutdownRequested = new CancellationTokenSource();
             _config = config;
             _client = new HttpClient { BaseAddress = new Uri(API_URL) };
         }
@@ -41,25 +45,49 @@ namespace Fritz.RunDown.Services
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             await GetChannelInfo();
-
-            _ws = new ClientWebSocket();
-            _ws.Options.SetRequestHeader("x-is-bot", "true");
-            await _ws.ConnectAsync(new Uri(WS_URL), cancellationToken);
-            await ReceiveReply();
-            await Send("livesubscribe", $"channel:{_channelId}:update");
-            await ReceiveReply();
+            await Connect(cancellationToken);
             var _ = Task.Factory.StartNew(MixerUpdater);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_ws != null)
+            _shutdownRequested.Cancel();
+
+            if (_webSocket != null)
             {
-                _ws.Dispose();
-                _ws = null;
+                _webSocket.Dispose();
+                _webSocket = null;
             }
 
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Forever try to connect with the remote server
+        /// </summary>
+        async Task<bool> Connect(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                _webSocket = new ClientWebSocket();
+                _webSocket.Options.SetRequestHeader("x-is-bot", "true");
+
+                try
+                {
+                    await _webSocket.ConnectAsync(new Uri(WS_URL), cancellationToken);
+                    await ReceiveReply();
+                    await Send("livesubscribe", $"channel:{_channelId}:update");
+                    await ReceiveReply();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"Websocket connection to {WS_URL} failed: {e.Message}");
+                    await Task.Delay(RECONNECT_DELAY * 1000);
+                }
+
+            }
+            return false;
         }
 
         /// <summary>
@@ -80,7 +108,7 @@ namespace Fritz.RunDown.Services
         async Task<JToken> ReceiveReply()
         {
             ArraySegment<byte> segment = new ArraySegment<byte>(new byte[1024]);
-            var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
+            var result = await _webSocket.ReceiveAsync(segment, CancellationToken.None);
             var a = segment.Array.Take(result.Count).ToArray();
             var json = Encoding.UTF8.GetString(a);
             return JToken.Parse(json);
@@ -109,19 +137,22 @@ namespace Fritz.RunDown.Services
             var json = JsonConvert.SerializeObject(data);
             var buf = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
 
-            return _ws.SendAsync(buf, WebSocketMessageType.Text, true, CancellationToken.None);
+            return _webSocket.SendAsync(buf, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
         async Task MixerUpdater()
         {
-            var ws = _ws;
+            var webSocket = _webSocket;
             ArraySegment<byte> segment = new ArraySegment<byte>(new byte[1024]);
 
-            try
+            while (!_shutdownRequested.IsCancellationRequested)
             {
-                while (true)
+                try
                 {
-                    var result = await ws.ReceiveAsync(segment, CancellationToken.None);
+                    var result = await webSocket.ReceiveAsync(segment, CancellationToken.None);
+                    if (result == null || result.Count == 0)
+                        break;  // Websocket closed
+
                     var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
                     var doc = JObject.Parse(json);
                     if (doc["type"] != null && doc["type"].Value<string>() == "event")
@@ -129,10 +160,26 @@ namespace Fritz.RunDown.Services
                         ParseEvent(doc["data"]["payload"]);
                     }
                 }
-            }
-            catch (ObjectDisposedException)
-            {
-                // NOP
+                catch (ObjectDisposedException)
+                {
+                    // Normal websocket close. Break out of forever loop
+                    break;
+                }
+                catch (Exception)
+                {
+                    // Connection was proberly terminated abnormally
+                    Debug.WriteLine($"Lost connection to {WS_URL}. Will try to reconnect");
+
+                    _webSocket.Dispose();
+                    _webSocket = null;
+
+                    // Re-connect
+                    if (await Connect(_shutdownRequested.Token))
+                    {
+                        webSocket = _webSocket;
+                        Debug.WriteLine($"Connection to {WS_URL} re-established");
+                    }
+                }
             }
         }
 

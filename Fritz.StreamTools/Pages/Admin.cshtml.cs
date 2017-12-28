@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fritz.RunDown.Models;
+using Fritz.StreamTools.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Fritz.RunDown.Pages
+namespace Fritz.StreamTools.Pages
 {
 	public class AdminModel : PageModel
 	{

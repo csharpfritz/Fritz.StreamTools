@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  fritz.rundown:
+  fritz.streamtools:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:

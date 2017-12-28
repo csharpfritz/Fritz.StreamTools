@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fritz.RunDown.Models;
-using Fritz.RunDown.Services;
+using Fritz.StreamTools.Models;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Fritz.RunDown
+namespace Fritz.StreamTools
 {
 	public class Startup
 	{

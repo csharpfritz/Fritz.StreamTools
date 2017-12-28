@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fritz.RunDown.Models;
+using Fritz.StreamTools.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fritz.RunDown.Controllers
+namespace Fritz.StreamTools.Controllers
 {
 	[Produces("application/json")]
 	[Route("api/items")]

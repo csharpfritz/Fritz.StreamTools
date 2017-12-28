@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Fritz.RunDown
+namespace Fritz.StreamTools
 {
     public class Program
     {

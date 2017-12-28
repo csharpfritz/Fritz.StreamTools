@@ -1,4 +1,4 @@
-# Fritz.Rundown
+# Fritz.StreamTools
 Handy tools for managing my a live video stream and outputting video widgets that can be used directly in OBS or other streaming tools.
 
 ## Features

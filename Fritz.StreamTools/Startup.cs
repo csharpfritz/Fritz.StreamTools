@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Fritz.RunDown
+namespace Fritz.StreamTools
 {
 	public class Startup
 	{

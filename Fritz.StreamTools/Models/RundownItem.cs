@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Fritz.RunDown.Models
+namespace Fritz.StreamTools.Models
 {
 	public class RundownItem
 	{

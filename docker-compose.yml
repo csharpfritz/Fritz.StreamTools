@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  fritz.rundown:
-    image: fritz.rundown
+  fritz.streamtools:
+    image: fritz.streamtools
     build:
       context: .
-      dockerfile: Fritz.RunDown/Dockerfile
+      dockerfile: Fritz.StreamTools/Dockerfile

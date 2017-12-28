@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fritz.RunDown.Services;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fritz.RunDown.Controllers
+namespace Fritz.StreamTools.Controllers
 {
   public class ViewersController : Controller
   {

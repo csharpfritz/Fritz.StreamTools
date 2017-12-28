@@ -1,4 +1,4 @@
-﻿namespace Fritz.RunDown.Models
+﻿namespace Fritz.StreamTools.Models
 {
   public class FollowerGoalConfiguration {
 

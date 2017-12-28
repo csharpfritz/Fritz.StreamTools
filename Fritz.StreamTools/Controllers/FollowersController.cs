@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fritz.RunDown.Models;
-using Fritz.RunDown.Services;
+using Fritz.StreamTools.Models;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace Fritz.RunDown.Controllers
+namespace Fritz.StreamTools.Controllers
 {
 
   public class FollowersController : Controller

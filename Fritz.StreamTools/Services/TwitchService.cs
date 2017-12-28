@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using TwitchLib.Models.API.v5.Streams;
 using TwitchLib.Services;
 
-namespace Fritz.RunDown.Services
+namespace Fritz.StreamTools.Services
 {
 
 

@@ -21,6 +21,8 @@ namespace Fritz.StreamTools.Services
     public FollowerService Service { get; private set; }
     public IConfiguration Configuration { get; }
 
+    public event EventHandler Updated;
+
     public TwitchService(IConfiguration config)
     {
       this.Configuration = config;
@@ -61,7 +63,7 @@ namespace Fritz.StreamTools.Services
 
       var v5 = new TwitchLib.Channels.V5(api);
       var follows = await v5.GetAllFollowersAsync(ChannelId);
-      var viewers = 
+      // var viewers = 
 
       _CurrentFollowerCount = follows.Count;
       Service.OnNewFollowersDetected += Service_OnNewFollowersDetected;
@@ -84,6 +86,7 @@ namespace Fritz.StreamTools.Services
     TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
     {
 
+      Updated?.Invoke(this, EventArgs.Empty);
       Interlocked.Increment(ref _CurrentFollowerCount);
 
     }

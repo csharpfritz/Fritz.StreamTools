@@ -15,7 +15,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services
 {
-    public class MixerService : IHostedService
+  public class MixerService : IHostedService
     {
         const string API_URL = "https://mixer.com/api/v1/";
         const string WS_URL = "wss://constellation.mixer.com";
@@ -201,4 +201,5 @@ namespace Fritz.StreamTools.Services
             }
         }
     }
+
 }

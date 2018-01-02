@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Builder;
@@ -37,6 +38,11 @@ namespace Fritz.StreamTools
       services.AddSingleton<IHostedService>(mxr);
       services.AddSingleton(mxr);
 
+      services.AddScoped<MyFollowerService>();
+
+      services.AddSignalR();
+      services.AddScoped<FollowerHub>();
+
 
 			services.AddMvc();
 		}
@@ -55,6 +61,11 @@ namespace Fritz.StreamTools
 			}
 
 			app.UseStaticFiles();
+
+      app.UseSignalR(configure =>
+      {
+        configure.MapHub<FollowerHub>("followerstream");
+      });
 
 			app.UseMvc(routes =>
 			{

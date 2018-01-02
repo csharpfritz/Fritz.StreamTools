@@ -64,11 +64,28 @@
 
     <script src="~/lib/jquery/dist/jquery.js"></script>
     <script type="text/javascript">
+        if (typeof Promise === 'undefined') {
+            document.write('<script type="text/javascript" src="lib/signalr/signalr-clientES5-1.0.0-alpha2-final.min.js"><\/script>');
+        }
+        else {
+            document.write('<script type="text/javascript" src="lib/signalr/signalr-client-1.0.0-alpha2-final.min.js"><\/script>');
+        }
+    </script>
+    <script type="text/javascript">
 <!--
 
         var fullBarWidth = @ViewBag.Width;
         var goalValue = @Model.GoalValue;
 
+        let connection = new signalR.HubConnection("followerstream");
+        connection.start().then(function () {
+
+            
+
+        });
+
+
+        /**
         $().ready(function () {
 
             window.setInterval(function () {
@@ -86,7 +103,7 @@
             }, 5000)
 
         });
-
+        **/
 //-->
     </script>
 

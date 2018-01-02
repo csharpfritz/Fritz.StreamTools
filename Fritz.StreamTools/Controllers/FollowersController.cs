@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -13,23 +14,43 @@ namespace Fritz.StreamTools.Controllers
 
   public class FollowersController : Controller
   {
+    private static int _TestFollowers;
 
-    public FollowersController(TwitchService twitch, MixerService mixer, IOptions<FollowerGoalConfiguration> config)
+    public FollowersController(
+      TwitchService twitch, 
+      MixerService mixer, 
+      IOptions<FollowerGoalConfiguration> config,
+      IHostingEnvironment env)
     {
       this.TwitchService = twitch;
       this.MixerService = mixer;
       this.Configuration = config.Value;
+      this.HostingEnvironment = env;
     }
 
     public TwitchService TwitchService { get; }
     public MixerService MixerService { get; }
     public FollowerGoalConfiguration Configuration { get; }
-
+    public IHostingEnvironment HostingEnvironment { get; }
 
     [HttpGet("api/Followers")]
     public int Get()
     {
+
+      if (HostingEnvironment.IsDevelopment() && _TestFollowers > 0) {
+        return _TestFollowers;
+      }
+
       return TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount;
+    }
+
+    [HttpPost("api/Followers")] 
+    public void Post(int newFollowers) {
+
+      if (HostingEnvironment.IsDevelopment()) {
+        _TestFollowers = newFollowers;
+      }
+
     }
 
     public IActionResult Count() {

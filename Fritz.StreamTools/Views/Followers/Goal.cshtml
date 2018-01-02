@@ -66,6 +66,9 @@
     <script type="text/javascript">
 <!--
 
+        var fullBarWidth = @ViewBag.Width;
+        var goalValue = @Model.GoalValue;
+
         $().ready(function () {
 
             window.setInterval(function () {
@@ -74,7 +77,9 @@
                     url: "/api/Followers"
                 }).done(function (data) {
 
-                    document.getElementsByClassName("current").textContent = data;
+                    document.getElementsByClassName("current")[0].textContent = data;
+                    document.getElementsByClassName("current")[1].textContent = data;
+                    document.getElementById("progress").style.width = (fullBarWidth * parseInt(data,10) / goalValue) + "px";
 
                 })
 

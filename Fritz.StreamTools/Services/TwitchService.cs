@@ -73,7 +73,14 @@ namespace Fritz.StreamTools.Services
 
     private void UpdateViewers(object state)
     {
-      
+
+      // Null check
+      if (_Stream.Stream == null)
+      {
+        _CurrentViewerCount = 0;
+        return;
+      }
+
       var count = _Stream.Stream.Viewers;
       Interlocked.Exchange(ref _CurrentViewerCount, count);
 

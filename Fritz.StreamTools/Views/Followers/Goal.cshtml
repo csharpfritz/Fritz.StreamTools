@@ -49,38 +49,42 @@
     </style>
 </head>
 <body>
-    <div id="progress" style="width: @(ViewBag.Width * Model.CurrentValue / Model.GoalValue)px;">
-        <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
-            <span class="caption">@Model.Caption</span>
-            <span class="current">@Model.CurrentValue</span>
-            <span class="goal">@Model.GoalValue</span>
-        </div>
+  <!--16 is the border (8 for each side)-->
+  <div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
+    <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
+      <span class="caption">@Model.Caption</span>
+      <span class="current">@Model.CurrentValue</span>
+      <span class="goal">@Model.GoalValue</span>
     </div>
-    <div class="followerBar" style="width: @(ViewBag.Width)px">
-        <span class="caption">@Model.Caption</span>
-        <span class="current">@Model.CurrentValue</span>
-        <span class="goal">@Model.GoalValue</span>
-    </div>
+  </div>
+  <div class="followerBar" style="width: @(ViewBag.Width)px">
+    <span class="caption">@Model.Caption</span>
+    <span class="current">@Model.CurrentValue</span>
+    <span class="goal">@Model.GoalValue</span>
+  </div>
 
-    <script src="~/lib/jquery/dist/jquery.js"></script>
-    <script type="text/javascript">
-        if (typeof Promise === 'undefined') {
-            document.write('<script type="text/javascript" src="lib/signalr/signalr-clientES5-1.0.0-alpha2-final.min.js"><\/script>');
-        }
-        else {
-            document.write('<script type="text/javascript" src="lib/signalr/signalr-client-1.0.0-alpha2-final.min.js"><\/script>');
-        }
-    </script>
-    <script type="text/javascript">
+  <script src="~/lib/jquery/dist/jquery.js"></script>
+  <script src="~/js/signalr-client.min.js"></script>
+  <script type="text/javascript">
 <!--
 
-        var fullBarWidth = @ViewBag.Width;
-        var goalValue = @Model.GoalValue;
+        $(function () {
+          var fullBarWidth = @ViewBag.Width;
+          var goalValue = @Model.GoalValue;
 
-        let connection = new signalR.HubConnection("followerstream");
-        connection.start().then(function () {
+          let hubUrl = '@Url.Content("~/followerstream")';
+          let httpConnection = new signalR.HttpConnection(hubUrl);
+          let hubConnection = new signalR.HubConnection(httpConnection);
 
-            
+          hubConnection.on('OnFollowersCountUpdated', data => {
+            //console.log(data);
+            document.getElementsByClassName("current")[0].textContent = data;
+            document.getElementsByClassName("current")[1].textContent = data;
+            //16 is the border (8 for each side)
+            document.getElementById("progress").style.width = ((fullBarWidth * parseInt(data, 10) / goalValue) + 16) + "px";
+          });
+
+          hubConnection.start();
 
         });
 
@@ -105,7 +109,7 @@
         });
         **/
 //-->
-    </script>
+  </script>
 
 </body>
 </html>

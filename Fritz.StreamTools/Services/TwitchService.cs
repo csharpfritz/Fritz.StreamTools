@@ -42,8 +42,6 @@ namespace Fritz.StreamTools.Services
     public int CurrentFollowerCount { get { return _CurrentFollowerCount; } }
 
     public static int _CurrentViewerCount;
-    private Timer _Timer;
-    private static StreamByUser _Stream;
 
     public int CurrentViewerCount {  get { return _CurrentViewerCount; } }
 

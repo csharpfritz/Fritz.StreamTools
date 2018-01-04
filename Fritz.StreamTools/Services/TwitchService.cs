@@ -43,7 +43,7 @@ namespace Fritz.StreamTools.Services
 
     public static int _CurrentViewerCount;
     private Timer _Timer;
-    private StreamByUser _Stream;
+    private static StreamByUser _Stream;
 
     public int CurrentViewerCount {  get { return _CurrentViewerCount; } }
 
@@ -63,32 +63,16 @@ namespace Fritz.StreamTools.Services
 
       var v5 = new TwitchLib.Channels.V5(api);
       var follows = await v5.GetAllFollowersAsync(ChannelId);
-      // var viewers = 
 
       _CurrentFollowerCount = follows.Count;
       Service.OnNewFollowersDetected += Service_OnNewFollowersDetected;
-
-      _Stream = await api.Streams.v5.GetStreamByUserAsync(ChannelId);
-      _Timer = new Timer(UpdateViewers, null, 0, 5000);
-
-    }
-
-    private void UpdateViewers(object state)
-    {
-      
-      var count = _Stream.Stream.Viewers;
-      Interlocked.Exchange(ref _CurrentViewerCount, count);
-
-
     }
 
     private void Service_OnNewFollowersDetected(object sender, 
     TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
     {
-
-      Updated?.Invoke(this, EventArgs.Empty);
       Interlocked.Increment(ref _CurrentFollowerCount);
-
+      Updated?.Invoke(this, EventArgs.Empty);
     }
 
     private Task StopTwitchMonitoring()

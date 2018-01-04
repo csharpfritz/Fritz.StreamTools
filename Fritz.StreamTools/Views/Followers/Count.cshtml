@@ -33,30 +33,45 @@
 </head>
 <body>
 
-    <span id="fg">Followers: <span id="count">@Model</span></span>
+  <span id="fg">Followers: <span id="count">@Model</span></span>
 
-    <script src="~/lib/jquery/dist/jquery.js"></script>
-    <script type="text/javascript">
+  <script src="~/lib/jquery/dist/jquery.js"></script>
+  <script src="~/js/signalr-client.min.js"></script>
+  <script type="text/javascript">
 <!--
+    $(function () {
 
-        $().ready(function () {
+      let hubUrl = '@Url.Content("~/followerstream")';
+      let httpConnection = new signalR.HttpConnection(hubUrl);
+      let hubConnection = new signalR.HubConnection(httpConnection);
 
-            window.setInterval(function () {
+      hubConnection.on('OnFollowersCountUpdated', data => {
+        //console.log(data);
+        document.getElementById("count").textContent = data;
+      });
 
-                $.ajax({
-                    url: "/api/Followers"
-                }).done(function (data) {
+      hubConnection.start();
 
-                    document.getElementById("count").textContent = data;
+    });
 
-                })
+    /*$().ready(function () {
 
-            }, 5000)
+      window.setInterval(function () {
 
-        });
+        $.ajax({
+          url: "/api/Followers"
+        }).done(function (data) {
+
+          document.getElementById("count").textContent = data;
+
+        })
+
+      }, 5000)
+
+    });*/
 
 //-->
-    </script>
+  </script>
 
 </body>
 </html>

@@ -21,7 +21,7 @@ namespace Fritz.StreamTools.Services
     public FollowerService Service { get; private set; }
     public IConfiguration Configuration { get; }
 
-    public event EventHandler Updated;
+    public event EventHandler<ServiceUpdatedEventArgs> Updated;
 
     public TwitchService(IConfiguration config)
     {
@@ -70,7 +70,11 @@ namespace Fritz.StreamTools.Services
     TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
     {
       Interlocked.Increment(ref _CurrentFollowerCount);
-      Updated?.Invoke(this, EventArgs.Empty);
+      Updated?.Invoke(this, new ServiceUpdatedEventArgs
+      {
+        ServiceName = "Twitch",
+        NewFollowers = _CurrentFollowerCount
+      });
     }
 
     private Task StopTwitchMonitoring()

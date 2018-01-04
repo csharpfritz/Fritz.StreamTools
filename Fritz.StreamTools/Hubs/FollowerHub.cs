@@ -25,8 +25,16 @@ namespace Fritz.StreamTools.Hubs
       Twitch.Updated += StreamService_Updated;
     }
 
-    private void StreamService_Updated(object sender, EventArgs e) {
-      Clients.All.InvokeAsync("OnFollowersCountUpdated", this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
+    private void StreamService_Updated(object sender, ServiceUpdatedEventArgs e) {
+
+
+      if (!e.NewFollowers.HasValue)
+      {
+        return;
+      }
+
+      Clients.All.InvokeAsync("OnFollowersCountUpdated", 
+      this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
     }
   }
 

@@ -65,8 +65,15 @@ namespace Fritz.StreamTools.Controllers
 
     }
 
-    [Route("followers/goal/{goal=0}/{caption=}")]
-    public IActionResult Goal(string caption, int goal, int width = 800) {
+    [Route("followers/goal/{*stuff}")]
+    public IActionResult Goal(string stuff) {
+
+      return View("Docs_Goal");
+
+    }
+
+    [Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
+    public IActionResult Goal(string caption = "", int goal=0, int width = 800) {
 
 
       // TODO: Handle empty caption

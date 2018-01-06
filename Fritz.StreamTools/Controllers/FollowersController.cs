@@ -23,20 +23,21 @@ namespace Fritz.StreamTools.Controllers
       MixerService mixer, 
       IOptions<FollowerGoalConfiguration> config,
       IHostingEnvironment env,
-      IHubContext<FollowerHub> followerContext)
+      FollowerClient followerClient) 
     {
       this.TwitchService = twitch;
       this.MixerService = mixer;
       this.Configuration = config.Value;
       this.HostingEnvironment = env;
-      this.FollowerContext = followerContext;
+      this.FollowerClient = followerClient;
     }
 
     public TwitchService TwitchService { get; }
     public MixerService MixerService { get; }
     public FollowerGoalConfiguration Configuration { get; }
     public IHostingEnvironment HostingEnvironment { get; }
-    public IHubContext<FollowerHub> FollowerContext { get; }
+    public FollowerClient FollowerClient { get; }
+
 
     [HttpGet("api/Followers")]
     public int Get()
@@ -54,7 +55,7 @@ namespace Fritz.StreamTools.Controllers
 
       if (HostingEnvironment.IsDevelopment()) {
         _TestFollowers = newFollowers;
-        FollowerContext.Clients.All.InvokeAsync("OnFollowersCountUpdated", newFollowers);
+        FollowerClient.UpdateFollowers(newFollowers);
       }
 
     }

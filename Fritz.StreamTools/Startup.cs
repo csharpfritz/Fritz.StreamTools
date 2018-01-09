@@ -43,7 +43,7 @@ namespace Fritz.StreamTools
       services.AddSignalR();
       services.AddSingleton<FollowerHub>();
 
-      services.AddScoped<FollowerClient>();
+      services.AddSingleton<FollowerClient>();
 
 
 			services.AddMvc();

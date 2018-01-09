@@ -12,14 +12,17 @@ namespace Fritz.StreamTools.Hubs
   {
     public TwitchService Twitch { get; }
     public MixerService Mixer { get; }
+    public FollowerClient FollowerClient { get; }
 
     public FollowerHub(
       TwitchService twitch,
-      MixerService mixer
+      MixerService mixer,
+      FollowerClient client
       ) {
 
       this.Twitch = twitch;
       this.Mixer = mixer;
+      this.FollowerClient = client;
 
       Mixer.Updated += StreamService_Updated;
       Twitch.Updated += StreamService_Updated;
@@ -33,8 +36,8 @@ namespace Fritz.StreamTools.Hubs
         return;
       }
 
-      Clients.All.InvokeAsync("OnFollowersCountUpdated", 
-      this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
+      this.FollowerClient.UpdateFollowers(this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
+
     }
   }
 

@@ -1,5 +1,6 @@
 ﻿// REF: https://dev.mixer.com/reference/constellation/index.html
 
+using System;
 using Fritz.StreamTools.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -23,6 +24,10 @@ namespace Fritz.StreamTools.Services
 
     }
 
+    public void UpdateViewers(string serviceName, int viewerCount)
+    {
+      FollowerContext.Clients.All.InvokeAsync("OnViewersCountUpdated", serviceName.ToLowerInvariant(), viewerCount);
+    }
   }
 
 }

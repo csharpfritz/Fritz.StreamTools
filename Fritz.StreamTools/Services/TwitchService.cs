@@ -42,6 +42,7 @@ namespace Fritz.StreamTools.Services
     public int CurrentFollowerCount { get { return _CurrentFollowerCount; } }
 
     public static int _CurrentViewerCount;
+    private Timer _Timer;
 
     public int CurrentViewerCount {  get { return _CurrentViewerCount; } }
 
@@ -60,10 +61,36 @@ namespace Fritz.StreamTools.Services
       await Service.StartService();
 
       var v5 = new TwitchLib.Channels.V5(api);
-      var follows = await v5.GetAllFollowersAsync(ChannelId);
 
+      var follows = await v5.GetAllFollowersAsync(ChannelId);
       _CurrentFollowerCount = follows.Count;
       Service.OnNewFollowersDetected += Service_OnNewFollowersDetected;
+
+      var v5Stream = new TwitchLib.Streams.V5(api);
+      var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
+      _CurrentViewerCount = myStream.Stream.Viewers;
+
+      _Timer = new Timer(CheckViews, null, 0, 5000);
+
+    }
+
+    private async void CheckViews(object state)
+    {
+      var api = new TwitchLib.TwitchAPI(clientId: ClientId);
+
+      var v5Stream = new TwitchLib.Streams.V5(api);
+      var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
+
+      if (_CurrentViewerCount != myStream.Stream.Viewers)
+      {
+        _CurrentViewerCount = myStream.Stream.Viewers;
+        Updated?.Invoke(null, new ServiceUpdatedEventArgs
+        {
+          ServiceName = "Twitch",
+          NewViewers = _CurrentViewerCount
+        });
+      }
+
     }
 
     private void Service_OnNewFollowersDetected(object sender, 

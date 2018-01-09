@@ -1,0 +1,38 @@
+﻿@page
+@model Fritz.StreamTools.Pages.CurrentViewersModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>CurrentViewers</title>
+</head>
+<body>
+
+    Twitch: <span id="twitchCount">@Model.Twitch.CurrentViewerCount</span>  
+    Mixer: <span id="mixerCount">@Model.Mixer.CurrentViewerCount</span>
+
+    <script src="~/js/signalr-client.min.js"></script>
+    <script type="text/javascript">
+
+        let hubUrl = '@Url.Content("~/followerstream")';
+
+        let httpConnection = new signalR.HttpConnection(hubUrl);
+        let hubConnection = new signalR.HubConnection(httpConnection);
+
+        hubConnection.on('OnViewersCountUpdated', (service, count) => {
+
+            document.getElementById(service + "Count").textContent = count;
+
+        });
+
+        hubConnection.start();
+
+    </script>
+
+</body>
+</html>

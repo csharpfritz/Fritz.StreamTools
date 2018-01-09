@@ -31,12 +31,15 @@ namespace Fritz.StreamTools.Hubs
     private void StreamService_Updated(object sender, ServiceUpdatedEventArgs e) {
 
 
-      if (!e.NewFollowers.HasValue)
+      if (e.NewFollowers.HasValue)
       {
-        return;
+        this.FollowerClient.UpdateFollowers(this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
       }
 
-      this.FollowerClient.UpdateFollowers(this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
+      if (e.NewViewers.HasValue) {
+        this.FollowerClient.UpdateViewers(e.ServiceName, e.NewViewers.Value);
+      }
+
 
     }
   }

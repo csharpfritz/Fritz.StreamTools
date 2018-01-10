@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools
 {
@@ -30,11 +31,12 @@ namespace Fritz.StreamTools
 
       services.Configure<FollowerGoalConfiguration>(Configuration.GetSection("FollowerGoal"));
 
-      var svc = new Services.TwitchService(Configuration);
+      var sp = services.BuildServiceProvider();
+      var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
       services.AddSingleton<IHostedService>(svc);
       services.AddSingleton(svc);
 
-      var mxr = new MixerService(Configuration);
+      var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
       services.AddSingleton<IHostedService>(mxr);
       services.AddSingleton(mxr);
 

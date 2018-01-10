@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,12 +21,14 @@ namespace Fritz.StreamTools.Services
     /// </summary>
     public FollowerService Service { get; private set; }
     public IConfiguration Configuration { get; }
+    public ILogger Logger { get; }
 
     public event EventHandler<ServiceUpdatedEventArgs> Updated;
 
-    public TwitchService(IConfiguration config)
+    public TwitchService(IConfiguration config, ILoggerFactory loggerFactory)
     {
       this.Configuration = config;
+      this.Logger = loggerFactory.CreateLogger("StreamServices");
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -68,7 +71,9 @@ namespace Fritz.StreamTools.Services
 
       var v5Stream = new TwitchLib.Streams.V5(api);
       var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
-      _CurrentViewerCount = myStream.Stream.Viewers;
+      _CurrentViewerCount = myStream.Stream?.Viewers ?? 0;
+
+      Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
 
       _Timer = new Timer(CheckViews, null, 0, 5000);
 
@@ -81,9 +86,9 @@ namespace Fritz.StreamTools.Services
       var v5Stream = new TwitchLib.Streams.V5(api);
       var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
 
-      if (_CurrentViewerCount != myStream.Stream.Viewers)
+      if (_CurrentViewerCount != (myStream.Stream?.Viewers ?? 0))
       {
-        _CurrentViewerCount = myStream.Stream.Viewers;
+        _CurrentViewerCount = (myStream.Stream?.Viewers ?? 0);
         Updated?.Invoke(null, new ServiceUpdatedEventArgs
         {
           ServiceName = "Twitch",
@@ -96,7 +101,9 @@ namespace Fritz.StreamTools.Services
     private void Service_OnNewFollowersDetected(object sender, 
     TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
     {
-      Interlocked.Increment(ref _CurrentFollowerCount);
+      Interlocked.Exchange(ref _CurrentFollowerCount, _CurrentFollowerCount + e.NewFollowers.Count);
+      Logger.LogInformation($"New Followers on Twitch, new total: {_CurrentFollowerCount}");
+
       Updated?.Invoke(this, new ServiceUpdatedEventArgs
       {
         ServiceName = "Twitch",

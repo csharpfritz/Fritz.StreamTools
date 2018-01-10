@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -24,6 +25,9 @@ namespace Fritz.StreamTools.Services
     ClientWebSocket _webSocket;
     IConfiguration _config;
     HttpClient _client;
+
+    public ILogger Logger { get; }
+
     int _nextCommandId;
     int _channelId;
     int _numberOfFollowers;
@@ -35,17 +39,21 @@ namespace Fritz.StreamTools.Services
     public int CurrentFollowerCount { get => _numberOfFollowers; }
     public int CurrentViewerCount { get => _numberOfViewers; }
 
-    public MixerService(IConfiguration config)
+    public MixerService(IConfiguration config, ILoggerFactory loggerFactory)
     {
       _shutdownRequested = new CancellationTokenSource();
       _config = config;
       _client = new HttpClient { BaseAddress = new Uri(API_URL) };
+      this.Logger = loggerFactory.CreateLogger("StreamServices");
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
       await GetChannelInfo();
       await Connect(cancellationToken);
+
+      Logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
+
       var _ = Task.Factory.StartNew(MixerUpdater);
     }
 
@@ -190,6 +198,8 @@ namespace Fritz.StreamTools.Services
       if (data["numFollowers"] != null && data["numFollowers"].Value<int>() != _numberOfFollowers)
       {
         Interlocked.Exchange(ref _numberOfFollowers, data["numFollowers"].Value<int>());
+        Logger.LogInformation($"New Followers on Mixer, new total: {_numberOfFollowers}");
+
         Updated?.Invoke(this, new ServiceUpdatedEventArgs
         {
           ServiceName = "Mixer",

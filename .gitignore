@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Ignore the Streamtools specific files
+runtime/
+Fritz.StreamTools/wwwroot/lib/
+.vscode/
+package-lock.json
+
 # User-specific files
 *.suo
 *.user

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,10 +82,22 @@ namespace Fritz.StreamTools.Services
 
     private async void CheckViews(object state)
     {
-      var api = new TwitchLib.TwitchAPI(clientId: ClientId);
 
+      var api = new TwitchLib.TwitchAPI(clientId: ClientId);
       var v5Stream = new TwitchLib.Streams.V5(api);
-      var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
+			StreamByUser myStream = null;
+
+			try
+			{
+
+				myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
+
+			} catch (JsonReaderException ex) {
+
+				Logger.LogError($"Unable to read stream from Twitch: {ex}");
+				return;
+
+			}
 
       if (_CurrentViewerCount != (myStream.Stream?.Viewers ?? 0))
       {

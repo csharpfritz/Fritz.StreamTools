@@ -10,37 +10,29 @@ namespace Fritz.StreamTools.Hubs
 
   public class FollowerHub : Hub
   {
-    public TwitchService Twitch { get; }
-    public MixerService Mixer { get; }
+    public StreamService StreamService { get; }
     public FollowerClient FollowerClient { get; }
 
     public FollowerHub(
-      TwitchService twitch,
-      MixerService mixer,
+      StreamService streamService,
       FollowerClient client
       ) {
 
-      this.Twitch = twitch;
-      this.Mixer = mixer;
+      this.StreamService = streamService;
       this.FollowerClient = client;
 
-      Mixer.Updated += StreamService_Updated;
-      Twitch.Updated += StreamService_Updated;
+      StreamService.Updated += StreamService_Updated;
     }
 
     private void StreamService_Updated(object sender, ServiceUpdatedEventArgs e) {
-
-
       if (e.NewFollowers.HasValue)
       {
-        this.FollowerClient.UpdateFollowers(this.Mixer.CurrentFollowerCount + this.Twitch.CurrentFollowerCount);
+        this.FollowerClient.UpdateFollowers(StreamService.CurrentFollowerCount);
       }
 
       if (e.NewViewers.HasValue) {
         this.FollowerClient.UpdateViewers(e.ServiceName, e.NewViewers.Value);
       }
-
-
     }
   }
 

@@ -38,6 +38,8 @@ namespace Fritz.StreamTools
       services.AddSingleton<IHostedService>(mxr);
       services.AddSingleton(mxr);
 
+      services.AddSingleton<StreamService>();
+
       //services.AddScoped<MyFollowerService>();
 
       services.AddSignalR();

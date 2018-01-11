@@ -10,18 +10,16 @@ namespace Fritz.StreamTools.Controllers
   public class ViewersController : Controller
   {
 
-    public ViewersController(TwitchService twitch, MixerService mixer)
+    public ViewersController(StreamService streamService)
     {
-      this.Twitch = twitch;
-      this.Mixer = mixer;
+      this.StreamService = streamService;
     }
 
-    public TwitchService Twitch { get; }
-    public MixerService Mixer { get; }
+    public StreamService StreamService { get; }
 
     public IActionResult Current()
     {
-      return View(Twitch.CurrentViewerCount + Mixer.CurrentViewerCount);
+      return View(StreamService.CurrentViewerCount);
     }
   }
 }

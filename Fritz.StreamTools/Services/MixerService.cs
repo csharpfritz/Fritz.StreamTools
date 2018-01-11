@@ -115,7 +115,7 @@ namespace Fritz.StreamTools.Services
     /// </summary>
     async Task<JToken> ReceiveReply()
     {
-      ArraySegment<byte> segment = new ArraySegment<byte>(new byte[1024]);
+      var segment = new ArraySegment<byte>(new byte[1024]);
       var result = await _webSocket.ReceiveAsync(segment, CancellationToken.None);
       var a = segment.Array.Take(result.Count).ToArray();
       var json = Encoding.UTF8.GetString(a);
@@ -151,7 +151,7 @@ namespace Fritz.StreamTools.Services
     async Task MixerUpdater()
     {
       var webSocket = _webSocket;
-      ArraySegment<byte> segment = new ArraySegment<byte>(new byte[1024]);
+      var segment = new ArraySegment<byte>(new byte[1024]);
 
       while (!_shutdownRequested.IsCancellationRequested)
       {

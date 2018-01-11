@@ -45,29 +45,14 @@
       let hubConnection = new signalR.HubConnection(httpConnection);
 
       hubConnection.on('OnFollowersCountUpdated', data => {
-        //console.log(data);
-        document.getElementById("count").textContent = data;
-      });
+
+				document.getElementById("count").textContent = data;
+
+			});
 
       hubConnection.start();
 
     });
-
-    /*$().ready(function () {
-
-      window.setInterval(function () {
-
-        $.ajax({
-          url: "/api/Followers"
-        }).done(function (data) {
-
-          document.getElementById("count").textContent = data;
-
-        })
-
-      }, 5000)
-
-    });*/
 
 //-->
   </script>

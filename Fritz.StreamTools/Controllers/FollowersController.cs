@@ -19,21 +19,18 @@ namespace Fritz.StreamTools.Controllers
     internal static int _TestFollowers;
 
     public FollowersController(
-      TwitchService twitch, 
-      MixerService mixer, 
+      StreamService streamService, 
       IOptions<FollowerGoalConfiguration> config,
       IHostingEnvironment env,
       FollowerClient followerClient) 
     {
-      this.TwitchService = twitch;
-      this.MixerService = mixer;
+      this.StreamService = streamService;
       this.Configuration = config.Value;
       this.HostingEnvironment = env;
       this.FollowerClient = followerClient;
     }
 
-    public TwitchService TwitchService { get; }
-    public MixerService MixerService { get; }
+    public StreamService StreamService { get; }
     public FollowerGoalConfiguration Configuration { get; }
     public IHostingEnvironment HostingEnvironment { get; }
     public FollowerClient FollowerClient { get; }
@@ -47,7 +44,7 @@ namespace Fritz.StreamTools.Controllers
         return _TestFollowers;
       }
 
-      return TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount;
+      return StreamService.CurrentFollowerCount;
     }
 
     [HttpPost("api/Followers")] 
@@ -62,7 +59,7 @@ namespace Fritz.StreamTools.Controllers
 
     public IActionResult Count() {
 
-      return View(TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount);
+      return View(StreamService.CurrentFollowerCount);
 
     }
 
@@ -93,7 +90,7 @@ namespace Fritz.StreamTools.Controllers
       return View(new FollowerGoal
       {
         Caption = caption,
-        CurrentValue = TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount,
+        CurrentValue = StreamService.CurrentFollowerCount,
         GoalValue = goal
       });
 

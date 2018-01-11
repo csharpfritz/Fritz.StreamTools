@@ -14,14 +14,13 @@ namespace Fritz.StreamTools.Services
 {
 
 
-  public class TwitchService : IHostedService
-  {
+  public class TwitchService : IHostedService, IStreamService {
 
     /// <summary>
     /// Service for connecting and monitoring Twitch
     /// </summary>
     public FollowerService Service { get; private set; }
-    public IConfiguration Configuration { get; }
+    private IConfiguration Configuration { get; }
     public ILogger Logger { get; }
 
     public event EventHandler<ServiceUpdatedEventArgs> Updated;

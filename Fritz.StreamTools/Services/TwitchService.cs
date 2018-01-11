@@ -55,8 +55,9 @@ namespace Fritz.StreamTools.Services
 
     private string ChannelId {  get{ return Configuration["StreamServices:Twitch:UserId"]; } }
 
+		public string Name { get { return "Twitch"; } }
 
-    private async Task StartTwitchMonitoring()
+		private async Task StartTwitchMonitoring()
     {
       var api = new TwitchLib.TwitchAPI(clientId: ClientId);
       Service = new FollowerService(api);

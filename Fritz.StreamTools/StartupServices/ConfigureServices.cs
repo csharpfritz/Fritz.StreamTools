@@ -36,19 +36,39 @@ namespace Fritz.StreamTools.StartupServices
 		private static void ConfigureStreamingServices(
 			IServiceCollection services,
 			IConfiguration Configuration
-		) {
+		)
+		{
 
 			var sp = services.BuildServiceProvider();
-			var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
-			services.AddSingleton<IHostedService>(svc);
-			services.AddSingleton(svc);
 
-			var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
-			services.AddSingleton<IHostedService>(mxr);
-			services.AddSingleton(mxr);
+			ConfigureTwitch(services, Configuration, sp);
+
+			ConfigureMixer(services, Configuration, sp);
 
 			services.AddSingleton<StreamService>();
 
+		}
+
+		private static void ConfigureTwitch(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
+		{
+			if (!string.IsNullOrEmpty(Configuration["StreamServices:Twitch:ClientId"]))
+			{
+
+				var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
+				services.AddSingleton<IHostedService>(svc);
+				services.AddSingleton<IStreamService>(svc);
+
+			}
+		}
+
+		private static void ConfigureMixer(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
+		{
+			if (!string.IsNullOrEmpty(Configuration["StreamServices:Mixer:ClientId"]))
+			{
+				var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
+				services.AddSingleton<IHostedService>(mxr);
+				services.AddSingleton<IStreamService>(mxr);
+			}
 		}
 
 		private static void ConfigureAspNetFeatures(IServiceCollection services)

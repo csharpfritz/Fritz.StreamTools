@@ -5,6 +5,8 @@ namespace Fritz.StreamTools.Services {
 
 		public interface IStreamService {
 
+				string Name { get; }
+
 				int CurrentFollowerCount { get; }
 
 				int CurrentViewerCount { get; }

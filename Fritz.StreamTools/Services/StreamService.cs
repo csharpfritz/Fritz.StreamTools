@@ -1,33 +1,52 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Services {
-  public class StreamService : IStreamService {
-    private List<IStreamService> _services;
-    public StreamService(
-      TwitchService twitch,
-      MixerService mixer
-    ) {
-      _services = new List<IStreamService>();
-      _services.Add(twitch);
-      _services.Add(mixer);
-    }
 
-    public int CurrentFollowerCount { get { return _services.Sum(s => s.CurrentFollowerCount); } }
+	public class StreamService : IStreamService {
 
-    public int CurrentViewerCount { get { return _services.Sum(s => s.CurrentViewerCount); } }
+		private IEnumerable<IStreamService> _services;
+
+		public StreamService(
+			IEnumerable<IStreamService> services
+		) {
+
+			_services = services;
+
+		}
+
+		public int CurrentFollowerCount { get { return _services.Sum(s => s.CurrentFollowerCount); } }
+
+		public int CurrentViewerCount { get { return _services.Sum(s => s.CurrentViewerCount); } }
+
+		public string Name { get { return "Aggregate";} }
+
+		public IEnumerable<(string service, int count)> CountByService {
+			get {
+
+				return _services.Select(s => (s.Name, s.CurrentViewerCount));
+
+			}
+		}
+
 
     public event EventHandler<ServiceUpdatedEventArgs> Updated {
       add {
         foreach (var s in _services)
-          s.Updated += value;
-      }
+				{
+					s.Updated += value;
+				}
+			}
       remove {
         foreach (var s in _services)
-          s.Updated -= value;
-      }
+				{
+					s.Updated -= value;
+				}
+			}
     }
+
   }
 }

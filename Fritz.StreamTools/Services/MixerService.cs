@@ -39,7 +39,9 @@ namespace Fritz.StreamTools.Services
     public int CurrentFollowerCount { get => _numberOfFollowers; }
     public int CurrentViewerCount { get => _numberOfViewers; }
 
-    public MixerService(IConfiguration config, ILoggerFactory loggerFactory)
+		public string Name { get { return "Mixer"; } }
+
+		public MixerService(IConfiguration config, ILoggerFactory loggerFactory)
     {
       _shutdownRequested = new CancellationTokenSource();
       _config = config;

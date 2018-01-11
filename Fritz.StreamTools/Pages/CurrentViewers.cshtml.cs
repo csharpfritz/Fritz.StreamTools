@@ -8,25 +8,22 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Fritz.StreamTools.Pages
 {
-  public class CurrentViewersModel : PageModel
-  {
+	public class CurrentViewersModel : PageModel
+	{
 
-    public CurrentViewersModel(
-      TwitchService twitchService,
-      MixerService mixerService
-    )
-    {
-      this.Twitch = twitchService;
-      this.Mixer = mixerService;
-    }
+		public CurrentViewersModel(
+			StreamService streamService
+		)
+		{
+			this.StreamService = streamService;
+		}
 
-    public TwitchService Twitch { get; }
-    public MixerService Mixer { get; }
+		public StreamService StreamService { get; }
 
-    public void OnGet()
-    {
+		public void OnGet()
+		{
 
-    }
+		}
 
-  }
+	}
 }

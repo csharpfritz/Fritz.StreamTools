@@ -15,6 +15,7 @@
 
     Twitch: <span id="twitchCount">@Model.Twitch.CurrentViewerCount</span>  
     Mixer: <span id="mixerCount">@Model.Mixer.CurrentViewerCount</span>
+    Total: <span id="totalCount">@(Model.Twitch.CurrentViewerCount + Model.Mixer.CurrentViewerCount)</span>
 
     <script src="~/js/signalr-client.min.js"></script>
     <script type="text/javascript">

@@ -27,30 +27,8 @@ namespace Fritz.StreamTools
 		public void ConfigureServices(IServiceCollection services)
 		{
 
-			services.AddSingleton<Models.RundownRepository>();
-
-      services.Configure<FollowerGoalConfiguration>(Configuration.GetSection("FollowerGoal"));
-
-      var sp = services.BuildServiceProvider();
-      var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
-      services.AddSingleton<IHostedService>(svc);
-      services.AddSingleton(svc);
-
-      var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
-      services.AddSingleton<IHostedService>(mxr);
-      services.AddSingleton(mxr);
-
-      services.AddSingleton<StreamService>();
-
-      //services.AddScoped<MyFollowerService>();
-
-      services.AddSignalR();
-      services.AddSingleton<FollowerHub>();
-
-      services.AddSingleton<FollowerClient>();
-
-
-			services.AddMvc();
+			StartupServices.ConfigureServices.Execute(services, Configuration);
+			
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

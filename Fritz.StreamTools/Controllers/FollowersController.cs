@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -14,24 +16,25 @@ namespace Fritz.StreamTools.Controllers
 
   public class FollowersController : Controller
   {
-    private static int _TestFollowers;
+    internal static int _TestFollowers;
 
     public FollowersController(
-      TwitchService twitch, 
-      MixerService mixer, 
+      StreamService streamService, 
       IOptions<FollowerGoalConfiguration> config,
-      IHostingEnvironment env)
+      IHostingEnvironment env,
+      FollowerClient followerClient) 
     {
-      this.TwitchService = twitch;
-      this.MixerService = mixer;
+      this.StreamService = streamService;
       this.Configuration = config.Value;
       this.HostingEnvironment = env;
+      this.FollowerClient = followerClient;
     }
 
-    public TwitchService TwitchService { get; }
-    public MixerService MixerService { get; }
+    public StreamService StreamService { get; }
     public FollowerGoalConfiguration Configuration { get; }
     public IHostingEnvironment HostingEnvironment { get; }
+    public FollowerClient FollowerClient { get; }
+
 
     [HttpGet("api/Followers")]
     public int Get()
@@ -41,7 +44,7 @@ namespace Fritz.StreamTools.Controllers
         return _TestFollowers;
       }
 
-      return TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount;
+      return StreamService.CurrentFollowerCount;
     }
 
     [HttpPost("api/Followers")] 
@@ -49,18 +52,26 @@ namespace Fritz.StreamTools.Controllers
 
       if (HostingEnvironment.IsDevelopment()) {
         _TestFollowers = newFollowers;
+        FollowerClient.UpdateFollowers(newFollowers);
       }
 
     }
 
     public IActionResult Count() {
 
-      return View(TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount);
+      return View(StreamService.CurrentFollowerCount);
 
     }
 
-    [Route("followers/goal/{goal=0}/{caption=}")]
-    public IActionResult Goal(string caption, int goal, int width = 800) {
+    [Route("followers/goal/{*stuff}")]
+    public IActionResult Goal(string stuff) {
+
+      return View("Docs_Goal");
+
+    }
+
+    [Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
+    public IActionResult Goal(string caption = "", int goal=0, int width = 800) {
 
 
       // TODO: Handle empty caption
@@ -79,7 +90,7 @@ namespace Fritz.StreamTools.Controllers
       return View(new FollowerGoal
       {
         Caption = caption,
-        CurrentValue = TwitchService.CurrentFollowerCount + MixerService.CurrentFollowerCount,
+        CurrentValue = StreamService.CurrentFollowerCount,
         GoalValue = goal
       });
 

@@ -1,0 +1,52 @@
+﻿@page
+@model Fritz.StreamTools.Pages.CurrentViewersModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>CurrentViewers</title>
+</head>
+<body>
+
+	@foreach (var service in Model.StreamService.CountByService.OrderByDescending(s => s.service))
+	{
+
+		@service.service <text>:</text> <span class="serviceCount" id="@service.service.ToLowerInvariant()Count">@service.count</span>
+
+	}
+
+	Total: <span id="totalCount">@(Model.StreamService.CountByService.Sum(s => s.count))</span>
+
+	<script src="~/js/signalr-client.min.js"></script>
+	<script type="text/javascript">
+
+        let hubUrl = '@Url.Content("~/followerstream")';
+
+        let httpConnection = new signalR.HttpConnection(hubUrl);
+				let hubConnection = new signalR.HubConnection(httpConnection);
+
+				const reducer = (accumulator, currentValue) => accumulator + parseInt(currentValue.textContent, 10);
+
+
+		    hubConnection.on('OnViewersCountUpdated', (service, count) => {
+
+					document.getElementById(service + "Count").textContent = count;
+
+					var currentCounts = document.getElementsByClassName("serviceCount");
+					var elArray = Array.from(currentCounts);
+					document.getElementById("totalCount").textContent = elArray.reduce(reducer, 0);
+
+
+        });
+
+        hubConnection.start();
+
+	</script>
+
+</body>
+</html>

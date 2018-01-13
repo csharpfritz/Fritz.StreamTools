@@ -1,37 +1,44 @@
 ﻿@model FollowerGoal
+@inject IOptions<FollowerGoalConfiguration> configOptions
 @{
-    Layout = null;
+  Layout = null;
+  var config = configOptions.Value;
 }
 
-<!DOCTYPE html>
+<!DOCTYPE html> 
 
 <html>
 <head>
     <title>Followers Goal</title>
     <style>
+        .followerBar {
+            background: @config.EmptyBackgroundColor;
+            color: @config.EmptyFontColor;
+            }
+
+        #fill {
+            background-color: @config.FillBackgroundColor;
+            color: @config.FillFontColor;
+        }
+    </style>
+    <style>
 
         .followerBar {
-            background: #ccc;
             width: 100%;
             display: flex;
             flex-wrap: nowrap;
             padding: 2px 8px;
         }
 
-        .followerBar span {
-            font-family: Arial;
-            font-size: 16pt;
-            font-weight: 600;
-        }
+            .followerBar span {
+                font-family: Arial;
+                font-size: 16pt;
+                font-weight: 600;
+            }
 
         #progress {
             overflow: hidden;
             position: absolute;
-        }
-
-        #fill {
-            background-color: #00F;
-            color: #FFF;
         }
 
         .followerBar span {
@@ -45,11 +52,11 @@
         .goal {
             text-align: right;
         }
-
     </style>
 </head>
 <body>
-    <div id="progress" style="width: @(ViewBag.Width * Model.CurrentValue / Model.GoalValue)px;">
+    <!--16 is the border (8 for each side)-->
+    <div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
         <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
             <span class="caption">@Model.Caption</span>
             <span class="current">@Model.CurrentValue</span>
@@ -62,30 +69,28 @@
         <span class="goal">@Model.GoalValue</span>
     </div>
 
-    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/js/signalr-client.min.js"></script>
     <script type="text/javascript">
 <!--
 
         var fullBarWidth = @ViewBag.Width;
         var goalValue = @Model.GoalValue;
 
-        $().ready(function () {
+        let hubUrl = '@Url.Content("~/followerstream")';
 
-            window.setInterval(function () {
+        let httpConnection = new signalR.HttpConnection(hubUrl);
+        let hubConnection = new signalR.HubConnection(httpConnection);
 
-                $.ajax({
-                    url: "/api/Followers"
-                }).done(function (data) {
+        hubConnection.on('OnFollowersCountUpdated', data => {
 
-                    document.getElementsByClassName("current")[0].textContent = data;
-                    document.getElementsByClassName("current")[1].textContent = data;
-                    document.getElementById("progress").style.width = (fullBarWidth * parseInt(data,10) / goalValue) + "px";
-
-                })
-
-            }, 5000)
+            document.getElementsByClassName("current")[0].textContent = data;
+            document.getElementsByClassName("current")[1].textContent = data;
+            //16 is the border (8 for each side)
+            document.getElementById("progress").style.width = ((fullBarWidth * parseInt(data, 10) / goalValue) + 16) + "px";
 
         });
+
+        hubConnection.start();
 
 //-->
     </script>

@@ -1,6 +1,6 @@
-docker build -t fritz.rundown:%1 -t fritz.rundown:latest -f Fritz.RunDown\Dockerfile .
+docker build -t fritz.streamtools:%1 -t fritz.streamtools:latest -f Fritz.StreamTools\Dockerfile .
 
-docker tag fritz.rundown:%1 fritzregistry.azurecr.io/fritz.rundown:%1
-docker tag fritz.rundown:%1 fritzregistry.azurecr.io/fritz.rundown:latest
+docker tag fritz.streamtools:%1 fritzregistry.azurecr.io/fritz.streamtools:%1
+docker tag fritz.streamtools:%1 fritzregistry.azurecr.io/fritz.streamtools:latest
 
-docker push fritzregistry.azurecr.io/fritz.rundown
+docker push fritzregistry.azurecr.io/fritz.streamtools

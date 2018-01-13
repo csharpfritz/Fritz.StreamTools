@@ -42,7 +42,10 @@ namespace Fritz.StreamTools.Services
     }
 
     public static int _CurrentFollowerCount;
-    public int CurrentFollowerCount { get { return _CurrentFollowerCount; } }
+    public int CurrentFollowerCount {
+			get { return _CurrentFollowerCount; }
+			internal set { _CurrentFollowerCount = value; }
+		}
 
     public static int _CurrentViewerCount;
     private Timer _Timer;
@@ -111,7 +114,7 @@ namespace Fritz.StreamTools.Services
 
     }
 
-    private void Service_OnNewFollowersDetected(object sender, 
+    internal void Service_OnNewFollowersDetected(object sender, 
     TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
     {
       Interlocked.Exchange(ref _CurrentFollowerCount, _CurrentFollowerCount + e.NewFollowers.Count);

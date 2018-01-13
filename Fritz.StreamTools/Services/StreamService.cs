@@ -24,16 +24,28 @@ namespace Fritz.StreamTools.Services {
 
 		public string Name { get { return "Aggregate";} }
 
-		public IEnumerable<(string service, int count)> CountByService {
-			get {
+		public IEnumerable<(string service, int count)> ViewerCountByService
+		{
+			get
+			{
 
 				return _services.Select(s => (s.Name, s.CurrentViewerCount));
 
 			}
 		}
 
+		public IEnumerable<(string service, int count)> FollowerCountByService
+		{
+			get
+			{
 
-    public event EventHandler<ServiceUpdatedEventArgs> Updated {
+				return _services.Select(s => (s.Name, s.CurrentFollowerCount));
+
+			}
+		}
+
+
+		public event EventHandler<ServiceUpdatedEventArgs> Updated {
       add {
         foreach (var s in _services)
 				{

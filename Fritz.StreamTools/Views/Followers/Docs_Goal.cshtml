@@ -12,50 +12,72 @@
 </head>
 <body>
 
-<h1>The Followers Goal</h1>
+    <h1>The Followers Goal</h1>
 
-<p>
-This is a simple horizontal meter that fills as you get more followers.  
-Use the following URL syntax:
-</p>
+    <p>
+        This is a simple horizontal meter that fills as you get more followers.
+        Use the following URL syntax:
+    </p>
 
-<code>
-/followers/goal/{goal_value}/{caption}
-</code>
+    <code>
+        /followers/goal/{goal_value}/{caption}
+    </code>
 
-<dl>
-<dt>goal_value</dt>
-<dd>The integer value of the goal number of followers</dd>
-<dt>caption</dt>
-<dd>The caption to display that defines the goal</dd>
-</dl>
+    <dl>
+        <dt>goal_value</dt>
+        <dd>The integer value of the goal number of followers</dd>
+        <dt>caption</dt>
+        <dd>The caption to display that defines the goal</dd>
+    </dl>
 
-<h3>Other Parameters</h3>
+    <h3>Other Parameters</h3>
 
-Other parameters can be passed on the querystring using standard name-value syntax
+    Other parameters can be passed on the querystring using standard name-value syntax
 
-<dl>
-<dt>width</dt>
-<dd>The width in pixels of the bar</dd>
-</dl>
+    <dl>
+        <dt>width</dt>
+        <dd>The width in pixels of the bar</dd>
+    </dl>
 
-<h3>Color Configuration</h3>
+    <dl>
+        <dt>bgcolors</dt>
+        <dd>A comma separated list of colors/values for the background - ordered left to right.</dd>
+    </dl>
 
-<p>
-You can configure the colors of the goal bar by setting the following configuration options in appsettings.json
-OR setting the appropriate environment variable
-</p>
+    <dl>
+        <dt>bgblend</dt>
+        <dd>A comma separated list of values between 0 and 1 representing how much of the color should be blended into the next color.</dd>
+        <dd>A value of zero means there will be a sharp cutover to the next color.</dd>
+        <dd>A value of one means there will be a smooth blend to the next color over the full width of the color section.</dd>
+        <dd>As the value increases from 0 (sharp cutover) the amount of blended overlap increases.</dd>
+    </dl>
 
-<dl>
-    <dt>FollowerGoal__EmptyBackgroundColor</dt>
-    <dd>Sets the background color of the empty bar</dd>
-    <dt>FollowerGoal__EmptyFontColor</dt>
-    <dd>Sets the font color of the empty bar</dd>
-    <dt>FollowerGoal__FillBackgroundColor</dt>
-    <dd>Sets the background color of the filled section of the bar</dd>
-    <dt>FollowerGoal__FillFontColor</dt>
-    <dd>Sets the font color for the filled section of the bar</dd>
-</dl>
+    <dl>
+        <dt>Examples</dt>
+        <dd>Blended Blue to Green : <a href="/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=1,1">/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=1,1</a></dd>
+        <dd>Stepped Blue to Green : <a href="/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=0,0">/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=0,0</a></dd>
+        <dd>Smooth step Blue to Green : <a href="/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=0.1,0.1">/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=0.1,0.1</a></dd>
+    </dl>
+
+    <h3>Color Configuration</h3>
+
+    <p>
+        You can configure the colors of the goal bar by setting the following configuration options in appsettings.json
+        OR setting the appropriate environment variable
+    </p>
+
+    <dl>
+        <dt>FollowerGoal__EmptyBackgroundColor</dt>
+        <dd>Sets the background color of the empty bar</dd>
+        <dt>FollowerGoal__EmptyFontColor</dt>
+        <dd>Sets the font color of the empty bar</dd>
+        <dt>FollowerGoal__FillBackgroundColor</dt>
+        <dd>Sets the background color(s) of the filled section of the bar</dd>
+        <dt>FollowerGoal__FillFontColor</dt>
+        <dd>Sets the font color for the filled section of the bar</dd>
+        <dt>FollowerGoal_FillBackgroundColorBlend</dt>
+        <dd>Sets the required color blends for the filled section of the bar</dd>
+    </dl>
 
 
 </body>

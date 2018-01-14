@@ -62,7 +62,7 @@
 </head>
 <body>
     <!--16 is the border (8 for each side)-->
-    <div id="progress" style="width: @((Math.Clamp(ViewBag.Width,250,9999) * Model.CurrentValue / Model.GoalValue) + 16)px;">
+    <div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
         <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
             <span class="caption">@Model.Caption</span>
             <span class="current">@Model.CurrentValue</span>

@@ -10,53 +10,59 @@
 <html>
 <head>
     <title>Followers Goal</title>
-    <style>
+	<style>
         .followerBar {
-            background: @config.EmptyBackgroundColor;
-            color: @config.EmptyFontColor;
+            background: @(config.EmptyBackgroundColor);
+            color: @(config.EmptyFontColor);
             }
 
         #fill {
-            background-color: @config.FillBackgroundColor;
-            color: @config.FillFontColor;
+			background-image: linear-gradient(to right, @( ViewBag.Gradient));
+            color: @(config.FillFontColor);
         }
-    </style>
-    <style>
+	</style>
+	<style>
 
-        .followerBar {
-            width: 100%;
-            display: flex;
-            flex-wrap: nowrap;
-            padding: 2px 8px;
-        }
+		.followerBar {
+			width: 100%;
+			min-width: 250px;
+			height: 26px;
+			display: flex;
+			padding: 2px 8px;
+		}
 
-            .followerBar span {
-                font-family: Arial;
-                font-size: 16pt;
-                font-weight: 600;
-            }
+			.followerBar span {
+				font-family: Arial;
+				font-size: 16pt;
+				font-weight: 600;
+			}
 
         #progress {
             overflow: hidden;
             position: absolute;
         }
 
-        .followerBar span {
-            flex: 1;
-        }
+		.caption {
+			width: calc(50% - 30px);
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			overflow: hidden;
+		}
+		.current {
+			text-align: center;
+			width: 60px;
+		}
 
-        .current {
-            text-align: center;
-        }
-
-        .goal {
-            text-align: right;
-        }
-    </style>
+		.goal {
+			width: calc(50% - 30px);
+			flex: 1;
+			text-align: right;
+		}
+	</style>
 </head>
 <body>
     <!--16 is the border (8 for each side)-->
-    <div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
+    <div id="progress" style="width: @((Math.Clamp(ViewBag.Width,250,9999) * Model.CurrentValue / Model.GoalValue) + 16)px;">
         <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
             <span class="caption">@Model.Caption</span>
             <span class="current">@Model.CurrentValue</span>

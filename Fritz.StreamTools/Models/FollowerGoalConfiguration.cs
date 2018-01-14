@@ -15,6 +15,7 @@
 
 		public string FillFontColor { get; set; }
 
+		public double[] FillBackgroundColorBlend { get; set; }
 	}
 
 }

@@ -77,7 +77,7 @@ namespace Fritz.StreamTools.Controllers
 		}
 
 		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
-		public IActionResult Goal(string caption = "", int goal = 0, int width = 800, int current = -1)
+		public IActionResult Goal(string caption = "", int goal = 0, int width = 800, int current = -1, string bgcolors = "", string bgblend = "")
 		{
 
 
@@ -91,9 +91,11 @@ namespace Fritz.StreamTools.Controllers
 
 			caption = string.IsNullOrEmpty(caption) ? Configuration.Caption : caption == "null" ? "" : caption;
 			goal = goal == 0 ? Configuration.Goal : goal;
+			var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBackgroundColor : bgcolors.Split(',');
+			var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBackgroundColorBlend : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
 
 			ViewBag.Width = width;
-			ViewBag.Gradient = Gradient;
+			ViewBag.Gradient = Gradient(backColors, backBlend, width);
 
 			return View(new FollowerGoal
 			{
@@ -104,24 +106,38 @@ namespace Fritz.StreamTools.Controllers
 
 		}
 
-		private string Gradient
+		/// <summary>
+		/// Produces the color gradient string required for linear-gradient based on a set of colors and the requested blending
+		/// </summary>
+		/// <param name="bgcolors">An array of valid CSS colors such as red,green,blue or #F00,#0F0,#00F</param>
+		/// <param name="bgblend">An array of percentage blends required for each color - expressed between 0 and 1 </param>
+		/// <param name="width">The total width to blend over</param>
+		/// <returns></returns>
+		private string Gradient(string[] bgcolors, double[] bgblend, int width)
 		{
-			get
-			{
-				var fillBackgroundColor = Configuration.FillBackgroundColor;
-				var count = (double)fillBackgroundColor.Length;
-				var percent = (double)1 / count;
-				var colorWidth = (int)(ViewBag.Width * percent);
-				const int blendWidth = 10;
+			var count = (double)bgcolors.Length;
+			var percent = (double)1 / count;
+			var colorWidth = (int)(width * percent);
 
-				var result = new StringBuilder(fillBackgroundColor[0]);
-				for (var c = 0; c < count - 1; c++)
+			var result = new StringBuilder(bgcolors[0]);
+			for (var c = 0; c < count - 1; c++)
+			{
+				var distance = (c + 1) * colorWidth;
+				var blendWidthLeft = 0;
+				var blendWidthRight = 0;
+
+				if (bgblend != null && bgblend.Length > c)
 				{
-					var distance = (c + 1) * colorWidth;
-					result.Append($", {fillBackgroundColor[c]} {distance - blendWidth }px, {fillBackgroundColor[c + 1]} {(c + 1) * colorWidth + blendWidth}px");
+					blendWidthLeft = (int)(colorWidth * bgblend[c]);
 				}
-				return result.ToString();
+				if (bgblend != null && bgblend.Length > c + 1)
+				{
+					blendWidthRight = (int)(colorWidth * bgblend[c + 1]);
+				}
+				result.Append($", {bgcolors[c]} {distance - blendWidthLeft }px, {bgcolors[c + 1]} {(c + 1) * colorWidth + blendWidthRight}px");
 			}
+			result.Append($", {bgcolors.Last()}");
+			return result.ToString();
 		}
 
 	}

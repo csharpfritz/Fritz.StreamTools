@@ -14,11 +14,4 @@
 
     public string FillFontColor { get; set; }
 
-<<<<<<< HEAD
-		public double[] FillBackgroundColorBlend { get; set; }
-	}
-=======
-  }
->>>>>>> parent of 6a0ee53... Fixed an issue with caption text wrapping.
-
 }

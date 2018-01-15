@@ -17,7 +17,7 @@
             }
 
         #fill {
-            background-color: @config.FillBackgroundColor;
+            background-image: linear-gradient(to right, @( ViewBag.Gradient));
             color: @config.FillFontColor;
         }
     </style>
@@ -41,16 +41,22 @@
             position: absolute;
         }
 
-        .followerBar span {
-            flex: 1;
+        .caption {
+            width: calc(50% - 30px);
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
 
         .current {
             text-align: center;
+            width: 60px;
         }
-
+        
         .goal {
             text-align: right;
+            width: calc(50% - 30px);
+            flex: 1;
         }
     </style>
 </head>

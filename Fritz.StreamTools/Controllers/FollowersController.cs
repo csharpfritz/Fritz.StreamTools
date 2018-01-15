@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
@@ -15,80 +14,81 @@ using Microsoft.Extensions.Options;
 namespace Fritz.StreamTools.Controllers
 {
 
-	public class FollowersController : Controller
-	{
-		internal static int _TestFollowers;
+  public class FollowersController : Controller
+  {
+    internal static int _TestFollowers;
 
-		public FollowersController(
-		  StreamService streamService,
-		  IOptions<FollowerGoalConfiguration> config,
-		  IHostingEnvironment env,
-		  FollowerClient followerClient)
-		{
-			this.StreamService = streamService;
-			this.Configuration = config.Value;
-			this.HostingEnvironment = env;
-			this.FollowerClient = followerClient;
-		}
+    public FollowersController(
+      StreamService streamService, 
+      IOptions<FollowerGoalConfiguration> config,
+      IHostingEnvironment env,
+      FollowerClient followerClient) 
+    {
+      this.StreamService = streamService;
+      this.Configuration = config.Value;
+      this.HostingEnvironment = env;
+      this.FollowerClient = followerClient;
+    }
 
-		public StreamService StreamService { get; }
-		public FollowerGoalConfiguration Configuration { get; }
-		public IHostingEnvironment HostingEnvironment { get; }
-		public FollowerClient FollowerClient { get; }
+    public StreamService StreamService { get; }
+    public FollowerGoalConfiguration Configuration { get; }
+    public IHostingEnvironment HostingEnvironment { get; }
+    public FollowerClient FollowerClient { get; }
 
 
-		[HttpGet("api/Followers")]
-		public int Get()
-		{
+    [HttpGet("api/Followers")]
+    public int Get()
+    {
 
-			if (HostingEnvironment.IsDevelopment() && _TestFollowers > 0)
-			{
-				return _TestFollowers;
-			}
+      if (HostingEnvironment.IsDevelopment() && _TestFollowers > 0) {
+        return _TestFollowers;
+      }
 
-			return StreamService.CurrentFollowerCount;
-		}
+      return StreamService.CurrentFollowerCount;
+    }
 
-		[HttpPost("api/Followers")]
-		public void Post(int newFollowers)
-		{
+    [HttpPost("api/Followers")] 
+    public void Post(int newFollowers) {
 
-			if (HostingEnvironment.IsDevelopment())
-			{
-				_TestFollowers = newFollowers;
-				FollowerClient.UpdateFollowers(newFollowers);
-			}
+      if (HostingEnvironment.IsDevelopment()) {
+        _TestFollowers = newFollowers;
+        FollowerClient.UpdateFollowers(newFollowers);
+      }
 
-		}
+    }
 
-		public IActionResult Count()
-		{
+    public IActionResult Count() {
 
-			return View(StreamService.CurrentFollowerCount);
+      return View(StreamService.CurrentFollowerCount);
 
-		}
+    }
 
-		[Route("followers/goal/{*stuff}")]
-		public IActionResult Goal(string stuff)
-		{
+    [Route("followers/goal/{*stuff}")]
+    public IActionResult Goal(string stuff) {
 
-			return View("Docs_Goal");
+      return View("Docs_Goal");
 
-		}
+    }
 
+<<<<<<< HEAD
 		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
 		public IActionResult Goal(string caption = "", int goal = 0, int width = 800, int current = -1, string bgcolors = "", string bgblend = "")
 		{
+=======
+    [Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
+    public IActionResult Goal(string caption = "", int goal=0, int width = 800) {
+>>>>>>> parent of 6a0ee53... Fixed an issue with caption text wrapping.
 
 
-			// TODO: Handle empty caption
+      // TODO: Handle empty caption
 
-			/**
-			 * Default value: 'Follower Goal'
-			 * Lowest priority: whats in Configuration
-			 * Highest priority: querystring
-			 */
+      /**
+       * Default value: 'Follower Goal'
+       * Lowest priority: whats in Configuration
+       * Highest priority: querystring
+       */
 
+<<<<<<< HEAD
 			caption = string.IsNullOrEmpty(caption) ? Configuration.Caption : caption == "null" ? "" : caption;
 			goal = goal == 0 ? Configuration.Goal : goal;
 			var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBackgroundColor : bgcolors.Split(',');
@@ -96,16 +96,23 @@ namespace Fritz.StreamTools.Controllers
 
 			ViewBag.Width = width;
 			ViewBag.Gradient = Gradient(backColors, backBlend, width);
+=======
+      caption = string.IsNullOrEmpty(caption) ? Configuration.Caption : caption == "null" ? "" : caption;
+      goal = goal == 0 ? Configuration.Goal : goal;
 
-			return View(new FollowerGoal
-			{
-				Caption = caption,
-				CurrentValue = current == -1 ? StreamService.CurrentFollowerCount : current,
-				GoalValue = goal
-			});
+      ViewBag.Width = width;
+>>>>>>> parent of 6a0ee53... Fixed an issue with caption text wrapping.
 
-		}
+      return View(new FollowerGoal
+      {
+        Caption = caption,
+        CurrentValue = StreamService.CurrentFollowerCount,
+        GoalValue = goal
+      });
 
+    }
+
+<<<<<<< HEAD
 		/// <summary>
 		/// Produces the color gradient string required for linear-gradient based on a set of colors and the requested blending
 		/// </summary>
@@ -141,4 +148,7 @@ namespace Fritz.StreamTools.Controllers
 		}
 
 	}
+=======
+  }
+>>>>>>> parent of 6a0ee53... Fixed an issue with caption text wrapping.
 }

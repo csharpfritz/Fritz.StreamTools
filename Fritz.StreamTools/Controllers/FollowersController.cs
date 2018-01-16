@@ -85,8 +85,8 @@ namespace Fritz.StreamTools.Controllers
 
       caption = string.IsNullOrEmpty(caption) ? Configuration.Caption : caption == "null" ? "" : caption;
       goal = goal == 0 ? Configuration.Goal : goal;
-      var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBackgroundColor : bgcolors.Split(',');
-      var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBackgroundColorBlend : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
+      var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBgColorArray : bgcolors.Split(',');
+      var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBgBlendArray : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
 
       ViewBag.Width = width;
       ViewBag.Gradient = Gradient(backColors, backBlend, width);

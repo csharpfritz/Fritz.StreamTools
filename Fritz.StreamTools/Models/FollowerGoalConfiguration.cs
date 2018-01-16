@@ -10,10 +10,10 @@
 
     public string EmptyFontColor { get; set; }
 
-    public string FillBackgroundColor { get; set; }
+    public string[] FillBackgroundColor { get; set; }
 
     public string FillFontColor { get; set; }
 
+    public double[] FillBackgroundColorBlend { get; set; }
   }
-
 }

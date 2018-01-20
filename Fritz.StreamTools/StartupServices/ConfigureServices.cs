@@ -45,6 +45,8 @@ namespace Fritz.StreamTools.StartupServices
 
 			ConfigureMixer(services, Configuration, sp);
 
+			ConfigureMock(services, Configuration, sp);
+
 			services.AddSingleton<StreamService>();
 
 		}
@@ -68,6 +70,15 @@ namespace Fritz.StreamTools.StartupServices
 				var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
 				services.AddSingleton<IHostedService>(mxr);
 				services.AddSingleton<IStreamService>(mxr);
+			}
+		}
+
+		private static void ConfigureMock(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
+		{
+			if (Configuration["StreamServices:Mock:Switch"] == "on") {
+				var mck = new MockService(Configuration, sp.GetService<ILoggerFactory>());
+				services.AddSingleton<IHostedService>(mck);
+				services.AddSingleton<IStreamService>(mck);
 			}
 		}
 

@@ -107,7 +107,7 @@ namespace Fritz.StreamTools.Services
         _CurrentViewerCount = (myStream.Stream?.Viewers ?? 0);
         Updated?.Invoke(null, new ServiceUpdatedEventArgs
         {
-          ServiceName = "Twitch",
+          ServiceName = Name,
           NewViewers = _CurrentViewerCount
         });
       }
@@ -122,7 +122,7 @@ namespace Fritz.StreamTools.Services
 
       Updated?.Invoke(this, new ServiceUpdatedEventArgs
       {
-        ServiceName = "Twitch",
+        ServiceName = Name,
         NewFollowers = _CurrentFollowerCount
       });
     }

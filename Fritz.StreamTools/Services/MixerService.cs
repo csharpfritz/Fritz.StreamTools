@@ -204,7 +204,7 @@ namespace Fritz.StreamTools.Services
 
         Updated?.Invoke(this, new ServiceUpdatedEventArgs
         {
-          ServiceName = "Mixer",
+          ServiceName = Name,
           NewFollowers = data["numFollowers"].Value<int>()
         });
       }
@@ -216,7 +216,7 @@ namespace Fritz.StreamTools.Services
         {
           Updated?.Invoke(this, new ServiceUpdatedEventArgs
           {
-            ServiceName = "Mixer",
+            ServiceName = Name,
             NewViewers = data["viewersCurrent"].Value<int>()
         });
         }

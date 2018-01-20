@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Services
 {
-	public class MockService : IHostedService, IStreamService
+	public class FakeService : IHostedService, IStreamService
 	{
 
 		IConfiguration _config;
@@ -21,11 +21,11 @@ namespace Fritz.StreamTools.Services
 		Timer _updateViewers;
 		Timer _updateFollowers;
 
-		public string Name => "Mock";
+		public string Name => "Fake";
 
 		public ILogger Logger { get; }
 
-		public MockService(IConfiguration config, ILoggerFactory loggerFactory)
+		public FakeService(IConfiguration config, ILoggerFactory loggerFactory)
 		{
 
 			this._config = config;
@@ -42,12 +42,12 @@ namespace Fritz.StreamTools.Services
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
 
-			_numberOfFollowers = int.Parse("0" + _config["StreamServices:Mock:CurrentFollowerCount"]);
-			_numberOfViewers = int.Parse("0" + _config["StreamServices:Mock:CurrentViewerCount"]);
-			_updateViewersInterval = int.Parse("0" + _config["StreamServices:Mock:UpdateViewersInterval"]);
-			_updateFollowersInterval = int.Parse("0" + _config["StreamServices:Mock:UpdateFollowersInterval"]);
+			_numberOfFollowers = int.Parse("0" + _config["StreamServices:Fake:CurrentFollowerCount"]);
+			_numberOfViewers = int.Parse("0" + _config["StreamServices:Fake:CurrentViewerCount"]);
+			_updateViewersInterval = int.Parse("0" + _config["StreamServices:Fake:UpdateViewersInterval"]);
+			_updateFollowersInterval = int.Parse("0" + _config["StreamServices:Fake:UpdateFollowersInterval"]);
 
-			Logger.LogInformation($"Now monitoring Mock with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
+			Logger.LogInformation($"Now monitoring Fake with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
 
 			SetupViewerUpdateTimer();
 			SetupFollowerUpdateTimer();
@@ -73,7 +73,7 @@ namespace Fritz.StreamTools.Services
 
 				_numberOfFollowers++;
 
-				Logger.LogInformation($"New Followers on Mock, new total: {_numberOfFollowers}");
+				Logger.LogInformation($"New Followers on Fake, new total: {_numberOfFollowers}");
 
 				Updated?.Invoke(
 					null,
@@ -107,7 +107,7 @@ namespace Fritz.StreamTools.Services
 
 				_numberOfViewers++;
 
-				Logger.LogInformation($"New Followers on Mock, new total: {_numberOfViewers}");
+				Logger.LogInformation($"New Viewers on Fake, new total: {_numberOfViewers}");
 
 				Updated?.Invoke(
 					null,
@@ -127,7 +127,7 @@ namespace Fritz.StreamTools.Services
 		public Task StopAsync(CancellationToken cancellationToken)
 		{
 
-			Logger.LogInformation($"Stopping monitoring Mock with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
+			Logger.LogInformation($"Stopping monitoring Fake with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
 
 			if (_updateViewers != null)
 			{

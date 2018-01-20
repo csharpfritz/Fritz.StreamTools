@@ -4,15 +4,16 @@
 
 namespace Fritz.StreamTools.Services
 {
-  public class ServiceUpdatedEventArgs : EventArgs {
+	public class ServiceUpdatedEventArgs : EventArgs
+	{
 
-    public string ServiceName { get; set; }
+		public string ServiceName { get; set; }
 
-    public int? NewFollowers { get; set; }
+		public int? NewFollowers { get; set; }
 
-    public int? NewViewers { get; set; }
+		public int? NewViewers { get; set; }
 
 
-  }
+	}
 
 }

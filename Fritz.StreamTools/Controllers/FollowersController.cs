@@ -20,10 +20,10 @@ namespace Fritz.StreamTools.Controllers
 		internal static int _TestFollowers;
 
 		public FollowersController(
-		  StreamService streamService,
-		  IOptions<FollowerGoalConfiguration> config,
-		  IHostingEnvironment env,
-		  FollowerClient followerClient)
+			StreamService streamService,
+			IOptions<FollowerGoalConfiguration> config,
+			IHostingEnvironment env,
+			FollowerClient followerClient)
 		{
 			this.StreamService = streamService;
 			this.Configuration = config.Value;
@@ -132,12 +132,15 @@ namespace Fritz.StreamTools.Controllers
 				{
 					blendWidthLeft = (int)(colorWidth * bgblend[c]);
 				}
+
 				if (bgblend != null && bgblend.Length > c + 1)
 				{
 					blendWidthRight = (int)(colorWidth * bgblend[c + 1]);
 				}
+
 				result.Append($", {bgcolors[c]} {distance - blendWidthLeft }px, {bgcolors[c + 1]} {(c + 1) * colorWidth + blendWidthRight}px");
 			}
+
 			result.Append($", {bgcolors.Last()}");
 			return result.ToString();
 		}

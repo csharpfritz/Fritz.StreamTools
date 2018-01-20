@@ -1,86 +1,86 @@
 ﻿@model FollowerGoal
 @inject IOptions<FollowerGoalConfiguration> configOptions
 @{
-  Layout = null;
-  var config = configOptions.Value;
+	Layout = null;
+	var config = configOptions.Value;
 }
 
 <!DOCTYPE html> 
 
 <html>
 <head>
-    <title>Followers Goal</title>
-    <style>
-        .followerBar {
-            background: @config.EmptyBackgroundColor;
-            color: @config.EmptyFontColor;
-            }
+		<title>Followers Goal</title>
+		<style>
+				.followerBar {
+						background: @config.EmptyBackgroundColor;
+						color: @config.EmptyFontColor;
+						}
 
-        #fill {
-            background-image: linear-gradient(to right, @( ViewBag.Gradient));
-            color: @config.FillFontColor;
-        }
-    </style>
-    <style>
+				#fill {
+						background-image: linear-gradient(to right, @( ViewBag.Gradient));
+						color: @config.FillFontColor;
+				}
+		</style>
+		<style>
 
-        .followerBar {
-            width: 100%;
-            display: flex;
-            flex-wrap: nowrap;
-            padding: 2px 8px;
-        }
+				.followerBar {
+						width: 100%;
+						display: flex;
+						flex-wrap: nowrap;
+						padding: 2px 8px;
+				}
 
-            .followerBar span {
-                font-family: Arial;
-                font-size: 16pt;
-                font-weight: 600;
-            }
+						.followerBar span {
+								font-family: Arial;
+								font-size: 16pt;
+								font-weight: 600;
+						}
 
-        #progress {
-            overflow: hidden;
-            position: absolute;
-        }
+				#progress {
+						overflow: hidden;
+						position: absolute;
+				}
 
-        .caption {
-            width: calc(50% - 30px);
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-        }
+				.caption {
+						width: calc(50% - 30px);
+						white-space: nowrap;
+						text-overflow: ellipsis;
+						overflow: hidden;
+				}
 
-        .current {
-            text-align: center;
-            width: 60px;
-        }
-        
-        .goal {
-            text-align: right;
-            width: calc(50% - 30px);
-            flex: 1;
-        }
-    </style>
+				.current {
+						text-align: center;
+						width: 60px;
+				}
+				
+				.goal {
+						text-align: right;
+						width: calc(50% - 30px);
+						flex: 1;
+				}
+		</style>
 </head>
 <body>
-    <!--16 is the border (8 for each side)-->
-    <div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
-        <div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
-            <span class="caption">@Model.Caption</span>
-            <span class="current">@Model.CurrentValue</span>
-            <span class="goal">@Model.GoalValue</span>
-        </div>
-    </div>
-    <div class="followerBar" style="width: @(ViewBag.Width)px">
-        <span class="caption">@Model.Caption</span>
-        <span class="current">@Model.CurrentValue</span>
-        <span class="goal">@Model.GoalValue</span>
-    </div>
+		<!--16 is the border (8 for each side)-->
+		<div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
+				<div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
+						<span class="caption">@Model.Caption</span>
+						<span class="current">@Model.CurrentValue</span>
+						<span class="goal">@Model.GoalValue</span>
+				</div>
+		</div>
+		<div class="followerBar" style="width: @(ViewBag.Width)px">
+				<span class="caption">@Model.Caption</span>
+				<span class="current">@Model.CurrentValue</span>
+				<span class="goal">@Model.GoalValue</span>
+		</div>
 
-    <script src="~/js/signalr-client-1.0.0-alpha2-final.min.js"></script>
-    <script type="text/javascript">
+		<script src="~/js/signalr-client-1.0.0-alpha2-final.min.js"></script>
+		<script type="text/javascript">
 <!--
 
-        var fullBarWidth = @ViewBag.Width;
-        var goalValue = @Model.GoalValue;
+				var fullBarWidth = @ViewBag.Width;
+				var goalValue = @Model.GoalValue;
 
 		let startHub = () => {
 			let hubConnection = new signalR.HubConnection("/followerstream");
@@ -110,7 +110,7 @@
 		startHub();
 
 //-->
-    </script>
+		</script>
 
 </body>
 </html>

@@ -75,7 +75,8 @@ namespace Fritz.StreamTools.StartupServices
 
 		private static void ConfigureMock(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
 		{
-			if (Configuration["StreamServices:Mock:Switch"] == "on") {
+			if (Configuration["StreamServices:Mock:Switch"] == "on")
+			{
 				var mck = new MockService(Configuration, sp.GetService<ILoggerFactory>());
 				services.AddSingleton<IHostedService>(mck);
 				services.AddSingleton<IStreamService>(mck);

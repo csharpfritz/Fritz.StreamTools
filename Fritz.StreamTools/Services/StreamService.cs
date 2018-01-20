@@ -4,15 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Fritz.StreamTools.Services {
+namespace Fritz.StreamTools.Services
+{
 
-	public class StreamService : IStreamService {
+	public class StreamService : IStreamService
+	{
 
 		private IEnumerable<IStreamService> _services;
 
 		public StreamService(
 			IEnumerable<IStreamService> services
-		) {
+		)
+		{
 
 			_services = services;
 
@@ -22,7 +25,7 @@ namespace Fritz.StreamTools.Services {
 
 		public int CurrentViewerCount { get { return _services.Sum(s => s.CurrentViewerCount); } }
 
-		public string Name { get { return "Aggregate";} }
+		public string Name { get { return "Aggregate"; } }
 
 		public IEnumerable<(string service, int count)> ViewerCountByService
 		{
@@ -45,20 +48,23 @@ namespace Fritz.StreamTools.Services {
 		}
 
 
-		public event EventHandler<ServiceUpdatedEventArgs> Updated {
-      add {
-        foreach (var s in _services)
+		public event EventHandler<ServiceUpdatedEventArgs> Updated
+		{
+			add
+			{
+				foreach (var s in _services)
 				{
 					s.Updated += value;
 				}
 			}
-      remove {
-        foreach (var s in _services)
+			remove
+			{
+				foreach (var s in _services)
 				{
 					s.Updated -= value;
 				}
 			}
-    }
+		}
 
-  }
+	}
 }

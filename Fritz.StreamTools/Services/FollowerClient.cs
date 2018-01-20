@@ -6,28 +6,29 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Fritz.StreamTools.Services
 {
-  public class FollowerClient
-  {
+	public class FollowerClient
+	{
 
-    public FollowerClient(IHubContext<FollowerHub> followerContext)
-    {
+		public FollowerClient(IHubContext<FollowerHub> followerContext)
+		{
 
-      this.FollowerContext = followerContext;
+			this.FollowerContext = followerContext;
 
-    }
+		}
 
-    private IHubContext<FollowerHub> FollowerContext { get; }
+		private IHubContext<FollowerHub> FollowerContext { get; }
 
-    public void UpdateFollowers (int newFollowers) {
+		public void UpdateFollowers(int newFollowers)
+		{
 
-      FollowerContext.Clients.All.InvokeAsync("OnFollowersCountUpdated", newFollowers);
+			FollowerContext.Clients.All.InvokeAsync("OnFollowersCountUpdated", newFollowers);
 
-    }
+		}
 
-    public void UpdateViewers(string serviceName, int viewerCount)
-    {
-      FollowerContext.Clients.All.InvokeAsync("OnViewersCountUpdated", serviceName.ToLowerInvariant(), viewerCount);
-    }
-  }
+		public void UpdateViewers(string serviceName, int viewerCount)
+		{
+			FollowerContext.Clients.All.InvokeAsync("OnViewersCountUpdated", serviceName.ToLowerInvariant(), viewerCount);
+		}
+	}
 
 }

@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Services
 {
-	public class MockService : IHostedService, IStreamService {
+	public class MockService : IHostedService, IStreamService
+	{
 
 		IConfiguration _config;
 
@@ -24,7 +25,8 @@ namespace Fritz.StreamTools.Services
 
 		public ILogger Logger { get; }
 
-		public MockService (IConfiguration config, ILoggerFactory loggerFactory) {
+		public MockService(IConfiguration config, ILoggerFactory loggerFactory)
+		{
 
 			this._config = config;
 			this.Logger = loggerFactory.CreateLogger("StreamServices");
@@ -37,7 +39,8 @@ namespace Fritz.StreamTools.Services
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 
-		public Task StartAsync(CancellationToken cancellationToken) {
+		public Task StartAsync(CancellationToken cancellationToken)
+		{
 
 			_numberOfFollowers = int.Parse("0" + _config["StreamServices:Mock:CurrentFollowerCount"]);
 			_numberOfViewers = int.Parse("0" + _config["StreamServices:Mock:CurrentViewerCount"]);
@@ -121,7 +124,8 @@ namespace Fritz.StreamTools.Services
 
 		}
 
-		public Task StopAsync(CancellationToken cancellationToken) {
+		public Task StopAsync(CancellationToken cancellationToken)
+		{
 
 			Logger.LogInformation($"Stopping monitoring Mock with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
 

@@ -43,7 +43,11 @@ namespace Fritz.StreamTools.Services
 		}
 
 		public static int _CurrentFollowerCount;
-		public int CurrentFollowerCount { get { return _CurrentFollowerCount; } }
+		public int CurrentFollowerCount
+		{
+			get { return _CurrentFollowerCount; }
+			internal set { _CurrentFollowerCount = value; }
+		}
 
 		public static int _CurrentViewerCount;
 		private Timer _Timer;
@@ -107,14 +111,14 @@ namespace Fritz.StreamTools.Services
 				_CurrentViewerCount = (myStream.Stream?.Viewers ?? 0);
 				Updated?.Invoke(null, new ServiceUpdatedEventArgs
 				{
-					ServiceName = "Twitch",
+					ServiceName = Name,
 					NewViewers = _CurrentViewerCount
 				});
 			}
 
 		}
 
-		private void Service_OnNewFollowersDetected(object sender,
+		internal void Service_OnNewFollowersDetected(object sender,
 		TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
 		{
 			Interlocked.Exchange(ref _CurrentFollowerCount, _CurrentFollowerCount + e.NewFollowers.Count);
@@ -122,7 +126,7 @@ namespace Fritz.StreamTools.Services
 
 			Updated?.Invoke(this, new ServiceUpdatedEventArgs
 			{
-				ServiceName = "Twitch",
+				ServiceName = Name,
 				NewFollowers = _CurrentFollowerCount
 			});
 		}

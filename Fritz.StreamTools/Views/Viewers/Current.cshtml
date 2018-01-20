@@ -1,56 +1,68 @@
 ﻿@model int
 @{
-    Layout = null;
+		Layout = null;
 }
 
 <!DOCTYPE html>
 
 <html>
 <head>
-  <meta name="viewport" content="width=device-width" />
-  <title>Current Viewers</title>
-  <style>
+	<meta name="viewport" content="width=device-width" />
+	<title>Current Viewers</title>
+	<style>
 
-    body {
-      background-color: #333;
-    }
+		body {
+			background-color: #333;
+		}
 
-    #fg {
-      font-family: Arial;
-      font-size: 24pt;
-      font-weight: 600;
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-      background: -webkit-linear-gradient(#1500FF, #FFF);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      -webkit-text-stroke: 1px #FFF;
-    }
-  </style>
+		#fg {
+			font-family: Arial;
+			font-size: 24pt;
+			font-weight: 600;
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			z-index: 10;
+			background: -webkit-linear-gradient(#1500FF, #FFF);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			-webkit-text-stroke: 1px #FFF;
+		}
+	</style>
 </head>
 <body>
 
-  <span id="fg">Viewers: <span id="count">@Model</span></span>
+	<span id="fg">Viewers: <span id="count">@Model</span></span>
 
-  <script src="~/js/signalr-client.min.js"></script>
-  <script type="text/javascript">
+	<script src="~/js/signalr-client-1.0.0-alpha2-final.min.js"></script>
+	<script type="text/javascript">
 <!--
-    let hubUrl = '@Url.Content("~/followerstream")';
-    let httpConnection = new signalR.HttpConnection(hubUrl);
-    let hubConnection = new signalR.HubConnection(httpConnection);
+		let startHub = () => {
+			let hubConnection = new signalR.HubConnection("/followerstream");
 
-    hubConnection.on('OnViewersCountUpdated', (serviceName, viewerCount) => {
-      //console.log(serviceName);
-      //console.log(viewerCount);
-      document.getElementById("count").textContent = viewerCount;
-    });
+			hubConnection.on('OnViewersCountUpdated', (serviceName, viewerCount) => {
+				//console.log(serviceName);
+				//console.log(viewerCount);
+				document.getElementById("count").textContent = viewerCount;
+			});
 
-    hubConnection.start();
+			hubConnection.onclose(() => {
+				// Hub connection was closed for some reason
+				let interval = setInterval(() => {
+					// Try to reconnect hub every 5 secs
+					startHub().then(() => {
+						// Reconnect succeeded, now reload entire page
+						location.reload();
+					});
+				}, 5000);
+			});
+
+			return hubConnection.start();
+		}
+		startHub();
 
 //-->
-  </script>
+	</script>
 
 </body>
 </html>

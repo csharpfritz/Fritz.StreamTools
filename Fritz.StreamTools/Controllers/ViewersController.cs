@@ -7,19 +7,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fritz.StreamTools.Controllers
 {
-  public class ViewersController : Controller
-  {
+	public class ViewersController : Controller
+	{
 
-    public ViewersController(StreamService streamService)
-    {
-      this.StreamService = streamService;
-    }
+		public ViewersController(StreamService streamService)
+		{
+			this.StreamService = streamService;
+		}
 
-    public StreamService StreamService { get; }
+		public StreamService StreamService { get; }
 
-    public IActionResult Current()
-    {
-      return View(StreamService.CurrentViewerCount);
-    }
-  }
+		[ResponseCache(NoStore = true)]
+		public IActionResult Current()
+		{
+			return View(StreamService.CurrentViewerCount);
+		}
+	}
 }

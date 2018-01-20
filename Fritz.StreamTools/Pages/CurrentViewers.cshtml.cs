@@ -2,25 +2,28 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fritz.StreamTools.Models;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Fritz.StreamTools.Pages
 {
-	public class IndexModel : PageModel
+	public class CurrentViewersModel : PageModel
 	{
 
-		public IndexModel(Models.RundownRepository repo)
+		public CurrentViewersModel(
+			StreamService streamService
+		)
 		{
-			this.Repository = repo;
+			this.StreamService = streamService;
 		}
 
-		public RundownRepository Repository { get; private set; }
+		public StreamService StreamService { get; }
 
 		public void OnGet()
 		{
 
 		}
+
 	}
 }

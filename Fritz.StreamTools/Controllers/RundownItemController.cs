@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
 using Microsoft.AspNetCore.Http;
@@ -21,16 +22,18 @@ namespace Fritz.StreamTools.Controllers
 
 		// GET: api/RundownItem
 		[HttpGet]
-		public IEnumerable<RundownItem> Get()
+		public IActionResult Get()
 		{
-			return Repository.Get();
+			return Ok(Repository.Get());
 		}
 
 		// GET: api/RundownItem/5
 		[HttpGet("{id}", Name = "Get")]
-		public RundownItem Get(int id)
+		public IActionResult Get(int id)
 		{
-			return Repository.Get().First(i => i.ID == id);
+			var outValue = Repository.Get().FirstOrDefault(i => i.ID == id);
+			if (outValue == null) return NotFound();
+			return Ok(outValue);
 		}
 
 		// POST: api/RundownItem
@@ -41,16 +44,18 @@ namespace Fritz.StreamTools.Controllers
 
 		// PUT: api/RundownItem/5
 		[HttpPut("{id}")]
-		public void Put(int id, [FromBody]RundownItem value)
+		public IActionResult Put(int id, [FromBody]RundownItem value)
 		{
 			Repository.Update(id, value);
+			return Ok(value);
 		}
 
 		// DELETE: api/ApiWithActions/5
 		[HttpDelete("{id}")]
-		public void Delete(int id)
+		public IActionResult Delete(int id)
 		{
 			Repository.Delete(id);
+			return NoContent();
 		}
 	}
 }

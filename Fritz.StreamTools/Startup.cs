@@ -2,10 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Hubs;
+using Fritz.StreamTools.Models;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools
 {
@@ -22,9 +27,8 @@ namespace Fritz.StreamTools
 		public void ConfigureServices(IServiceCollection services)
 		{
 
-			services.AddSingleton<Models.RundownRepository>();
-
-			services.AddMvc();
+			StartupServices.ConfigureServices.Execute(services, Configuration);
+			
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,6 +45,11 @@ namespace Fritz.StreamTools
 			}
 
 			app.UseStaticFiles();
+
+      app.UseSignalR(configure =>
+      {
+        configure.MapHub<FollowerHub>("followerstream");
+      });
 
 			app.UseMvc(routes =>
 			{

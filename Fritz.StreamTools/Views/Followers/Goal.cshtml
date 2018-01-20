@@ -75,28 +75,39 @@
         <span class="goal">@Model.GoalValue</span>
     </div>
 
-    <script src="~/js/signalr-client.min.js"></script>
+    <script src="~/js/signalr-client-1.0.0-alpha2-final.min.js"></script>
     <script type="text/javascript">
 <!--
 
         var fullBarWidth = @ViewBag.Width;
         var goalValue = @Model.GoalValue;
 
-        let hubUrl = '@Url.Content("~/followerstream")';
+		let startHub = () => {
+			let hubConnection = new signalR.HubConnection("/followerstream");
 
-        let httpConnection = new signalR.HttpConnection(hubUrl);
-        let hubConnection = new signalR.HubConnection(httpConnection);
+			hubConnection.on('OnFollowersCountUpdated', data => {
 
-        hubConnection.on('OnFollowersCountUpdated', data => {
+				document.getElementsByClassName("current")[0].textContent = data;
+				document.getElementsByClassName("current")[1].textContent = data;
+				//16 is the border (8 for each side)
+				document.getElementById("progress").style.width = ((fullBarWidth * parseInt(data, 10) / goalValue) + 16) + "px";
 
-            document.getElementsByClassName("current")[0].textContent = data;
-            document.getElementsByClassName("current")[1].textContent = data;
-            //16 is the border (8 for each side)
-            document.getElementById("progress").style.width = ((fullBarWidth * parseInt(data, 10) / goalValue) + 16) + "px";
+			});
 
-        });
+			hubConnection.onclose(() => {
+				// Hub connection was closed for some reason
+				let interval = setInterval(() => {
+					// Try to reconnect hub every 5 secs
+					startHub().then(() => {
+						// Reconnect succeeded, now reload entire page
+						location.reload();
+					});
+				}, 5000);
+			});
 
-        hubConnection.start();
+			return hubConnection.start();
+		}
+		startHub();
 
 //-->
     </script>

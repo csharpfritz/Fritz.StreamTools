@@ -31,9 +31,9 @@ namespace Fritz.StreamTools.Controllers
 		[HttpGet("{id}", Name = "Get")]
 		public IActionResult Get(int id)
 		{
-      var outValue = Repository.Get().FirstOrDefault(i => i.ID == id);
-      if (outValue == null) return NotFound();
-      return Ok(outValue);
+			var outValue = Repository.Get().FirstOrDefault(i => i.ID == id);
+			if (outValue == null) return NotFound();
+			return Ok(outValue);
 		}
 
 		// POST: api/RundownItem

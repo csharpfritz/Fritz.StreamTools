@@ -12,7 +12,8 @@ namespace Test.Services.StreamService
 	{
 
 		[Fact]
-		public void ShouldCountSeparately() {
+		public void ShouldCountSeparately()
+		{
 
 			// arrange
 			var jeffStreams = Mockery.Create<IStreamService>();

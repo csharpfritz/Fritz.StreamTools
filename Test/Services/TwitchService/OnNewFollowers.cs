@@ -47,8 +47,8 @@ namespace Test.Services.TwitchService
 			{
 				NewFollowers = newFollowerList
 			};
-			//MockLogger.Setup(l => LoggerExtensions.LogInformation(l, It.IsAny<string>()))
-			//	.Callback<string>(msg => Console.Out.WriteLine(msg));
+			// MockLogger.Setup(l => LoggerExtensions.LogInformation(l, It.IsAny<string>()))
+			// 	.Callback<string>(msg => Console.Out.WriteLine(msg));
 
 			// act
 			var sut = new FRITZ.TwitchService(MockConfiguration.Object, MockLoggerFactory.Object)
@@ -58,12 +58,13 @@ namespace Test.Services.TwitchService
 			sut.Service_OnNewFollowersDetected(null, args);
 
 			// assert
-			Assert.Equal(newFollowerCount+initialFollowers, sut.CurrentFollowerCount);
+			Assert.Equal(newFollowerCount + initialFollowers, sut.CurrentFollowerCount);
 
 		}
 
 		[Fact]
-		public void ShouldRaiseEventProperly() {
+		public void ShouldRaiseEventProperly()
+		{
 
 			// arrange
 			var newFollowerCount = new Random().Next(400, 500);

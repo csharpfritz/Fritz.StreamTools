@@ -9,11 +9,11 @@ namespace Test.Startup
 	public class ConfigureServices
 	{
 
-		[Fact(Skip="Need to write these tests")]
+		[Fact(Skip = "Need to write these tests")]
 		public void PinThisFunctionality()
 		{
 
-			
+
 
 		}
 

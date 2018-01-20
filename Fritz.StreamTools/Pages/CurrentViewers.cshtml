@@ -13,14 +13,14 @@
 </head>
 <body>
 
-	@foreach (var service in Model.StreamService.CountByService.OrderByDescending(s => s.service))
+	@foreach (var service in Model.StreamService.ViewerCountByService.OrderByDescending(s => s.service))
 	{
 
 		@service.service <text>:</text> <span class="serviceCount" id="@service.service.ToLowerInvariant()Count">@service.count</span>
 
 	}
 
-	Total: <span id="totalCount">@(Model.StreamService.CountByService.Sum(s => s.count))</span>
+	Total: <span id="totalCount">@(Model.StreamService.ViewerCountByService.Sum(s => s.count))</span>
 
 	<script src="~/js/signalr-client.min.js"></script>
 	<script type="text/javascript">

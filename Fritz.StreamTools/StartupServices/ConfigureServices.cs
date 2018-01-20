@@ -45,6 +45,8 @@ namespace Fritz.StreamTools.StartupServices
 
 			ConfigureMixer(services, Configuration, sp);
 
+			ConfigureFake(services, Configuration, sp);
+
 			services.AddSingleton<StreamService>();
 
 		}
@@ -69,6 +71,30 @@ namespace Fritz.StreamTools.StartupServices
 				services.AddSingleton<IHostedService>(mxr);
 				services.AddSingleton<IStreamService>(mxr);
 			}
+		}
+
+		private static void ConfigureFake(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
+		{
+
+			if (bool.TryParse(Configuration["StreamServices:Fake:Enabled"], out var enabled)) {
+
+				if (!enabled)
+				{
+					// Exit now, we are not enabling the service
+					return;
+				}
+
+			} else {
+
+				// unable to parse the value, by default disable the FakeService
+				return;
+
+			}
+
+			var mck = new FakeService(Configuration, sp.GetService<ILoggerFactory>());
+			services.AddSingleton<IHostedService>(mck);
+			services.AddSingleton<IStreamService>(mck);
+
 		}
 
 		private static void ConfigureAspNetFeatures(IServiceCollection services)

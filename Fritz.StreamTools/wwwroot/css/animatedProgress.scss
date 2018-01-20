@@ -1,0 +1,109 @@
+﻿$bar-width: 400px;
+$bar-height: 40px;
+
+h1 {
+    text-align: center;
+    font-family: "Trebuchet MS", Helvetica, sans-serif;
+    font-weight: normal;
+    margin: 50px 0 0
+}
+
+.progress-bar {
+    position: relative;
+    border: #ccc solid 1px;
+    width: $bar-width;
+    height: $bar-height;
+    line-height: $bar-height;
+    vertical-align: midle;
+    overflow: hidden;
+    margin: 100px auto 50px;
+    font-family: arial, sans-serif;
+    font-weight: bold;
+    font-size: 30px;
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.25);
+
+    .bar {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        overflow: hidden;
+
+        div {
+            position: absolute;
+            display: flex;
+            width: $bar-width;
+            height: 100%;
+            text-align: center;
+        }
+
+        &.positive {
+            background: #fff;
+            left: 0;
+            width: 54%;
+
+            span {
+                left: 0;
+                color: #333;
+            }
+
+            -webkit-animation: animate-positive 4s;
+            animation: animate-positive 4s;
+        }
+
+        &.negative {
+            background: #07A4DD;
+            right: 0;
+            width: 46%;
+
+            div {
+                right: 0;
+                color: #fff;
+            }
+
+            -webkit-animation: animate-negative 4s;
+            animation: animate-negative 4s;
+        }
+    }
+}
+
+@-webkit-keyframes animate-positive {
+    0% {
+        width: 0%;
+    }
+}
+
+@keyframes animate-positive {
+    0% {
+        width: 0%;
+    }
+}
+
+@-webkit-keyframes animate-negative {
+    0% {
+        width: 100%;
+    }
+}
+
+@keyframes animate-negative {
+    0% {
+        width: 100%;
+    }
+}
+
+.content {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.content span {
+    flex: 1;
+}
+
+.left {
+    text-align: left;
+}
+
+.right {
+    text-align: right;
+}

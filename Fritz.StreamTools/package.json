@@ -1,0 +1,9 @@
+{
+  "version": "0.6.1",
+  "name": "Fritz.StreamTools",
+  "private": true,
+  "devDependencies": {},
+  "dependencies": {
+    "@aspnet/signalr-client": "1.0.0-alpha2-final"
+  }
+}

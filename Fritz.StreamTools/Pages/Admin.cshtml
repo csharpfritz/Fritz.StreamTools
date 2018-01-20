@@ -47,7 +47,10 @@
 
 				$.ajax({
 					method: 'PUT',
-					url: '/api/items?id=' + itemToUpdate.ID
+					url: '/api/items/' + itemToUpdate.ID,
+					data: JSON.stringify(itemToUpdate),
+					dataType: 'json',
+					contentType: 'text/json'
 				});
 
 			});

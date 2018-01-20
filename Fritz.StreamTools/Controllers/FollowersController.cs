@@ -27,6 +27,8 @@ namespace Fritz.StreamTools.Controllers
 		{
 			this.StreamService = streamService;
 			this.Configuration = config.Value;
+
+
 			this.HostingEnvironment = env;
 			this.FollowerClient = followerClient;
 		}
@@ -76,6 +78,7 @@ namespace Fritz.StreamTools.Controllers
 
 		}
 
+		[ResponseCache(NoStore = true)]
 		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
 		public IActionResult Goal(string caption = "", int goal = 0, int width = 800, int current = -1, string bgcolors = "", string bgblend = "")
 		{
@@ -84,15 +87,15 @@ namespace Fritz.StreamTools.Controllers
 			// TODO: Handle empty caption
 
 			/**
-       * Default value: 'Follower Goal'
-       * Lowest priority: whats in Configuration
-       * Highest priority: querystring
-       */
+			 * Default value: 'Follower Goal'
+			 * Lowest priority: whats in Configuration
+			 * Highest priority: querystring
+			 */
 
 			caption = string.IsNullOrEmpty(caption) ? Configuration.Caption : caption == "null" ? "" : caption;
 			goal = goal == 0 ? Configuration.Goal : goal;
-			var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBackgroundColor : bgcolors.Split(',');
-			var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBackgroundColorBlend : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
+			var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBgColorArray : bgcolors.Split(',');
+			var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBgBlendArray : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
 
 			ViewBag.Width = width;
 			ViewBag.Gradient = Gradient(backColors, backBlend, width);

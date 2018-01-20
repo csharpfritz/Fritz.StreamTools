@@ -17,6 +17,7 @@ namespace Fritz.StreamTools.Controllers
 
 		public StreamService StreamService { get; }
 
+		[ResponseCache(NoStore = true)]
 		public IActionResult Current()
 		{
 			return View(StreamService.CurrentViewerCount);

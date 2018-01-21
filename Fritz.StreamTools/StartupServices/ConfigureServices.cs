@@ -1,14 +1,16 @@
-﻿using Fritz.StreamTools.Hubs;
+﻿using System;
+using System.IO;
+using System.Linq;
+using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
+using Fritz.StreamTools.TagHelpers;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.StartupServices
 {
@@ -31,6 +33,8 @@ namespace Fritz.StreamTools.StartupServices
 
 			ConfigureAspNetFeatures(services);
 
+			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
+			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 		}
 
 		private static void ConfigureStreamingServices(

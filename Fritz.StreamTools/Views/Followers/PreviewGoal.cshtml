@@ -1,0 +1,138 @@
+﻿<html>
+
+<head>
+
+	<!-- COOL STUFF GOES HERE -->
+
+	<style>
+
+		#content {
+			display: flex;
+			align-items: stretch;
+			justify-content: flex-start;
+			flex-direction: column;
+		}
+
+		fieldset {
+			margin: 5px 0;
+		}
+
+		iframe {
+			height: 80px;
+			overflow-x: hidden;
+		}
+
+		input, label {
+			width: 10em;
+			display: inline-block;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div id="content">
+
+		<h1>Configure Follower Goal</h1>
+		<a href="/">Back to home</a>
+
+		<iframe id="widgetPreview" name="widgetPreview" scrolling="no"></iframe>
+
+		<fieldset>
+
+			<label>Caption:</label> <input type="text" id="caption" value="Configure Me" />
+			<br />
+			<label>Goal:</label> <input type="text" id="goal" value="100" />
+			<br />
+			<label>Test Count:</label> <input type="text" id="current" value="90" />
+			<br />
+			<label>Empty Bg Color:</label> <input type="color" id="emptyBgColor" />
+			<br />
+			<label>Left Color:</label> <input type="color" id="bgcolor1" />
+			<br />
+			<label>Middle Color:</label> <input type="color" id="bgcolor2" />
+			<br />
+			<label>Right Color:</label> <input type="color" id="bgcolor3" />
+
+		</fieldset>
+
+		<button id="preview">Preview</button>
+
+		<p>
+			Here is your URL:
+			<a id="outputUrl" href="#" target="_blank"></a>
+		</p>
+
+	</div>
+
+	<script type="text/javascript">
+<!--
+		(function () {
+
+			onload();
+
+			LoadPreview();
+
+			document.getElementById("preview").onclick = LoadPreview;
+
+			function LoadPreview() {
+
+				var iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
+
+				var urlTemplate = "/followers/goal/";
+				urlTemplate += `${document.getElementById("goal").value}/`;
+				urlTemplate += `${document.getElementById("caption").value}`;
+				urlTemplate += `?width=${iframeWidth}`;
+				urlTemplate += `&bgcolors=${escape(document.getElementById("bgcolor1").value)}`;
+				urlTemplate += `,${escape(document.getElementById("bgcolor2").value)}`;
+				urlTemplate += `,${escape(document.getElementById("bgcolor3").value)}`;
+				urlTemplate += `&bgblend=1,1,1`;
+				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
+
+				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
+				console.log(urlTemplate);
+
+				document.getElementById("outputUrl").textContent = urlTemplate;
+				document.getElementById("outputUrl").href = urlTemplate;
+				saveValues();
+
+			};
+
+			function onload() {
+
+				var elements = document.getElementsByTagName("input");
+				for (var el of elements) {
+
+					console.log(el.id);
+
+					if (localStorage.getItem(el.id)) {
+						el.value = localStorage.getItem(el.id);
+					}
+				}
+
+			}
+
+			function saveValues() {
+
+				var elements = document.getElementsByTagName("input");
+				for (var el of elements) {
+
+					console.log(`Saving value: ${el.id}: ${el.value}`);
+
+					localStorage.setItem(el.id, el.value);
+
+				}
+
+
+			}
+
+
+		})();
+
+//-->
+	</script>
+
+</body>
+
+</html>

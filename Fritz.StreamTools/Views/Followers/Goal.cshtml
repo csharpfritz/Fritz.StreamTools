@@ -1,8 +1,7 @@
 ﻿@model FollowerGoal
-@inject IOptions<FollowerGoalConfiguration> configOptions
 @{
 	Layout = null;
-	var config = configOptions.Value;
+	var config = ViewBag.Configuration;
 }
 
 <!DOCTYPE html> 
@@ -106,8 +105,14 @@
 			});
 
 			return hubConnection.start();
-		}
-		startHub();
+			}
+
+			if (window.self == window.top) {
+				console.log("Topmost window - enabling SignalR");
+				startHub();
+			} else {
+				console.log("hosted in a frame - disabling SignalR");
+			}
 
 //-->
 		</script>

@@ -18,3 +18,7 @@ The project supports reading stream metrics from the following services:
 
 *  Mixer
 *  Twitch
+
+## Contributing
+
+This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux, and Windows.  Download the [.NET SDK](https://dot.net) and grab a copy of [Visual Studio Code](https://code.visualstudio.com) to get started on any platform

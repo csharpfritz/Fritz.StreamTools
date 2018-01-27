@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Fritz.StreamTools.Pages
 {
-	public class IndexModel : PageModel
+	public class RundownModel : PageModel
 	{
 
-		public IndexModel(Models.RundownRepository repo)
+		public RundownModel(Models.RundownRepository repo)
 		{
 			this.Repository = repo;
 		}

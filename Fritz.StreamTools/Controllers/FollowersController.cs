@@ -80,7 +80,9 @@ namespace Fritz.StreamTools.Controllers
 
 		[ResponseCache(NoStore = true)]
 		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
-		public IActionResult Goal(string caption = "", int goal = 0, int width = 800, int current = -1, string bgcolors = "", string bgblend = "")
+		public IActionResult Goal(string caption = "", int goal = 0,
+			int width = 800, int current = -1, string bgcolors = "",
+			string bgblend = "", string emptyBgColor = "")
 		{
 
 
@@ -97,6 +99,9 @@ namespace Fritz.StreamTools.Controllers
 			var backColors = string.IsNullOrEmpty(bgcolors) ? Configuration.FillBgColorArray : bgcolors.Split(',');
 			var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBgBlendArray : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
 
+			Configuration.EmptyBackgroundColor = string.IsNullOrWhiteSpace(emptyBgColor) ? Configuration.EmptyBackgroundColor : emptyBgColor;
+
+			ViewBag.Configuration = Configuration;
 			ViewBag.Width = width;
 			ViewBag.Gradient = Gradient(backColors, backBlend, width);
 
@@ -106,6 +111,14 @@ namespace Fritz.StreamTools.Controllers
 				CurrentValue = current == -1 ? StreamService.CurrentFollowerCount : current,
 				GoalValue = goal
 			});
+		}
+
+
+		[Route("followers/goal/preview")]
+		public IActionResult PreviewGoal() {
+
+			return View();
+
 		}
 
 		/// <summary>

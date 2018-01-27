@@ -44,6 +44,7 @@ namespace Fritz.StreamTools
 				app.UseExceptionHandler("/Error");
 			}
 
+			app.UseDefaultFiles();
 			app.UseStaticFiles();
 
       app.UseSignalR(configure =>

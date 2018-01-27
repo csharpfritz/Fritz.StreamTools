@@ -15,11 +15,16 @@ namespace Fritz.StreamTools.StartupServices
 	public static class ConfigureServices
 	{
 
+		private static ILogger Logger;
+
 		public static void Execute(
 			IServiceCollection services,
-			IConfiguration Configuration
+			IConfiguration Configuration,
+			ILoggerFactory loggerFactory
 		)
 		{
+
+			Logger = loggerFactory.CreateLogger("StartupServices");
 
 			services.AddSingleton<Models.RundownRepository>();
 
@@ -56,9 +61,14 @@ namespace Fritz.StreamTools.StartupServices
 			if (!string.IsNullOrEmpty(Configuration["StreamServices:Twitch:ClientId"]))
 			{
 
+				Logger.LogInformation("Configuring Twitch Service");
 				var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
 				services.AddSingleton<IHostedService>(svc);
 				services.AddSingleton<IStreamService>(svc);
+
+			} else {
+
+				Logger.LogInformation("Skipping Twitch Configuration - missing StreamServices:Twitch:ClientId");
 
 			}
 		}
@@ -67,30 +77,33 @@ namespace Fritz.StreamTools.StartupServices
 		{
 			if (!string.IsNullOrEmpty(Configuration["StreamServices:Mixer:ClientId"]))
 			{
+				Logger.LogInformation("Configuring Mixer Service");
 				var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
 				services.AddSingleton<IHostedService>(mxr);
 				services.AddSingleton<IStreamService>(mxr);
+			}
+			else
+			{
+
+				Logger.LogInformation("Skipping Mixer Configuration - missing StreamServices:Mixer:ClientId");
+
 			}
 		}
 
 		private static void ConfigureFake(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
 		{
 
-			if (bool.TryParse(Configuration["StreamServices:Fake:Enabled"], out var enabled)) {
-
-				if (!enabled)
-				{
-					// Exit now, we are not enabling the service
-					return;
-				}
-
-			} else {
+			if (!bool.TryParse(Configuration["StreamServices:Fake:Enabled"], out var enabled) || !enabled) {
 
 				// unable to parse the value, by default disable the FakeService
+				// Exit now, we are not enabling the service
+
+				Logger.LogInformation("Skipping FakeService Configuration - StreamServices:Fake:Enabled not set or set to false");
 				return;
 
 			}
 
+			Logger.LogInformation("Configuring Fake Service");
 			var mck = new FakeService(Configuration, sp.GetService<ILoggerFactory>());
 			services.AddSingleton<IHostedService>(mck);
 			services.AddSingleton<IStreamService>(mck);

@@ -49,6 +49,8 @@
 			<br />
 			<label>Empty Bg Color:</label> <input type="color" id="emptyBgColor" />
 			<br />
+			<label>Empty Font Color:</label> <input type="color" id="emptyFontColor" />
+			<br />
 			<label>Left Color:</label> <input type="color" id="bgcolor1" />
 			<br />
 			<label>Middle Color:</label> <input type="color" id="bgcolor2" />
@@ -88,7 +90,8 @@
 				urlTemplate += `,${escape(document.getElementById("bgcolor2").value)}`;
 				urlTemplate += `,${escape(document.getElementById("bgcolor3").value)}`;
 				urlTemplate += `&bgblend=1,1,1`;
-				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
+				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`
+				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
 
 				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
 				console.log(urlTemplate);

@@ -82,7 +82,7 @@ namespace Fritz.StreamTools.Controllers
 		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
 		public IActionResult Goal(string caption = "", int goal = 0,
 			int width = 800, int current = -1, string bgcolors = "",
-			string bgblend = "", string emptyBgColor = "")
+			string bgblend = "", string emptyBgColor = "", string emptyFontColor = "")
 		{
 
 
@@ -100,6 +100,7 @@ namespace Fritz.StreamTools.Controllers
 			var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBgBlendArray : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
 
 			Configuration.EmptyBackgroundColor = string.IsNullOrWhiteSpace(emptyBgColor) ? Configuration.EmptyBackgroundColor : emptyBgColor;
+			Configuration.EmptyFontColor = string.IsNullOrWhiteSpace(emptyFontColor) ? Configuration.EmptyFontColor : emptyFontColor;
 
 			ViewBag.Configuration = Configuration;
 			ViewBag.Width = width;

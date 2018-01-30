@@ -20,7 +20,7 @@ namespace Test.TagHelpers.SignalrTagHelper
 			var fileSystem = Mockery.Create<IFileSystem>();
 
 			// act
-			var sut = new WEB.TagHelpers.SignalrTagHelper(hostingEnvironment.Object);
+			//var sut = new WEB.TagHelpers.SignalrTagHelper(hostingEnvironment.Object);
 			// var result = sut.IdentifyClientLibrary(fileSystem.Object, "TESTPATH");
 
 			// assert

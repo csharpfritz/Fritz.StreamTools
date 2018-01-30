@@ -35,10 +35,9 @@
   <span id="fg">Followers: <span id="count">@Model</span></span>
 
 	<signalr />
-  <script src="~/js/signalr-client.min.js"></script>
   <script type="text/javascript">
 <!--
-    $(function () {
+    (function () {
 
       let hubUrl = '@Url.Content("~/followerstream")';
       let httpConnection = new signalR.HttpConnection(hubUrl);
@@ -52,7 +51,7 @@
 
       hubConnection.start();
 
-    });
+    })();
 
 //-->
   </script>

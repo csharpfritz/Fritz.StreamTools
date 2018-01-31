@@ -6,105 +6,60 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.StartupServices
 {
 	public static class ConfigureServices
 	{
-
 		public static void Execute(
 			IServiceCollection services,
-			IConfiguration Configuration
-		)
+			IConfiguration configuration)
 		{
-
-			services.AddSingleton<Models.RundownRepository>();
-
-			services.Configure<FollowerGoalConfiguration>(Configuration.GetSection("FollowerGoal"));
-
-			ConfigureStreamingServices(services, Configuration);
-
+			services.AddSingleton<RundownRepository>();
+			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
+			services.ConfigureStreamingServices(configuration);
 			services.AddSingleton<FollowerClient>();
-
-			ConfigureAspNetFeatures(services);
-
+			services.ConfigureAspNetFeatures();
 		}
 
-		private static void ConfigureStreamingServices(
-			IServiceCollection services,
-			IConfiguration Configuration
-		)
-		{
-
-			var sp = services.BuildServiceProvider();
-
-			ConfigureTwitch(services, Configuration, sp);
-
-			ConfigureMixer(services, Configuration, sp);
-
-			ConfigureFake(services, Configuration, sp);
-
-			services.AddSingleton<StreamService>();
-
+		private static void ConfigureStreamingServices(this IServiceCollection services,
+			IConfiguration configuration)
+		{		
+			services.ConfigureStreamService(configuration, 
+				(c, l) => new TwitchService(c, l), 
+				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));
+			services.ConfigureStreamService(configuration, 
+				(c, l) => new MixerService(c, l), 
+				c => string.IsNullOrEmpty(c["StreamServices:Mixer:ClientId"]));
+			services.ConfigureStreamService(configuration, 
+				(c, l) => new FakeService(c, l), 
+				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);
+			
+			services.AddSingleton<StreamService>();	
 		}
 
-		private static void ConfigureTwitch(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
+		private static void ConfigureStreamService<TStreamService>(this IServiceCollection services, 
+			IConfiguration configuration, Func<IConfiguration, ILoggerFactory, TStreamService> factory, 
+			Func<IConfiguration, bool> isDisabled) 
+			where TStreamService : class
 		{
-			if (!string.IsNullOrEmpty(Configuration["StreamServices:Twitch:ClientId"]))
-			{
-
-				var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
-				services.AddSingleton<IHostedService>(svc);
-				services.AddSingleton<IStreamService>(svc);
-
-			}
-		}
-
-		private static void ConfigureMixer(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
-		{
-			if (!string.IsNullOrEmpty(Configuration["StreamServices:Mixer:ClientId"]))
-			{
-				var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
-				services.AddSingleton<IHostedService>(mxr);
-				services.AddSingleton<IStreamService>(mxr);
-			}
-		}
-
-		private static void ConfigureFake(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
-		{
-
-			if (bool.TryParse(Configuration["StreamServices:Fake:Enabled"], out var enabled)) {
-
-				if (!enabled)
-				{
-					// Exit now, we are not enabling the service
-					return;
-				}
-
-			} else {
-
-				// unable to parse the value, by default disable the FakeService
+			if(isDisabled(configuration))
 				return;
+			
+			var provider = services.BuildServiceProvider();
+			var loggerFactory = provider.GetService<ILoggerFactory>();
 
-			}
-
-			var mck = new FakeService(Configuration, sp.GetService<ILoggerFactory>());
-			services.AddSingleton<IHostedService>(mck);
-			services.AddSingleton<IStreamService>(mck);
-
+			var service = factory(configuration, loggerFactory);
+			
+			services.AddSingleton(service as IHostedService);
+			services.AddSingleton(service as IStreamService);
 		}
 
-		private static void ConfigureAspNetFeatures(IServiceCollection services)
+		private static void ConfigureAspNetFeatures(this IServiceCollection services)
 		{
 			services.AddSignalR();
 			services.AddSingleton<FollowerHub>();
-
 			services.AddMvc();
 		}
-
-
 	}
 }

@@ -76,6 +76,8 @@
 				</span>
 				<button type="button" onclick="addColor()" title="Add another color picker to the end of the list.">+</button>
 			</div>
+			<label>Google Font:</label> <input type="text" id="fontname" value="" />
+			<br />
 		</fieldset>
 
 		<button id="preview">Preview</button>
@@ -109,6 +111,7 @@
 				urlTemplate += getBGBlend();
 				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
 				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
+				urlTemplate += getFontName();
 
 				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
 				console.log(urlTemplate);
@@ -242,6 +245,11 @@
 				spans[i].children[0].id = `bgcolor${i + 1}`;
 				spans[i].children[1].id = `bgblend${i + 1}`;
 			}
+		}
+
+		function getFontName() {
+			var fontName = document.getElementById("fontname").value;
+			return `&fontName=${escape(fontName)}`;
 		}
 //-->
 	</script>

@@ -14,15 +14,12 @@ namespace Test.Startup
 	
 	public class ConfigureServicesTests
 	{
-		[Theory]
-		[InlineData("StreamServices:Twitch:ClientId", "123456", typeof(TwitchService))]
-		[InlineData("StreamServices:Mixer:ClientId", "654321", typeof(MixerService))]
-		[InlineData("StreamServices:Fake:Enabled", "true", typeof(FakeService))]
-		public void Execute_RegisterStreamService_ReturnExpected(string configurationKey, string configurationValue, Type expected)
+		[Theory, MemberData(nameof(Configurations))]
+		public void Execute_RegisterStreamServicesWithVariousConfigurations_ReturnExpected(Dictionary<string, string> configurations, Type[] expected)
 		{
 			// arrange
 			var configuration = new ConfigurationBuilder()
-				.AddInMemoryCollection(new Dictionary<string, string> { { configurationKey, configurationValue } })
+				.AddInMemoryCollection(configurations)
 				.Build();
 
 			var serviceCollection = new ServiceCollection();
@@ -33,13 +30,32 @@ namespace Test.Startup
 
 			// assert
 			var provider = serviceCollection.BuildServiceProvider();
-			var expectedHostedServices = provider
-				.GetServices<IHostedService>();
-			var expectedStreamServices = provider
-				.GetServices<IStreamService>();
-			
-			Assert.IsType(expected, expectedHostedServices.Single());
-			Assert.IsType(expected, expectedStreamServices.Single());
+
+			Assert.Equal(expected, provider.GetServices<IHostedService>().Select(x => x.GetType()));
+			Assert.Equal(expected, provider.GetServices<IStreamService>().Select(x => x.GetType()));
+		}
+
+		public static IEnumerable<object[]> Configurations
+		{
+			get
+			{
+				yield return new object[]{ MakeFakeConfiguration("123456", "654321", true), new [] { typeof(TwitchService), typeof(MixerService), typeof(FakeService) } };
+				yield return new object[]{ MakeFakeConfiguration("", "654321", true), new [] { typeof(MixerService), typeof(FakeService) } };
+				yield return new object[]{ MakeFakeConfiguration("", "", true), new [] { typeof(FakeService) } };
+				yield return new object[]{ MakeFakeConfiguration("123456", "654321", false), new [] { typeof(TwitchService), typeof(MixerService) } };
+			}
+		}
+
+		private static Dictionary<string, string> MakeFakeConfiguration(string twitchClientId,
+			string mixerClientId,
+			bool enableFake)
+		{
+			return new Dictionary<string, string>
+			{
+				{"StreamServices:Twitch:ClientId", twitchClientId},
+				{"StreamServices:Mixer:ClientId", mixerClientId},
+				{"StreamServices:Fake:Enabled", enableFake.ToString()}
+			};
 		}
 	}
 }

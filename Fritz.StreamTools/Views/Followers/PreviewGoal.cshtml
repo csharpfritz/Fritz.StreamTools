@@ -28,6 +28,7 @@
 		}
 
 		input[type="color"] {
+			height: 23px;
 			min-width: 3em;
 			width: auto;
 		}
@@ -42,6 +43,15 @@
 			height: 23px;
 			margin-right: 5px;
 		}
+
+		span {
+			display: inline-flex;
+		}
+
+		#bgcolors {
+			display: inline-flex;
+		}
+
 	</style>
 
 </head>
@@ -67,8 +77,8 @@
 			<br />
 			<label>Empty Font Color:</label> <input type="color" id="emptyFontColor" />
 			<br />
-			<div>
-				<label>Fill Bar Colors:</label>
+			<label>Fill Bar Colors:</label>
+			<div id="bgcolors">
 				<span name="spanBGColor">
 					<input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" />
 					<input id="bgblend1" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
@@ -121,20 +131,16 @@
 
 			function onload() {
 
-				var bgArray = [];
+				var bgArray = new Array();
 
 				for (var i = 0; i < localStorage.length; i++) {
 					var key = localStorage.key(i);
 					var item = localStorage.getItem(key);
 					console.log(key, item);
 
-					// make sure we create all the required color pickers
+					// store an array of all the required color pickers
 					if (key.substr(0, 2) == "bg") {
 						bgArray.push(key);
-						//if (!document.getElementById(key)) {
-						//	addColor(bgColorCounter);
-						//	bgColorCounter++;
-						//}
 					} else {
 
 						var el = document.getElementById(key);
@@ -156,12 +162,18 @@
 							addColor(key);
 						}
 
-						document.getElementById(i).value = localStorage.getItem(i);
-
 					}
 
 				}
 
+				for (var i of sortedArray) {
+
+						var el = document.getElementById(i);
+						if (el) {
+							el.value = localStorage.getItem(i);
+						}
+
+				}
 
 
 			}
@@ -170,7 +182,7 @@
 
 				localStorage.clear();
 
-				var elements = document.getElementsByTagName("input");
+				var elements = Array.from(document.getElementsByTagName("input"));
 				for (var el of elements) {
 
 					console.log(`Saving value: ${el.id}: ${el.value}`);

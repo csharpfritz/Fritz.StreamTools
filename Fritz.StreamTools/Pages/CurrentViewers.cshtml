@@ -22,7 +22,7 @@
 
 	Total: <span id="totalCount">@(Model.StreamService.ViewerCountByService.Sum(s => s.count))</span>
 
-		<script src="~/js/signalr-client.js"></script>
+		<script src="~/lib/signalr/signalr-client.js"></script>
 		<script src="~/js/streamhub.js"></script>
 		<script>
 				(function () {

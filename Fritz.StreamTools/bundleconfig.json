@@ -21,7 +21,7 @@
 		"sourceMap": false
 	},
 	{
-		"outputFileName": "wwwroot/js/signalr-client.js",
+		"outputFileName": "wwwroot/lib/signalr/signalr-client.js",
 		"inputFiles": [
 			"node_modules/@aspnet/signalr-client/dist/browser/signalr-client-1.0.0-alpha2-final.min.js"
 		],

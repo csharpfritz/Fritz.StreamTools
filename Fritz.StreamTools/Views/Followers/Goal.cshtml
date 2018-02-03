@@ -8,56 +8,57 @@
 
 <html>
 <head>
-		<title>Followers Goal</title>
-		<style>
+	<title>Followers Goal</title>
+	<google-font>@config.FontName</google-font>
+	<style>
 				.followerBar {
 						background: @config.EmptyBackgroundColor;
 						color: @config.EmptyFontColor;
+						font-family: @config.FontName, Arial;
 						}
 
 				#fill {
 						background-image: linear-gradient(to right, @( ViewBag.Gradient));
 						color: @config.FillFontColor;
 				}
-		</style>
-		<style>
+	</style>
+	<style>
 
-				.followerBar {
-						width: 100%;
-						display: flex;
-						flex-wrap: nowrap;
-						padding: 2px 8px;
-				}
+		.followerBar {
+			width: 100%;
+			display: flex;
+			flex-wrap: nowrap;
+			padding: 2px 8px;
+		}
 
-						.followerBar span {
-								font-family: Arial;
-								font-size: 16pt;
-								font-weight: 600;
-						}
+			.followerBar span {
+				font-size: 16pt;
+				font-weight: 600;
+			}
 
-				#progress {
-						overflow: hidden;
-						position: absolute;
-				}
+		#progress {
+			overflow: hidden;
+			position: absolute;
+		}
 
-				.caption {
-						width: calc(50% - 30px);
-						white-space: nowrap;
-						text-overflow: ellipsis;
-						overflow: hidden;
-				}
+		.caption {
+			width: calc(50% - 30px);
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			overflow: hidden;
+		}
 
-				.current {
-						text-align: center;
-						width: 60px;
-				}
-				
-				.goal {
-						text-align: right;
-						width: calc(50% - 30px);
-						flex: 1;
-				}
-		</style>
+		.current {
+			text-align: center;
+			width: 60px;
+		}
+
+		.goal {
+			text-align: right;
+			width: calc(50% - 30px);
+			flex: 1;
+		}
+	</style>
 </head>
 <body>
 		<!--16 is the border (8 for each side)-->

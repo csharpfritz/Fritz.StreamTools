@@ -6,105 +6,80 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.StartupServices
 {
 	public static class ConfigureServices
 	{
-
 		public static void Execute(
 			IServiceCollection services,
-			IConfiguration Configuration
-		)
+			IConfiguration configuration)
 		{
-
-			services.AddSingleton<Models.RundownRepository>();
-
-			services.Configure<FollowerGoalConfiguration>(Configuration.GetSection("FollowerGoal"));
-
-			ConfigureStreamingServices(services, Configuration);
-
+			services.AddSingleton<RundownRepository>();
+			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
+			services.ConfigureStreamingServices(configuration);
 			services.AddSingleton<FollowerClient>();
-
-			ConfigureAspNetFeatures(services);
-
+			services.ConfigureAspNetFeatures();
 		}
 
-		private static void ConfigureStreamingServices(
-			IServiceCollection services,
-			IConfiguration Configuration
-		)
-		{
-
-			var sp = services.BuildServiceProvider();
-
-			ConfigureTwitch(services, Configuration, sp);
-
-			ConfigureMixer(services, Configuration, sp);
-
-			ConfigureFake(services, Configuration, sp);
-
-			services.AddSingleton<StreamService>();
-
+		private static void ConfigureStreamingServices(this IServiceCollection services,
+			IConfiguration configuration)
+		{		
+			services.ConfigureStreamService(configuration, 
+				(c, l) => new TwitchService(c, l),																	// Factory
+				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
+			services.ConfigureStreamService(configuration, 
+				(c, l) => new MixerService(c, l),                                   // Factory
+				c => string.IsNullOrEmpty(c["StreamServices:Mixer:ClientId"]));			// Test to disable
+			services.ConfigureStreamService(configuration, 
+				(c, l) => new FakeService(c, l),                                                          // Factory
+				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
+			
+			services.AddSingleton<StreamService>();	
 		}
 
-		private static void ConfigureTwitch(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
+		/// <summary>
+		/// Generically configure stream service providers and register them with the DI container
+		/// </summary>
+		/// <typeparam name="TStreamService">Type of StreamService to create</typeparam>
+		/// <param name="services">The DI services configuration object</param>
+		/// <param name="configuration">Application Configuration to use to populate our service</param>
+		/// <param name="factory">Callback method that defines how to instantiate the service</param>
+		/// <param name="isDisabled">Callback test to determine whether to disable the service</param>
+		private static void ConfigureStreamService<TStreamService>(this IServiceCollection services, 
+			IConfiguration configuration,
+			Func<IConfiguration, ILoggerFactory, TStreamService> factory, 
+			Func<IConfiguration, bool> isDisabled) 
+			where TStreamService : class, IStreamService
 		{
-			if (!string.IsNullOrEmpty(Configuration["StreamServices:Twitch:ClientId"]))
+
+			// Don't configure this service if it is disabled
+			if (isDisabled(configuration))
 			{
-
-				var svc = new Services.TwitchService(Configuration, sp.GetService<ILoggerFactory>());
-				services.AddSingleton<IHostedService>(svc);
-				services.AddSingleton<IStreamService>(svc);
-
-			}
-		}
-
-		private static void ConfigureMixer(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
-		{
-			if (!string.IsNullOrEmpty(Configuration["StreamServices:Mixer:ClientId"]))
-			{
-				var mxr = new MixerService(Configuration, sp.GetService<ILoggerFactory>());
-				services.AddSingleton<IHostedService>(mxr);
-				services.AddSingleton<IStreamService>(mxr);
-			}
-		}
-
-		private static void ConfigureFake(IServiceCollection services, IConfiguration Configuration, ServiceProvider sp)
-		{
-
-			if (bool.TryParse(Configuration["StreamServices:Fake:Enabled"], out var enabled)) {
-
-				if (!enabled)
-				{
-					// Exit now, we are not enabling the service
-					return;
-				}
-
-			} else {
-
-				// unable to parse the value, by default disable the FakeService
 				return;
-
 			}
 
-			var mck = new FakeService(Configuration, sp.GetService<ILoggerFactory>());
-			services.AddSingleton<IHostedService>(mck);
-			services.AddSingleton<IStreamService>(mck);
+			// Configure and grab a logger so that we can log information
+			// about the creation of the services
+			var provider = services.BuildServiceProvider();		// Build a 'temporary' instance of the DI container
+			var loggerFactory = provider.GetService<ILoggerFactory>();
 
+			var service = factory(configuration, loggerFactory);
+			
+			services.AddSingleton(service as IHostedService);
+			services.AddSingleton(service as IStreamService);
 		}
 
-		private static void ConfigureAspNetFeatures(IServiceCollection services)
+		/// <summary>
+		/// Configure the standard ASP.NET Core services
+		/// </summary>
+		/// <param name="services"></param>
+		private static void ConfigureAspNetFeatures(this IServiceCollection services)
 		{
 			services.AddSignalR();
 			services.AddSingleton<FollowerHub>();
-
 			services.AddMvc();
 		}
-
 
 	}
 }

@@ -27,9 +27,7 @@ namespace Fritz.StreamTools
 		public void ConfigureServices(IServiceCollection services)
 		{
 
-			var loggerFactory = services.BuildServiceProvider().GetService<ILoggerFactory>();
-
-			StartupServices.ConfigureServices.Execute(services, Configuration, loggerFactory);
+			StartupServices.ConfigureServices.Execute(services, Configuration);
 			
 		}
 

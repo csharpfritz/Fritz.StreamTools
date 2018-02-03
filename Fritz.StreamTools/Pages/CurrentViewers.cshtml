@@ -22,31 +22,29 @@
 
 	Total: <span id="totalCount">@(Model.StreamService.ViewerCountByService.Sum(s => s.count))</span>
 
-	<script src="~/js/signalr-client.min.js"></script>
-	<script type="text/javascript">
+		<script src="~/lib/signalr/signalr-client.js"></script>
+		<script src="~/js/streamhub.js"></script>
+		<script>
+				(function () {
 
-        let hubUrl = '@Url.Content("~/followerstream")';
+						const reducer = (accumulator, currentValue) => accumulator + parseInt(currentValue.textContent, 10);
 
-        let httpConnection = new signalR.HttpConnection(hubUrl);
-				let hubConnection = new signalR.HubConnection(httpConnection);
+						var hub = new StreamHub();
 
-				const reducer = (accumulator, currentValue) => accumulator + parseInt(currentValue.textContent, 10);
+						hub.onViewers = (service, count) => {
 
+								document.getElementById(service + "Count").textContent = count;
 
-		    hubConnection.on('OnViewersCountUpdated', (service, count) => {
+								var currentCounts = document.getElementsByClassName("serviceCount");
+								var elArray = Array.from(currentCounts);
+								document.getElementById("totalCount").textContent = elArray.reduce(reducer, 0);
 
-					document.getElementById(service + "Count").textContent = count;
+						}
 
-					var currentCounts = document.getElementsByClassName("serviceCount");
-					var elArray = Array.from(currentCounts);
-					document.getElementById("totalCount").textContent = elArray.reduce(reducer, 0);
+						hub.start();
 
-
-        });
-
-        hubConnection.start();
-
-	</script>
+				})();
+		</script>
 
 </body>
 </html>

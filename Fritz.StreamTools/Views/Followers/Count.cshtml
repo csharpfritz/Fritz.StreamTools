@@ -34,27 +34,21 @@
 
   <span id="fg">Followers: <span id="count">@Model</span></span>
 
-	<signalr />
-  <script type="text/javascript">
-<!--
-    (function () {
+		<script src="~/lib/signalr/signalr-client.js"></script>
+		<script src="~/js/streamhub.js"></script>
+		<script>
+				(function () {
 
-      let hubUrl = '@Url.Content("~/followerstream")';
-      let httpConnection = new signalR.HttpConnection(hubUrl);
-      let hubConnection = new signalR.HubConnection(httpConnection);
+						var hub = new StreamHub();
 
-      hubConnection.on('OnFollowersCountUpdated', data => {
+						hub.onFollowers = (count) => {
+								document.getElementById("count").textContent = count;
+						}
 
-				document.getElementById("count").textContent = data;
+						hub.start();
 
-			});
-
-      hubConnection.start();
-
-    })();
-
-//-->
-  </script>
+				})();
+		</script>
 
 </body>
 </html>

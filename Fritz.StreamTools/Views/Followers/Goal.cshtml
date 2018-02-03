@@ -75,47 +75,28 @@
 				<span class="goal">@Model.GoalValue</span>
 		</div>
 
-		<script src="~/js/signalr-client-1.0.0-alpha2-final.min.js"></script>
-		<script type="text/javascript">
-<!--
+		<script src="~/lib/signalr/signalr-client.js"></script>
+		<script src="~/js/streamhub.js"></script>
+		<script>
+				(function () {
 
-				var fullBarWidth = @ViewBag.Width;
-				var goalValue = @Model.GoalValue;
+						var hub = new StreamHub();
 
-		let startHub = () => {
-			let hubConnection = new signalR.HubConnection("/followerstream");
+						hub.onFollowers = (data) => {
+								document.getElementsByClassName("current")[0].textContent = data;
+								document.getElementsByClassName("current")[1].textContent = data;
+								//16 is the border (8 for each side)
+								document.getElementById("progress").style.width = ((fullBarWidth * parseInt(data, 10) / goalValue) + 16) + "px";
+						}
 
-			hubConnection.on('OnFollowersCountUpdated', data => {
+						if (window.self == window.top) {
+								console.log("Topmost window - enabling SignalR");
+								hub.start();
+						} else {
+								console.log("hosted in a frame - disabling SignalR");
+						}
 
-				document.getElementsByClassName("current")[0].textContent = data;
-				document.getElementsByClassName("current")[1].textContent = data;
-				//16 is the border (8 for each side)
-				document.getElementById("progress").style.width = ((fullBarWidth * parseInt(data, 10) / goalValue) + 16) + "px";
-
-			});
-
-			hubConnection.onclose(() => {
-				// Hub connection was closed for some reason
-				let interval = setInterval(() => {
-					// Try to reconnect hub every 5 secs
-					startHub().then(() => {
-						// Reconnect succeeded, now reload entire page
-						location.reload();
-					});
-				}, 5000);
-			});
-
-			return hubConnection.start();
-			}
-
-			if (window.self == window.top) {
-				console.log("Topmost window - enabling SignalR");
-				startHub();
-			} else {
-				console.log("hosted in a frame - disabling SignalR");
-			}
-
-//-->
+				})();
 		</script>
 
 </body>

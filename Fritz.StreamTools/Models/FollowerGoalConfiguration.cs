@@ -35,5 +35,6 @@ namespace Fritz.StreamTools.Models
 			}
 		}
 
+		public string FontName { get; set; }
 	}
 }

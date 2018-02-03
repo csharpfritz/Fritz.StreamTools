@@ -82,7 +82,8 @@ namespace Fritz.StreamTools.Controllers
 		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
 		public IActionResult Goal(string caption = "", int goal = 0,
 			int width = 800, int current = -1, string bgcolors = "",
-			string bgblend = "", string emptyBgColor = "")
+			string bgblend = "", string emptyBgColor = "", string emptyFontColor = "",
+			string fontName = "~")
 		{
 
 
@@ -100,6 +101,8 @@ namespace Fritz.StreamTools.Controllers
 			var backBlend = string.IsNullOrEmpty(bgblend) ? Configuration.FillBgBlendArray : bgblend.Split(',').Select(a => double.Parse(a)).ToArray();
 
 			Configuration.EmptyBackgroundColor = string.IsNullOrWhiteSpace(emptyBgColor) ? Configuration.EmptyBackgroundColor : emptyBgColor;
+			Configuration.EmptyFontColor = string.IsNullOrWhiteSpace(emptyFontColor) ? Configuration.EmptyFontColor : emptyFontColor;
+			Configuration.FontName = fontName == "~" ? Configuration.FontName : fontName;
 
 			ViewBag.Configuration = Configuration;
 			ViewBag.Width = width;
@@ -130,28 +133,46 @@ namespace Fritz.StreamTools.Controllers
 		/// <returns></returns>
 		private string Gradient(string[] bgcolors, double[] bgblend, int width)
 		{
-			var count = (double)bgcolors.Length;
-			var percent = (double)1 / count;
-			var colorWidth = (int)(width * percent);
 
-			var result = new StringBuilder(bgcolors[0]);
+			var count = (double)bgcolors.Length;
+
+			// no colors
+			if (count == 0) return "";
+			// 1 color = no gradient
+			if (count == 1) return $"{bgcolors[0]},{bgcolors[0]}";
+
+			var colorWidth = (int)(width / (count-1));
+
+			var result = new StringBuilder();
 			for (var c = 0; c < count - 1; c++)
 			{
-				var distance = (c + 1) * colorWidth;
-				var blendWidthLeft = 0;
-				var blendWidthRight = 0;
+				var distance = c  * colorWidth;
+
+				// Each color has an anchor equidistant from the other colors
+				if (result.Length > 0)
+				{
+					result.Append($",{bgcolors[c]} {distance}px");
+				} else
+				{
+					result.Append($"{bgcolors[c]} {distance}px");
+				}
+				
+				var blend = 1.0;
 
 				if (bgblend != null && bgblend.Length > c)
 				{
-					blendWidthLeft = (int)(colorWidth * bgblend[c]);
+					blend = bgblend[c];
 				}
 
-				if (bgblend != null && bgblend.Length > c + 1)
-				{
-					blendWidthRight = (int)(colorWidth * bgblend[c + 1]);
-				}
+				// Mark the end of this color based on its blend %
+				distance = (int)(c * colorWidth + (1 - blend) * colorWidth * 0.5);
 
-				result.Append($", {bgcolors[c]} {distance - blendWidthLeft }px, {bgcolors[c + 1]} {(c + 1) * colorWidth + blendWidthRight}px");
+				result.Append($",{bgcolors[c]} {distance}px");
+
+				// Now add the start of the next color based on this blend %
+				distance = (int)(( c + 1 ) * colorWidth - (1 - blend) * colorWidth * 0.5);
+
+				result.Append($",{bgcolors[c+1]} {distance}px");
 			}
 
 			result.Append($", {bgcolors.Last()}");

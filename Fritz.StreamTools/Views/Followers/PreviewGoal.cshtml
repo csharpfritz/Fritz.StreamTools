@@ -26,6 +26,32 @@
 			width: 10em;
 			display: inline-block;
 		}
+
+		input[type="color"] {
+			height: 23px;
+			min-width: 3em;
+			width: auto;
+		}
+
+		input[name="bgblend"] {
+			height: 23px;
+			width: 2em;
+			text-align: center;
+		}
+
+		span[name="spanBGColor"] button {
+			height: 23px;
+			margin-right: 5px;
+		}
+
+		span {
+			display: inline-flex;
+		}
+
+		#bgcolors {
+			display: inline-flex;
+		}
+
 	</style>
 
 </head>
@@ -47,14 +73,21 @@
 			<br />
 			<label>Test Count:</label> <input type="text" id="current" value="90" />
 			<br />
+			<label>Google Font:</label> <input type="text" id="fontname" value="" />
+			<br />
 			<label>Empty Bg Color:</label> <input type="color" id="emptyBgColor" />
 			<br />
-			<label>Left Color:</label> <input type="color" id="bgcolor1" />
+			<label>Empty Font Color:</label> <input type="color" id="emptyFontColor" />
 			<br />
-			<label>Middle Color:</label> <input type="color" id="bgcolor2" />
-			<br />
-			<label>Right Color:</label> <input type="color" id="bgcolor3" />
-
+			<label>Fill Bar Colors:</label>
+			<div id="bgcolors">
+				<span name="spanBGColor">
+					<input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" />
+					<input id="bgblend1" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
+					<button onclick="removeColor()" title="Remove this color from the list.">X</button>
+				</span>
+				<button type="button" onclick="addColor()" title="Add another color picker to the end of the list.">+</button>
+			</div>
 		</fieldset>
 
 		<button id="preview">Preview</button>
@@ -84,11 +117,11 @@
 				urlTemplate += `${document.getElementById("goal").value}/`;
 				urlTemplate += `${document.getElementById("caption").value}`;
 				urlTemplate += `?width=${iframeWidth}`;
-				urlTemplate += `&bgcolors=${escape(document.getElementById("bgcolor1").value)}`;
-				urlTemplate += `,${escape(document.getElementById("bgcolor2").value)}`;
-				urlTemplate += `,${escape(document.getElementById("bgcolor3").value)}`;
-				urlTemplate += `&bgblend=1,1,1`;
+				urlTemplate += getBGColors();
+				urlTemplate += getBGBlend();
 				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
+				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
+				urlTemplate += getFontName();
 
 				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
 				console.log(urlTemplate);
@@ -101,21 +134,58 @@
 
 			function onload() {
 
-				var elements = document.getElementsByTagName("input");
-				for (var el of elements) {
+				var bgArray = new Array();
 
-					console.log(el.id);
+				for (var i = 0; i < localStorage.length; i++) {
+					var key = localStorage.key(i);
+					var item = localStorage.getItem(key);
+					console.log(key, item);
 
-					if (localStorage.getItem(el.id)) {
-						el.value = localStorage.getItem(el.id);
+					// store an array of all the required color pickers
+					if (key.substr(0, 2) == "bg") {
+						bgArray.push(key);
+					} else {
+
+						var el = document.getElementById(key);
+						if (el) {
+							el.value = item;
+						}
 					}
+
 				}
+
+				var sortedArray = bgArray.sort();
+
+				for (var i of sortedArray) {
+
+					if (i.substr(0, 7) == "bgcolor") {
+
+						if (!document.getElementById(i)) {
+							var key = i.substr(7);
+							addColor(key);
+						}
+
+					}
+
+				}
+
+				for (var i of sortedArray) {
+
+						var el = document.getElementById(i);
+						if (el) {
+							el.value = localStorage.getItem(i);
+						}
+
+				}
+
 
 			}
 
 			function saveValues() {
 
-				var elements = document.getElementsByTagName("input");
+				localStorage.clear();
+
+				var elements = Array.from(document.getElementsByTagName("input"));
 				for (var el of elements) {
 
 					console.log(`Saving value: ${el.id}: ${el.value}`);
@@ -127,11 +197,77 @@
 
 			}
 
+			// build the bgcolors parameter
+			function getBGColors() {
+				var spans = document.getElementsByName("spanBGColor");
+				var result = "";
+				if (spans) {
+					for (var i = 0; i < spans.length; i++) {
+						result += `,${escape(spans[i].children[0].value)}`;
+					}
+					result = `&bgcolors=${result.substr(1)}`;
+				}
+				return result;
+			}
+
+			// build the bgblend parameter
+			function getBGBlend() {
+				var spans = document.getElementsByName("spanBGColor");
+				var result = "";
+				if (spans) {
+					for (var i = 0; i < spans.length; i++) {
+						result += `,${spans[i].children[1].value}`;
+					}
+					result = `&bgblend=${result.substr(1)}`;
+				}
+				return result;
+			}
 
 		})();
 
+		function addColor() {
+			addColor(null);
+		}
+
+		function addColor(key) {
+			var spans = document.getElementsByName("spanBGColor");
+			if (spans) {
+				var addButton = spans[spans.length - 1].nextSibling;
+				var newNode = spans[spans.length - 1].cloneNode(true);
+				newNode.children[0].id = key ? `bgcolor${key}` : `bgcolor${spans.length + 1}`;
+				newNode.children[1].id = key ? `bgblend${key}` : `bgblend${spans.length + 1}`;
+				addButton.parentNode.insertBefore(newNode, addButton);
+				newNode.getElementsByTagName("button")[0].onclick = removeColor;
+			}
+		}
+
+		function removeColor() {
+
+			if (!this.parentNode) return;
+
+			this.parentNode.remove();
+			renumberColors();
+
+		}
+
+		function renumberColors() {
+			var spans = document.getElementsByName("spanBGColor");
+			for (var i = 0; i < spans.length; i++) {
+				var el = spans[i].firstChild;
+				spans[i].children[0].id = `bgcolor${i + 1}`;
+				spans[i].children[1].id = `bgblend${i + 1}`;
+			}
+		}
+
+		function getFontName() {
+			var fontName = document.getElementById("fontname").value;
+			return `&fontName=${escape(fontName)}`;
+		}
 //-->
 	</script>
+
+
+
 
 </body>
 

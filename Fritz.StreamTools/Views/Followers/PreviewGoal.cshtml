@@ -22,7 +22,7 @@
 			overflow-x: hidden;
 		}
 
-		input, label {
+		input, label, #fontNames {
 			width: 10em;
 			display: inline-block;
 		}
@@ -120,6 +120,12 @@
 			function LoadPreview() {
 
 				var iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
+				let fontName = document.getElementById("fontname").value;
+
+				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName).length === 0) {
+					alert('Font not supported by Google Fonts');
+					return;
+				}
 
 				var urlTemplate = "/followers/goal/";
 				urlTemplate += `${document.getElementById("goal").value}/`;
@@ -129,7 +135,7 @@
 				urlTemplate += getBGBlend();
 				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
 				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
-				urlTemplate += getFontName();
+				urlTemplate += `&fontName=${escape(fontName)}`;
 
 				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
 				console.log(urlTemplate);
@@ -298,7 +304,7 @@
 
 			document.getElementById('fontname').onkeyup = function (d) {
 
-				if (d.keyCode < 65 || d.keyCode > 90)
+				if (d.keyCode != 8 && (d.keyCode < 65 || d.keyCode > 90))
 					return;
 				document.getElementById('fontsPanel').style.display = '';
 				updateFontList(filterFontList(supportedFonts, this.value));
@@ -347,11 +353,7 @@
 				spans[i].children[1].id = `bgblend${i + 1}`;
 			}
 		}
-
-		function getFontName() {
-			var fontName = document.getElementById("fontname").value;
-			return `&fontName=${escape(fontName)}`;
-		}
+		
 //-->
 	</script>
 

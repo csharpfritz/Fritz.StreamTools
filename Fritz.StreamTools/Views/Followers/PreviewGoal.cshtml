@@ -122,7 +122,7 @@
 				var iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
 				let fontName = document.getElementById("fontname").value;
 
-				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName).length === 0) {
+				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
 					alert('Font not supported by Google Fonts');
 					return;
 				}
@@ -288,8 +288,16 @@
 				setSupportedFonts(supportedFonts);
 			}
 
-			function filterFontList(fonts, search) {
-				return fonts.filter(function (item) { return !search || item.indexOf(search) > -1; })
+			function filterExactMatchOperation(currentItem, searchValue) {
+				return !searchValue || currentItem === searchValue;
+			}
+
+			function filterPartialMatchOperation(currentItem, searchValue) {
+				return !searchValue || currentItem.indexOf(searchValue) > -1;
+			}
+
+			function filterFontList(fonts, searchValue, searchOperation = filterPartialMatchOperation) {
+				return fonts.filter(function (currentItem) { return searchOperation(currentItem, searchValue); });
 			}
 
 			function updateFontList(fonts) {

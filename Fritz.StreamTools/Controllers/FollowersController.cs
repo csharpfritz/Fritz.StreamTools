@@ -23,7 +23,8 @@ namespace Fritz.StreamTools.Controllers
 			StreamService streamService,
 			IOptions<FollowerGoalConfiguration> config,
 			IHostingEnvironment env,
-			FollowerClient followerClient)
+			FollowerClient followerClient,
+			IConfiguration appConfig)
 		{
 			this.StreamService = streamService;
 			this.Configuration = config.Value;
@@ -31,12 +32,15 @@ namespace Fritz.StreamTools.Controllers
 
 			this.HostingEnvironment = env;
 			this.FollowerClient = followerClient;
+
+			this.AppConfig = appConfig;
 		}
 
 		public StreamService StreamService { get; }
 		public FollowerGoalConfiguration Configuration { get; }
 		public IHostingEnvironment HostingEnvironment { get; }
 		public FollowerClient FollowerClient { get; }
+		public IConfiguration AppConfig { get; }
 
 
 		[HttpGet("api/Followers")]
@@ -120,6 +124,7 @@ namespace Fritz.StreamTools.Controllers
 		[Route("followers/goal/preview")]
 		public IActionResult PreviewGoal() {
 
+			ViewBag.GoogleFontsApiKey = AppConfig["GoogleFontsApi:Key"];
 			return View();
 
 		}

@@ -67,17 +67,21 @@
 
 		<fieldset>
 
-			<label>Caption:</label> <input type="text" id="caption" value="Configure Me" />
+			<label for="caption">Caption:</label> <input type="text" id="caption" value="Configure Me" />
 			<br />
-			<label>Goal:</label> <input type="text" id="goal" value="100" />
+			<label for="goal">Goal:</label> <input type="text" id="goal" value="100" />
 			<br />
-			<label>Test Count:</label> <input type="text" id="current" value="90" />
+			<label for="current">Test Count:</label> <input type="text" id="current" value="90" />
 			<br />
-			<label>Google Font:</label> <input type="text" id="fontname" value="" />
+			<label for="fontname">Google Font:</label> <input type="text" id="fontname" value="" />
 			<br />
-			<label>Empty Bg Color:</label> <input type="color" id="emptyBgColor" />
+			<div id="fontsPanel">
+				<label for="fontname"></label> <select id="fontNames" size="5"></select>
+				<br />
+			</div>
+			<label for="emptyBgColor">Empty Bg Color:</label> <input type="color" id="emptyBgColor" />
 			<br />
-			<label>Empty Font Color:</label> <input type="color" id="emptyFontColor" />
+			<label for="emptyFontColor">Empty Font Color:</label> <input type="color" id="emptyFontColor" />
 			<br />
 			<label>Fill Bar Colors:</label>
 			<div id="bgcolors">
@@ -102,6 +106,10 @@
 	<script type="text/javascript">
 <!--
 		(function () {
+
+			document.getElementById('fontsPanel').style.display = 'none';
+
+			var supportedFonts = [];
 
 			onload();
 
@@ -139,6 +147,15 @@
 				for (var i = 0; i < localStorage.length; i++) {
 					var key = localStorage.key(i);
 					var item = localStorage.getItem(key);
+
+					if (key === 'supportedFonts') {
+
+						var fonts = JSON.parse(item);
+						setSupportedFonts(fonts);
+						continue;
+
+					}
+
 					console.log(key, item);
 
 					// store an array of all the required color pickers
@@ -178,6 +195,8 @@
 
 				}
 
+				if (supportedFonts.length == 0)
+					googleFontsAdapter(setSupportedFontsFromApi);
 
 			}
 
@@ -194,6 +213,7 @@
 
 				}
 
+				localStorage.setItem('supportedFonts', JSON.stringify(supportedFonts));
 
 			}
 
@@ -222,6 +242,75 @@
 				}
 				return result;
 			}
+
+			// retrieve the supported font names from google api
+			function googleFontsAdapter(setter) {
+				@*Reference for the HTTP in vanilla JS https://www.sitepoint.com/guide-vanilla-ajax-without-jquery/*@
+				let api = 'https://www.googleapis.com/webfonts/v1/webfonts?key=@ViewBag.GoogleFontsApiKey';
+
+				@if (string.IsNullOrEmpty(ViewBag.GoogleFontsApiKey))
+				{
+					@:setter([{ 'family': 'Aclonica' }, { 'family': 'Mallanna' }]);
+					@:return;
+				}
+
+				let xhr = new XMLHttpRequest();
+				xhr.open('GET', api);
+				xhr.send(null);
+
+				console.log('Calling google fonts api');
+
+				xhr.onreadystatechange = function() {
+					let DONE = 4; // readyState 4 means the request is done.
+					let OK = 200; // status 200 is a successful return.
+					if (xhr.readyState === DONE) {
+						if (xhr.status === OK)
+							setter(JSON.parse(xhr.responseText).items); // 'This is the returned text.'
+						else
+							console.log('Error: ' + xhr.status); // An error occurred during the request.
+					}
+				}
+			}
+
+			function setSupportedFonts(fonts) {
+				localStorage.setItem('supportedFonts', JSON.stringify(supportedFonts));
+				updateFontList(filterFontList(supportedFonts));
+			}
+
+			function setSupportedFontsFromApi(value) {
+				supportedFonts = value.map((v) => v.family);
+				setSupportedFonts(supportedFonts);
+			}
+
+			function filterFontList(fonts, search) {
+				return fonts.filter(function (item) { return !search || item.indexOf(search) > -1; })
+			}
+
+			function updateFontList(fonts) {
+				let control = document.getElementById('fontNames');
+				control.innerHTML = '';
+				for (var current of fonts) {
+					let option = document.createElement("option");
+					option.text = current;
+					control.add(option);
+				}
+			}
+
+			document.getElementById('fontname').onkeyup = function (d) {
+
+				if (d.keyCode < 65 || d.keyCode > 90)
+					return;
+				document.getElementById('fontsPanel').style.display = '';
+				updateFontList(filterFontList(supportedFonts, this.value));
+
+			};
+
+			document.getElementById('fontNames').onchange = function () {
+
+				document.getElementById('fontsPanel').style.display = 'none';
+				document.getElementById('fontname').value = this.value;
+
+			};
 
 		})();
 

@@ -52,6 +52,10 @@
 			display: inline-flex;
 		}
 
+		#fontNames {
+			font-size: 2em;
+		}
+
 	</style>
 
 </head>
@@ -283,8 +287,8 @@
 				updateFontList(filterFontList(supportedFonts));
 			}
 
-			function setSupportedFontsFromApi(value) {
-				supportedFonts = value.map((v) => v.family);
+			function setSupportedFontsFromApi(fonts) {
+				supportedFonts = fonts.map((v) => v.family);
 				setSupportedFonts(supportedFonts);
 			}
 
@@ -300,19 +304,56 @@
 				return fonts.filter(function (currentItem) { return searchOperation(currentItem, searchValue); });
 			}
 
+			function createCssLinkTag(encoded) {
+
+				if (document.getElementById(`font-${encoded}`))
+					return;
+
+				let l = document.createElement('link');
+				l.type = 'text/css';
+				l.rel = 'stylesheet';
+				l.id = `font-${encoded}`;
+				l.href = `https://fonts.googleapis.com/css?family=${encoded}`;
+
+				document.getElementsByTagName('head')[0].appendChild(l);
+
+			}
+
+			function createFontOption(fontFamily) {
+
+				let option = document.createElement("option");
+				option.style.fontFamily = fontFamily;
+				option.text = fontFamily;
+				return option;
+
+			}
+
 			function updateFontList(fonts) {
+
 				let control = document.getElementById('fontNames');
 				control.innerHTML = '';
+
 				for (var current of fonts) {
-					let option = document.createElement("option");
-					option.text = current;
-					control.add(option);
+					let encoded = encodeURI(current);
+
+					createCssLinkTag(encoded);
+					
+					control.add(createFontOption(current));
 				}
+
 			}
 
 			document.getElementById('fontname').onkeyup = function (d) {
 
-				if (d.keyCode != 8 && (d.keyCode < 65 || d.keyCode > 90))
+				//console.log(d.keyCode);
+				if (
+					d.keyCode != 8
+					&& d.keyCode != 32
+					&& d.keyCode != 46
+					&& (
+						d.keyCode < 65
+						|| d.keyCode > 90)
+				)
 					return;
 				document.getElementById('fontsPanel').style.display = '';
 				updateFontList(filterFontList(supportedFonts, this.value));

@@ -16,35 +16,36 @@
 	@foreach (var service in Model.StreamService.ViewerCountByService.OrderByDescending(s => s.service))
 	{
 
-		@service.service <text>:</text> <span class="serviceCount" id="@service.service.ToLowerInvariant()Count">@service.count</span>
+		<i class="fab fa-@(service.service == "Mixer" ?  "microsoft" : service.service.ToLowerInvariant() )"></i> <span class="serviceCount" id="@service.service.ToLowerInvariant()Count">@service.count</span>
 
 	}
 
 	Total: <span id="totalCount">@(Model.StreamService.ViewerCountByService.Sum(s => s.count))</span>
 
-		<script src="~/lib/signalr/signalr-client.js"></script>
-		<script src="~/js/streamhub.js"></script>
-		<script>
-				(function () {
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/streamhub.js"></script>
+	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+	<script>
+		(function () {
 
-						const reducer = (accumulator, currentValue) => accumulator + parseInt(currentValue.textContent, 10);
+			const reducer = (accumulator, currentValue) => accumulator + parseInt(currentValue.textContent, 10);
 
-						var hub = new StreamHub();
+			var hub = new StreamHub();
 
-						hub.onViewers = (service, count) => {
+			hub.onViewers = (service, count) => {
 
-								document.getElementById(service + "Count").textContent = count;
+				document.getElementById(service + "Count").textContent = count;
 
-								var currentCounts = document.getElementsByClassName("serviceCount");
-								var elArray = Array.from(currentCounts);
-								document.getElementById("totalCount").textContent = elArray.reduce(reducer, 0);
+				var currentCounts = document.getElementsByClassName("serviceCount");
+				var elArray = Array.from(currentCounts);
+				document.getElementById("totalCount").textContent = elArray.reduce(reducer, 0);
 
-						}
+			}
 
-						hub.start();
+			hub.start();
 
-				})();
-		</script>
+		})();
+	</script>
 
 </body>
 </html>

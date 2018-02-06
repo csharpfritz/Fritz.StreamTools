@@ -8,6 +8,7 @@ using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -117,8 +118,8 @@ namespace Fritz.StreamTools.Controllers
 		}
 
 
-		[Route("followers/goal/preview")]
-		public IActionResult PreviewGoal() {
+		[Route("followers/goal/configuration", Name ="ConfigureGoal")]
+		public IActionResult GoalConfiguration() {
 
 			return View();
 

@@ -5,7 +5,7 @@ using TwitchLib.Events.Services.FollowerService;
 using Xunit;
 using FRITZ = Fritz.StreamTools.Services;
 
-namespace Test.Services.TwitchService
+namespace StreamToolsTests.Services.TwitchService
 {
 
 	public class OnNewFollowers

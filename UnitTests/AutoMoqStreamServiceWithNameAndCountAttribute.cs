@@ -2,7 +2,7 @@
 using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
 
-namespace Test
+namespace StreamToolsTests
 {
 
 	public class AutoMoqStreamServiceWithNameAndCountAttribute : AutoDataAttribute

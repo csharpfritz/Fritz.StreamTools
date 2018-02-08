@@ -3,7 +3,7 @@ using Fritz.StreamTools.TagHelpers;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Xunit;
 
-namespace Test.TagHelpers.SignalrTagHelper
+namespace StreamToolsTests.TagHelpers.SignalrTagHelper
 {
 
 	public class Process

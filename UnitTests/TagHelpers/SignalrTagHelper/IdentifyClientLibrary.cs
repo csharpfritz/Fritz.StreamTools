@@ -6,7 +6,7 @@ using System.Text;
 using Xunit;
 using WEB = Fritz.StreamTools;
 
-namespace Test.TagHelpers.SignalrTagHelper
+namespace StreamToolsTests.TagHelpers.SignalrTagHelper
 {
 
 	public class IdentifyClientLibrary : BaseFixture

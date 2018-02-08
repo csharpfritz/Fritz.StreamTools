@@ -4,7 +4,7 @@ using AutoFixture.Kernel;
 using Fritz.StreamTools.Services;
 using Moq;
 
-namespace Test
+namespace StreamToolsTests
 {
 
 	public class AutoMoqStreamServiceWithNameAndCountCustomization : ICustomization

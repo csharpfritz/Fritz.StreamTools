@@ -1,7 +1,7 @@
 ﻿using Fritz.StreamTools.Services;
 using Xunit;
 
-namespace Test.Services.StreamService
+namespace StreamToolsTests.Services.StreamService
 {
 
 

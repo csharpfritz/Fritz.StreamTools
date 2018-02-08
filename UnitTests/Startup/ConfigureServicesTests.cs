@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace Test.Startup
+namespace StreamToolsTests.Startup
 {
 	
 	public class ConfigureServicesTests

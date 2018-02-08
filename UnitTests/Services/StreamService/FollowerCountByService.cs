@@ -2,7 +2,7 @@
 using System.Linq;
 using Xunit;
 
-namespace Test.Services.StreamService
+namespace StreamToolsTests.Services.StreamService
 {
 
 	public class FollowerCountByService

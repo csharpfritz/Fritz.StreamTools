@@ -12,10 +12,10 @@ using Xunit;
 namespace StreamToolsTests.Startup
 {
 	
-	public class ConfigureServicesTests
+	public class ConfigureServicesShould
 	{
 		[Theory, MemberData(nameof(Configurations))]
-		public void Execute_RegisterStreamServicesWithVariousConfigurations_ReturnExpected(Dictionary<string, string> configurations, Type[] expected)
+		public void RegisterStreamServicesForValidConfigurations(Dictionary<string, string> configurations, Type[] expected)
 		{
 			// arrange
 			var configuration = new ConfigurationBuilder()
@@ -39,14 +39,15 @@ namespace StreamToolsTests.Startup
 		{
 			get
 			{
-				yield return new object[]{ MakeFakeConfiguration("123456", "654321", true), new [] { typeof(TwitchService), typeof(MixerService), typeof(FakeService) } };
-				yield return new object[]{ MakeFakeConfiguration("", "654321", true), new [] { typeof(MixerService), typeof(FakeService) } };
-				yield return new object[]{ MakeFakeConfiguration("", "", true), new [] { typeof(FakeService) } };
-				yield return new object[]{ MakeFakeConfiguration("123456", "654321", false), new [] { typeof(TwitchService), typeof(MixerService) } };
+				yield return new object[]{ MakeStubConfiguration("123456", "", false), new [] { typeof(TwitchService)} };
+				yield return new object[]{ MakeStubConfiguration("", "654321", false), new [] { typeof(MixerService)} };
+				yield return new object[] { MakeStubConfiguration("", "", true), new[] { typeof(FakeService) } };
+				yield return new object[] { MakeStubConfiguration("", "", false), new IStreamService[] { } };
+				yield return new object[]{ MakeStubConfiguration("123456", "654321", true), new [] { typeof(TwitchService), typeof(MixerService), typeof(FakeService) } };
 			}
 		}
 
-		private static Dictionary<string, string> MakeFakeConfiguration(string twitchClientId,
+		private static Dictionary<string, string> MakeStubConfiguration(string twitchClientId,
 			string mixerClientId,
 			bool enableFake)
 		{

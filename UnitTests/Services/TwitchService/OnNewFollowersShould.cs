@@ -8,13 +8,13 @@ using FRITZ = Fritz.StreamTools.Services;
 namespace StreamToolsTests.Services.TwitchService
 {
 
-	public class OnNewFollowers
+	public class OnNewFollowersShould
 	{
 
 		[Theory]
 		[AutoMoqData]
 
-		public void ShouldSetCurrentFollowerCount(
+		public void UpdateCurrentFollowerCount(
 			IConfiguration configuration,
 			ILoggerFactory loggerFactory,
 			int initialFollowers,
@@ -39,7 +39,7 @@ namespace StreamToolsTests.Services.TwitchService
 
 		[Theory]
 		[AutoMoqData]
-		public void ShouldRaiseEventProperly(
+		public void RaiseEventProperly(
 			IConfiguration configuration,
 			ILoggerFactory loggerFactory,
 			int initialFollowers,

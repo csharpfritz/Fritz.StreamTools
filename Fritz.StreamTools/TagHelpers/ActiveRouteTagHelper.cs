@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.TagHelpers
 {
+		/// <summary>
+		/// Will place an "active" class on a html tag when the current route matches the asp-controller and (optional) asp-action attributes. Used
+		/// mainly for Bootstrap navigation item where the active class needs to be on the LI tag and not the A tag.
+		/// </summary>
 		[HtmlTargetElement(Attributes = "is-active-route")]
 		public class ActiveRouteTagHelper : TagHelper
 		{

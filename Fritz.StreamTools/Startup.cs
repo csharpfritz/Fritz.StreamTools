@@ -44,7 +44,6 @@ namespace Fritz.StreamTools
 				app.UseExceptionHandler("/Error");
 			}
 
-			app.UseDefaultFiles();
 			app.UseStaticFiles();
 
       app.UseSignalR(configure =>
@@ -56,7 +55,7 @@ namespace Fritz.StreamTools
 			{
 				routes.MapRoute(
 									name: "default",
-									template: "{controller}/{action=Index}/{id?}");
+									template: "{controller=Home}/{action=Index}/{id?}");
 			});
 		}
 	}

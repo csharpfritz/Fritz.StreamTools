@@ -54,77 +54,66 @@
 				<label>Fill Bar Colors:</label>
 				<div id="bgcolors" class="form-row">
 						<div name="spanBGColor" style="display: inline-block;" class="col-md-3">
-								<input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" value="#0000CC" />
-								<input id="bgblend1" type="number" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
-								<button class="btn btn-danger" onclick="removeColor()" title="Remove this color from the list."><i class="far fa-trash-alt"></i></button>
+								<div class="input-group mb-2">
+										<div class="input-group-prepend">
+												<div class="input-group-text"><input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" value="#0000CC" class="form-control" /></div>
+										</div>
+										<input id="bgblend1" class="form-control" type="number" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
+										<div class="input-group-append">
+												<div class="input-group-text btn btn-danger" onclick="removeColor()" title="Remove this color from the list."><i class="far fa-trash-alt"></i></div>
+										</div>
+								</div>
 						</div>
-						<button class="btn btn-secondary" onclick="addColor()" title="Add another color picker to the end of the list."><i class="fas fa-plus-circle"></i></button>
 				</div>
 		</div>
 </div>
+<div class="row mb-3">
+		<div class="col-sm-12 col-md-12">
+				<button class="btn btn-secondary" onclick="addColor()" title="Add another color picker to the end of the list."><i class="fas fa-plus-circle"></i></button>
+		</div>
+</div>
 
-<button id="preview" class="btn btn-lg btn-primary btn-block">Preview</button>
+<button id="preview" class="btn btn-lg btn-primary btn-block mb-3">Preview</button>
 
 <div class="alert alert-info">
 		<h4 class="alert-heading">Here is your URL:</h4>
 		<p><a id="outputUrl" href="#" target="_blank"></a></p>
 </div>
 
-		@section scripts {
-				<script type="text/javascript">
+@section scripts {
+		<script type="text/javascript">
 <!--
+				var supportedFonts = [];
 		(function () {
 
 			document.getElementById('fontsPanel').style.display = 'none';
 
-			var supportedFonts = [];
-
 			onload();
 
-			LoadPreview();
+			loadPreview();
 
-			document.getElementById("preview").onclick = LoadPreview;
+				document.getElementById("preview").onclick = loadPreview;
 
-			function LoadPreview() {
-
-				var iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
-				let fontName = document.getElementById("fontname").value;
-
-				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
-					alert('Font not supported by Google Fonts');
-					return;
-				}
-
-				var urlTemplate = "/followers/goal/";
-				urlTemplate += `${document.getElementById("goal").value}/`;
-				urlTemplate += `${document.getElementById("caption").value}`;
-				urlTemplate += `?width=${iframeWidth}`;
-				urlTemplate += getBGColors();
-				urlTemplate += getBGBlend();
-				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
-				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
-				urlTemplate += `&fontName=${escape(fontName)}`;
-
-				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
-				console.log(urlTemplate);
-
-				document.getElementById("outputUrl").textContent = urlTemplate;
-				document.getElementById("outputUrl").href = urlTemplate;
-				saveValues();
-
-			};
+				document.getElementById("caption").onchange = loadPreview;
+				document.getElementById("fontname").onchange = loadPreview;
+				document.getElementById("goal").onchange = loadPreview;
+				document.getElementById("current").onchange = loadPreview;
+				document.getElementById("emptyBgColor").onchange = loadPreview;
+				document.getElementById("emptyFontColor").onchange = loadPreview;
+				document.getElementById("bgcolor1").onchange = loadPreview;
+				document.getElementById("bgblend1").onchange = loadPreview;
 
 			function onload() {
 
-				var bgArray = new Array();
+				const bgArray = new Array();
 
 				for (var i = 0; i < localStorage.length; i++) {
 					var key = localStorage.key(i);
-					var item = localStorage.getItem(key);
+					const item = localStorage.getItem(key);
 
 					if (key === 'supportedFonts') {
 
-						var fonts = JSON.parse(item);
+						const fonts = JSON.parse(item);
 						setSupportedFonts(fonts);
 						continue;
 
@@ -145,7 +134,7 @@
 
 				}
 
-				var sortedArray = bgArray.sort();
+				const sortedArray = bgArray.sort();
 
 				for (var i of sortedArray) {
 
@@ -162,24 +151,54 @@
 
 				for (var i of sortedArray) {
 
-						var el = document.getElementById(i);
-						if (el) {
-							el.value = localStorage.getItem(i);
-						}
+					var el = document.getElementById(i);
+					if (el) {
+						el.value = localStorage.getItem(i);
+					}
 
 				}
 
 				if (supportedFonts.length == 0)
 					googleFontsAdapter(setSupportedFontsFromApi);
 
-			}
+				}
+		})();
+
+			function loadPreview() {
+
+				const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
+				const fontName = document.getElementById("fontname").value;
+
+				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
+					alert('Font not supported by Google Fonts');
+					return;
+				}
+
+				var urlTemplate = "/followers/goal/";
+				urlTemplate += `${document.getElementById("goal").value}/`;
+				urlTemplate += `${document.getElementById("caption").value}`;
+				urlTemplate += `?width=${iframeWidth}`;
+				urlTemplate += getBgColors();
+				urlTemplate += getBgBlend();
+				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
+				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
+				urlTemplate += `&fontName=${escape(fontName)}`;
+
+				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
+				console.log(urlTemplate);
+
+				document.getElementById("outputUrl").textContent = urlTemplate;
+				document.getElementById("outputUrl").href = urlTemplate;
+				saveValues();
+
+			};
 
 			function saveValues() {
 
 				localStorage.clear();
 
-				var elements = Array.from(document.getElementsByTagName("input"));
-				for (var el of elements) {
+				const elements = Array.from(document.getElementsByTagName("input"));
+				for (let el of elements) {
 
 					console.log(`Saving value: ${el.id}: ${el.value}`);
 
@@ -192,12 +211,12 @@
 			}
 
 			// build the bgcolors parameter
-			function getBGColors() {
-				var spans = document.getElementsByName("spanBGColor");
+			function getBgColors() {
+				const spans = document.getElementsByName("spanBGColor");
 				var result = "";
 				if (spans) {
-					for (var i = 0; i < spans.length; i++) {
-						result += `,${escape(spans[i].children[0].value)}`;
+					for (let i = 0; i < spans.length; i++) {
+							result += `,${escape(spans[i].getElementsByTagName('input')[0].value)}`;
 					}
 					result = `&bgcolors=${result.substr(1)}`;
 				}
@@ -205,12 +224,12 @@
 			}
 
 			// build the bgblend parameter
-			function getBGBlend() {
-				var spans = document.getElementsByName("spanBGColor");
+			function getBgBlend() {
+					const spans = document.getElementsByName("spanBGColor");
 				var result = "";
 				if (spans) {
-					for (var i = 0; i < spans.length; i++) {
-						result += `,${spans[i].children[1].value}`;
+					for (let i = 0; i < spans.length; i++) {
+							result += `,${spans[i].getElementsByTagName('input')[1].value}`;
 					}
 					result = `&bgblend=${result.substr(1)}`;
 				}
@@ -219,30 +238,10 @@
 
 			// retrieve the supported font names from google api
 			function googleFontsAdapter(setter) {
-				@*Reference for the HTTP in vanilla JS https://www.sitepoint.com/guide-vanilla-ajax-without-jquery/*@
-				let api = 'https://www.googleapis.com/webfonts/v1/webfonts?key=@ViewBag.GoogleFontsApiKey';
-
 				@if (string.IsNullOrEmpty(ViewBag.GoogleFontsApiKey))
 				{
 					@:setter([{ 'family': 'Abel' }, { 'family': 'Abril Fatface' }, { 'family': 'Acme' }, { 'family': 'Alegreya' }, { 'family': 'Alex Brush' }, { 'family': 'Amaranth' }, { 'family': 'Amatic SC' }, { 'family': 'Anton' }, { 'family': 'Arbutus Slab' }, { 'family': 'Architects Daughter' }, { 'family': 'Archivo' }, { 'family': 'Archivo Black' }, { 'family': 'Arima Madurai' }, { 'family': 'Asap' }, { 'family': 'Bad Script' }, { 'family': 'Baloo Bhaina' }, { 'family': 'Bangers' }, { 'family': 'Berkshire Swash' }, { 'family': 'Bitter' }, { 'family': 'Boogaloo' }, { 'family': 'Bree Serif' }, { 'family': 'Bungee Shade' }, { 'family': 'Cantata One' }, { 'family': 'Catamaran' }, { 'family': 'Caveat' }, { 'family': 'Caveat Brush' }, { 'family': 'Ceviche One' }, { 'family': 'Chewy' }, { 'family': 'Contrail One' }, { 'family': 'Crete Round' }, { 'family': 'Dancing Script' }, { 'family': 'Exo 2' }, { 'family': 'Fascinate' }, { 'family': 'Francois One' }, { 'family': 'Freckle Face' }, { 'family': 'Fredoka One' }, { 'family': 'Gloria Hallelujah' }, { 'family': 'Gochi Hand' }, { 'family': 'Great Vibes' }, { 'family': 'Handlee' }, { 'family': 'Inconsolata' }, { 'family': 'Indie Flower' }, { 'family': 'Kaushan Script' }, { 'family': 'Lalezar' }, { 'family': 'Lato' }, { 'family': 'Libre Baskerville' }, { 'family': 'Life Savers' }, { 'family': 'Lobster' }, { 'family': 'Lora' }, { 'family': 'Luckiest Guy' }, { 'family': 'Marcellus SC' }, { 'family': 'Merriweather' }, { 'family': 'Merriweather Sans' }, { 'family': 'Monoton' }, { 'family': 'Montserrat' }, { 'family': 'News Cycle' }, { 'family': 'Nothing You Could Do' }, { 'family': 'Noto Serif' }, { 'family': 'Oleo Script Swash Caps' }, { 'family': 'Open Sans' }, { 'family': 'Open Sans Condensed' }, { 'family': 'Oranienbaum' }, { 'family': 'Oswald' }, { 'family': 'PT Sans' }, { 'family': 'PT Sans Narrow' }, { 'family': 'PT Serif' }, { 'family': 'Pacifico' }, { 'family': 'Patrick Hand' }, { 'family': 'Peralta' }, { 'family': 'Permanent Marker' }, { 'family': 'Philosopher' }, { 'family': 'Play' }, { 'family': 'Playfair Display' }, { 'family': 'Playfair Display SC' }, { 'family': 'Poiret One' }, { 'family': 'Press Start 2P' }, { 'family': 'Prosto One' }, { 'family': 'Quattrocento' }, { 'family': 'Questrial' }, { 'family': 'Quicksand' }, { 'family': 'Raleway' }, { 'family': 'Rancho' }, { 'family': 'Righteous' }, { 'family': 'Roboto' }, { 'family': 'Roboto Condensed' }, { 'family': 'Roboto Slab' }, { 'family': 'Rubik' }, { 'family': 'Rye' }, { 'family': 'Satisfy' }, { 'family': 'Shadows Into Light' }, { 'family': 'Shojumaru' }, { 'family': 'Sigmar One' }, { 'family': 'Skranji' }, { 'family': 'Slabo 27px' }, { 'family': 'Special Elite' }, { 'family': 'Tinos' }, { 'family': 'Ultra' }, { 'family': 'UnifrakturMaguntia' }, { 'family': 'VT323' }, { 'family': 'Yanone Kaffeesatz' }]);
 					@:return;
-				}
-
-				let xhr = new XMLHttpRequest();
-				xhr.open('GET', api);
-				xhr.send(null);
-
-				console.log('Calling google fonts api');
-
-				xhr.onreadystatechange = function() {
-					let DONE = 4; // readyState 4 means the request is done.
-					let OK = 200; // status 200 is a successful return.
-					if (xhr.readyState === DONE) {
-						if (xhr.status === OK)
-							setter(JSON.parse(xhr.responseText).items); // 'This is the returned text.'
-						else
-							console.log('Error: ' + xhr.status); // An error occurred during the request.
-					}
 				}
 			}
 
@@ -273,7 +272,7 @@
 				if (document.getElementById(`font-${encoded}`))
 					return;
 
-				let l = document.createElement('link');
+				const l = document.createElement('link');
 				l.type = 'text/css';
 				l.rel = 'stylesheet';
 				l.id = `font-${encoded}`;
@@ -285,7 +284,7 @@
 
 			function createFontOption(fontFamily) {
 
-				let option = document.createElement("option");
+				const option = document.createElement("option");
 				option.style.fontFamily = fontFamily;
 				option.text = fontFamily;
 				return option;
@@ -294,11 +293,11 @@
 
 			function updateFontList(fonts) {
 
-				let control = document.getElementById('fontNames');
+				const control = document.getElementById('fontNames');
 				control.innerHTML = '';
 
-				for (var current of fonts) {
-					let encoded = encodeURI(current);
+				for (let current of fonts) {
+					const encoded = encodeURI(current);
 
 					createCssLinkTag(encoded);
 
@@ -329,54 +328,57 @@
 				document.getElementById('fontsPanel').style.display = 'none';
 				document.getElementById('fontname').value = this.value;
 
-			};
+				};
 
-		})();
-
-		function addColor() {
-			addColor(null);
-		}
-
-		function addColor(key) {
-			var spans = document.getElementsByName("spanBGColor");
+				function addColor(key) {
+					key = key || null;
+			const spans = document.getElementsByName("spanBGColor");
 			if (spans) {
-				var addButton = spans[spans.length - 1].nextSibling;
-				var newNode = spans[spans.length - 1].cloneNode(true);
-				newNode.children[0].id = key ? `bgcolor${key}` : `bgcolor${spans.length + 1}`;
-				newNode.children[1].id = key ? `bgblend${key}` : `bgblend${spans.length + 1}`;
+				const addButton = spans[spans.length - 1].nextSibling,
+					newNode = spans[spans.length - 1].cloneNode(true),
+					bgColorField = newNode.getElementsByTagName('input')[0],
+					bgBlendField = newNode.getElementsByTagName('input')[0];
+
+				bgColorField.id = key ? `bgcolor${key}` : `bgcolor${spans.length + 1}`;
+				bgColorField.onchange = loadPreview;
+				bgBlendField.id = key ? `bgblend${key}` : `bgblend${spans.length + 1}`;
+				bgBlendField.onchange = loadPreview;
+
 				addButton.parentNode.insertBefore(newNode, addButton);
-				newNode.getElementsByTagName("button")[0].onclick = removeColor;
+				newNode.getElementsByClassName("input-group-text btn btn-danger")[0].onclick = removeColor;
+				loadPreview();
 			}
 		}
 
 		function removeColor() {
+				if (this === window) return;
 
-			if (!this.parentNode) return;
-
-			this.parentNode.remove();
-			renumberColors();
-
+				this.closest('[name=spanBGColor]').remove();
+				renumberColors();
+				loadPreview();
 		}
 
 		function renumberColors() {
-			var spans = document.getElementsByName("spanBGColor");
-			for (var i = 0; i < spans.length; i++) {
-				var el = spans[i].firstChild;
-				spans[i].children[0].id = `bgcolor${i + 1}`;
-				spans[i].children[1].id = `bgblend${i + 1}`;
+			const spans = document.getElementsByName("spanBGColor");
+			for (let i = 0; i < spans.length; i++) {
+				spans[i].getElementsByTagName('input')[0].id = `bgcolor${i + 1}`;
+				spans[i].getElementsByTagName('input')[1].id = `bgblend${i + 1}`;
 			}
 		}
 
+
+
+
 //-->
-				</script>
-				}
+		</script>
+}
 
 @section styles {
-				<style>
+		<style>
 
-					#bgcolors input[type='number'] {
-						width: 4em;
-					}
-
-				</style>
+				#bgcolors .input-group-prepend .input-group-text {
+						background-color: inherit;
+						color: inherit;
+				}
+		</style>
 }

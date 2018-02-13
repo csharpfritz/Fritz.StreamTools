@@ -28,36 +28,38 @@
 </div>
 
 <div class="row">
-		<div class="col-md-6 mb-3">
+		<div class="col-md-6 mb-3 form-group">
 				<label for="goal">Goal:</label>
 				<input class="form-control" type="number" id="goal" value="100" />
 		</div>
-		<div class="col-md-6 mb-3">
+		<div class="col-md-6 mb-3 form-group">
 				<label for="current">Test Count:</label>
 				<input class="form-control" type="number" id="current" value="85" />
 		</div>
 </div>
 
 <div class="row">
-		<div class="col-md-6 mb-3">
+
+		<div class="col-md-6 mb-3 form-inline">
 				<label for="emptyBgColor">Empty Bg Color:</label>
-				<input class="form-control" type="color" id="emptyBgColor" value="#CCCCCC" />
+				<input type="color" id="emptyBgColor" value="#CCCCCC" />
 		</div>
-		<div class="col-md-6 mb-3">
+		<div class="col-md-6 mb-3 form-inline">
 				<label for="emptyFontColor">Empty Font Color:</label>
-				<input class="form-control" type="color" id="emptyFontColor" />
-		</div>
+				<input type="color" id="emptyFontColor" />
+
+    </div>
 </div>
 
 <div class="row">
-		<div class="col-md-6 mb-3">
+		<div class="col-md-12 mb-3">
 				<label>Fill Bar Colors:</label>
-				<div id="bgcolors">
-						<span name="spanBGColor">
+				<div id="bgcolors" class="form-row">
+						<div name="spanBGColor" style="display: inline-block;" class="col-md-3">
 								<input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" value="#0000CC" />
-								<input id="bgblend1" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
+								<input id="bgblend1" type="number" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
 								<button class="btn btn-danger" onclick="removeColor()" title="Remove this color from the list."><i class="far fa-trash-alt"></i></button>
-						</span>
+						</div>
 						<button class="btn btn-secondary" onclick="addColor()" title="Add another color picker to the end of the list."><i class="fas fa-plus-circle"></i></button>
 				</div>
 		</div>
@@ -370,3 +372,13 @@
 //-->
 				</script>
 				}
+
+@section styles {
+				<style>
+
+					#bgcolors input[type='number'] {
+						width: 4em;
+					}
+
+				</style>
+}

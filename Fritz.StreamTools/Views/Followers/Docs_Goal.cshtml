@@ -1,41 +1,25 @@
-﻿
-@{
-    Layout = null;
-}
+﻿<div class="py-5 text-center">
+		<h2>The Followers Goal</h2>
+		<p class="lead">
+				This is a simple horizontal meter that fills as you get more followers.
+				Use the following URL syntax:
+		</p>
+		<div class="highlight">
+				<code>/followers/goal/{goal_value}/{caption}</code>
+		</div>
+</div>
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Followers Goal</title>
-</head>
-<body>
-
-	<h1>The Followers Goal</h1>
-	<a href="/">Back to home</a>
-
-	<p>
-		This is a simple horizontal meter that fills as you get more followers.
-		Use the following URL syntax:
-	</p>
-
-	<code>
-		/followers/goal/{goal_value}/{caption}
-	</code>
-
-	<dl>
+<dl>
 		<dt>goal_value</dt>
 		<dd>The integer value of the goal number of followers</dd>
 		<dt>caption</dt>
 		<dd>The caption to display that defines the goal</dd>
-	</dl>
+</dl>
 
-	<h3>Other Parameters</h3>
+<h4>Other Parameters</h4>
+<p>Other parameters can be passed on the querystring using standard name-value syntax</p>
 
-	Other parameters can be passed on the querystring using standard name-value syntax
-
-	<dl>
+<dl>
 		<dt>width</dt>
 		<dd>The width in pixels of the bar</dd>
 
@@ -58,16 +42,16 @@
 		<dd>Blended Blue to Green : <a href="/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=1,1">/followers/goal/400/Example%20Blue%20to%20Green?width=400&amp;current=377&amp;bgcolors=blue,green&amp;bgblend=1,1</a></dd>
 		<dd>Stepped Blue to Green : <a href="/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=0,0">/followers/goal/400/Example%20Blue%20to%20Green?width=400&amp;current=377&amp;bgcolors=blue,green&amp;bgblend=0,0</a></dd>
 		<dd>Smooth step Blue to Green : <a href="/followers/goal/400/Example%20Blue%20to%20Green?width=400&current=377&bgcolors=blue,green&bgblend=0.1,0.1">/followers/goal/400/Example%20Blue%20to%20Green?width=400&amp;current=377&amp;bgcolors=blue,green&amp;bgblend=0.1,0.1</a></dd>
-	</dl>
+</dl>
 
-	<h3>Color Configuration</h3>
+<h3>Color Configuration</h3>
 
-	<p>
+<p>
 		You can configure the colors of the goal bar by setting the following configuration options in appsettings.json
 		OR setting the appropriate environment variable
-	</p>
+</p>
 
-	<dl>
+<dl>
 		<dt>FollowerGoal__EmptyBackgroundColor</dt>
 		<dd>Sets the background color of the empty bar</dd>
 		<dt>FollowerGoal__EmptyFontColor</dt>
@@ -80,8 +64,4 @@
 		<dd>Sets the required color blends for the filled section of the bar</dd>
 		<dt>FollowerGoal__FontName</dt>
 		<dd>Sets an optional Google font name for the caption</dd>
-	</dl>
-
-
-</body>
-</html>
+</dl>

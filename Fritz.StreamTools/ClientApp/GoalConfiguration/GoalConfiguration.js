@@ -37,7 +37,7 @@
 			document.getElementById("outputUrl").href = urlTemplate;
 			saveValues();
 
-		};
+		}
 
 		function onload() {
 
@@ -146,9 +146,9 @@
 		function googleFontsAdapter(setter) {
 			/* Reference
 			for the HTTP in vanilla JS https: //www.sitepoint.com/guide-vanilla-ajax-without-jquery/*/
-				let api = 'https://www.googleapis.com/webfonts/v1/webfonts?key='+GoogleFontsApiKey;
+			let api = 'https://www.googleapis.com/webfonts/v1/webfonts?key=' + GoogleFontsApiKey;
 
-			if(GoogleFontsApiKey) {
+			if (GoogleFontsApiKey) {
 				setter([{
 					'family': 'Aclonica'
 				}, {

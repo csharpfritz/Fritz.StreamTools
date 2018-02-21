@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
@@ -23,13 +24,14 @@ namespace Fritz.StreamTools.Services
 		const string API_URL = "https://mixer.com/api/v1/";
 		const string WS_URL = "wss://constellation.mixer.com";
 		const int RECONNECT_DELAY = 10;
+		const string TOKEN_FILENAME = "fritz_streamtools_mixer_token.json";
 
 		ClientWebSocket _webSocket;
 		IConfiguration _config;
 		HttpClient _client;
 		IHostingEnvironment _hosting;
 
-		public ILogger Logger { get; }
+		public ILogger _logger { get; }
 
 		OAuthToken _token;
 
@@ -53,12 +55,21 @@ namespace Fritz.StreamTools.Services
 			_hosting = hosting;
 			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
-			this.Logger = loggerFactory.CreateLogger("StreamServices");
+			_logger = loggerFactory.CreateLogger("MixerService");
 		}
 
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			await DoShortCodeAuth();
+			_token = LoadToken();
+			if (_token == null)
+			{
+				await DoShortCodeAuth();
+			}
+
+			if(_token != null)
+			{
+				var _ = Task.Run(TokenRefresher);
+			}
 
 			//await GetChannelInfo();
 			//await Connect(cancellationToken);
@@ -210,7 +221,7 @@ namespace Fritz.StreamTools.Services
 			if (data["numFollowers"] != null && data["numFollowers"].Value<int>() != _numberOfFollowers)
 			{
 				Interlocked.Exchange(ref _numberOfFollowers, data["numFollowers"].Value<int>());
-				Logger.LogInformation($"New Followers on Mixer, new total: {_numberOfFollowers}");
+				_logger.LogInformation($"New Followers on Mixer, new total: {_numberOfFollowers}");
 
 				Updated?.Invoke(this, new ServiceUpdatedEventArgs
 				{
@@ -281,7 +292,7 @@ namespace Fritz.StreamTools.Services
 
 				if (string.IsNullOrEmpty(authCode))
 				{
-					Logger.LogError($"Mixer auth failed: {result.StatusCode}");
+					_logger.LogError($"Mixer auth failed: {result.StatusCode}");
 					return false;
 				}
 
@@ -300,48 +311,51 @@ namespace Fritz.StreamTools.Services
 				_token = OAuthToken.Parse(json);
 				StoreToken(_token);
 
-				Logger.LogInformation($"Mixer auth succeeded. Access token valid until {_token.ValidUntil} UTC");
-
-
-				var _ = Task.Run(async () =>
-				{
-					while(true)
-					{
-						// Refresh token before it expires
-						var delay = TimeSpan.FromSeconds((int)((_token.ValidUntil - DateTime.UtcNow).TotalSeconds * .9));
-						Logger.LogInformation($"Refreshing mixer access_token in {delay.ToString()}");
-						await Task.Delay(delay);
-
-						// Refresh token
-						var refreshData = new
-						{
-							grant_type = "refresh_token",
-							refresh_token = _token.RefreshToken,
-							client_id = _config["StreamServices:Mixer:ClientId"],
-							client_secret = _config["StreamServices:Mixer:ClientSecret"]
-						};
-						content = new StringContent(JsonConvert.SerializeObject(refreshData), Encoding.UTF8, "application/json");
-						result = await client.PostAsync("oauth/token", content);
-						result.EnsureSuccessStatusCode();
-						json = await result.Content.ReadAsStringAsync();
-						_token = OAuthToken.Parse(json);
-						StoreToken(_token);
-
-						Logger.LogInformation($"Mixer access_token refreshed");
-					}
-				});
+				_logger.LogInformation($"Mixer auth succeeded. Access token valid until {_token.ValidUntil} UTC");
 
 				return true;
 			}
 			catch (Exception e)
 			{
-				Logger.LogError(e, "Mixer shortcode auth failed");
+				_logger.LogError(e, "Mixer shortcode auth failed");
 				return false;
 			}
 		}
 
-		private void StoreToken(OAuthToken token)
+		private async Task TokenRefresher()
 		{
+			try
+			{
+				while (true)
+				{
+					// Refresh token before it expires
+					var delay = TimeSpan.FromSeconds((int)((_token.ValidUntil - DateTime.UtcNow).TotalSeconds * .9));
+					_logger.LogInformation($"Refreshing mixer access_token in {delay.ToString()}");
+					await Task.Delay(delay);
+
+					// Refresh token
+					var refreshData = new
+					{
+						grant_type = "refresh_token",
+						refresh_token = _token.RefreshToken,
+						client_id = _config["StreamServices:Mixer:ClientId"],
+						client_secret = _config["StreamServices:Mixer:ClientSecret"]
+					};
+					var content = new StringContent(JsonConvert.SerializeObject(refreshData), Encoding.UTF8, "application/json");
+					var result = await _client.PostAsync("oauth/token", content);
+					result.EnsureSuccessStatusCode();
+					var json = await result.Content.ReadAsStringAsync();
+					_token = OAuthToken.Parse(json);
+					StoreToken(_token);
+
+					_logger.LogInformation($"Mixer access_token refreshed");
+				}
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, "Mixer access_token refreshed failed. You need to restart app to authenticate");
+				_token = null;
+			}
 		}
 
 		private class OAuthToken
@@ -363,11 +377,47 @@ namespace Fritz.StreamTools.Services
 				ValidUntil = DateTime.UtcNow.AddSeconds(expiresIn);
 			}
 
-			public string AccessToken { get; private set; }
-			public DateTime ValidUntil { get; private set; }
-			public string RefreshToken { get; private set; }
+			public string AccessToken { get; set; }
+			public DateTime ValidUntil { get; set; }
+			public string RefreshToken { get; set; }
 		}
 
-#endregion
+		private void StoreToken(OAuthToken token)
+		{
+			var filename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), TOKEN_FILENAME);
+
+			try
+			{
+				var json = JsonConvert.SerializeObject(_token, Formatting.Indented);
+				File.WriteAllText(filename, json);
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, "Error saving {0}", filename);
+			}
+		}
+
+		private OAuthToken LoadToken()
+		{
+			var filename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), TOKEN_FILENAME);
+			OAuthToken token = null;
+
+			try
+			{
+				if (File.Exists(filename))
+				{
+					var json = File.ReadAllText(filename);
+					token = JsonConvert.DeserializeObject<OAuthToken>(json);
+					_logger.LogInformation("Loaded token from {0}", filename);
+				}
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, "Error loading {0}", filename);
+			}
+			return token;
+		}
+
+		#endregion
 	}
 }

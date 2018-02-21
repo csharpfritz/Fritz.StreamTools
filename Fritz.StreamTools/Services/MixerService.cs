@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,8 +27,11 @@ namespace Fritz.StreamTools.Services
 		ClientWebSocket _webSocket;
 		IConfiguration _config;
 		HttpClient _client;
+		IHostingEnvironment _hosting;
 
 		public ILogger Logger { get; }
+
+		OAuthToken _token;
 
 		int _nextCommandId;
 		int _channelId;
@@ -41,22 +46,26 @@ namespace Fritz.StreamTools.Services
 
 		public string Name { get { return "Mixer"; } }
 
-		public MixerService(IConfiguration config, ILoggerFactory loggerFactory)
+		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IHostingEnvironment hosting = null)
 		{
 			_shutdownRequested = new CancellationTokenSource();
 			_config = config;
+			_hosting = hosting;
 			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
+			_client.DefaultRequestHeaders.Add("Accept", "application/json");
 			this.Logger = loggerFactory.CreateLogger("StreamServices");
 		}
 
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			await GetChannelInfo();
-			await Connect(cancellationToken);
+			await DoShortCodeAuth();
 
-			Logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
+			//await GetChannelInfo();
+			//await Connect(cancellationToken);
 
-			var _ = Task.Factory.StartNew(MixerUpdater);
+			//Logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
+
+			//var _ = Task.Factory.StartNew(MixerUpdater);
 		}
 
 		public Task StopAsync(CancellationToken cancellationToken)
@@ -223,6 +232,142 @@ namespace Fritz.StreamTools.Services
 				}
 			}
 		}
-	}
 
+		#region OAuth
+
+		private async Task<bool> DoShortCodeAuth()
+		{
+			var client = _client;
+
+			try
+			{
+				// Send short code request to mixer api
+				var data = new
+				{
+					client_id = _config["StreamServices:Mixer:ClientId"],
+					client_secret = _config["StreamServices:Mixer:ClientSecret"],
+					scope = ""
+				};
+				var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+				var result = await client.PostAsync("oauth/shortcode", content);
+				var json = await result.Content.ReadAsStringAsync();
+				var doc = JObject.Parse(json);
+
+				var code = doc["code"].Value<string>();
+				var handle = doc["handle"].Value<string>();
+				var expiresIn = doc["expires_in"].Value<int>();
+				var expireTime = DateTime.UtcNow + TimeSpan.FromSeconds(expiresIn);
+
+				// Show code to user
+				var prevColor = Console.ForegroundColor;
+				Console.ForegroundColor = ConsoleColor.Cyan;
+				Console.WriteLine($"Go to 'https://mixer.com/go' and enter code {code} within {expiresIn} seconds");
+				Console.ForegroundColor = prevColor;
+
+				// Poll mixer api for user accept, and get auth code
+				string authCode = null;
+				while(expireTime > DateTime.UtcNow)
+				{
+					await Task.Delay(500);
+					result = await client.GetAsync($"oauth/shortcode/check/{handle}");
+					if(result.StatusCode == System.Net.HttpStatusCode.OK)
+					{
+						json = await result.Content.ReadAsStringAsync();
+						doc = JObject.Parse(json);
+						authCode = doc["code"].Value<string>();
+						break;
+					}
+				}
+
+				if (string.IsNullOrEmpty(authCode))
+				{
+					Logger.LogError($"Mixer auth failed: {result.StatusCode}");
+					return false;
+				}
+
+				// Call mixer token endpoint to login
+				var authData = new
+				{
+					grant_type = "authorization_code",
+					client_id = _config["StreamServices:Mixer:ClientId"],
+					client_secret = _config["StreamServices:Mixer:ClientSecret"],
+					code = authCode
+				};
+				content = new StringContent(JsonConvert.SerializeObject(authData), Encoding.UTF8, "application/json");
+				result = await client.PostAsync("oauth/token", content);
+				result.EnsureSuccessStatusCode();
+				json = await result.Content.ReadAsStringAsync();
+				_token = OAuthToken.Parse(json);
+				StoreToken(_token);
+
+				Logger.LogInformation($"Mixer auth succeeded. Access token valid until {_token.ValidUntil} UTC");
+
+
+				var _ = Task.Run(async () =>
+				{
+					while(true)
+					{
+						// Refresh token before it expires
+						var delay = TimeSpan.FromSeconds((int)((_token.ValidUntil - DateTime.UtcNow).TotalSeconds * .9));
+						Logger.LogInformation($"Refreshing mixer access_token in {delay.ToString()}");
+						await Task.Delay(delay);
+
+						// Refresh token
+						var refreshData = new
+						{
+							grant_type = "refresh_token",
+							refresh_token = _token.RefreshToken,
+							client_id = _config["StreamServices:Mixer:ClientId"],
+							client_secret = _config["StreamServices:Mixer:ClientSecret"]
+						};
+						content = new StringContent(JsonConvert.SerializeObject(refreshData), Encoding.UTF8, "application/json");
+						result = await client.PostAsync("oauth/token", content);
+						result.EnsureSuccessStatusCode();
+						json = await result.Content.ReadAsStringAsync();
+						_token = OAuthToken.Parse(json);
+						StoreToken(_token);
+
+						Logger.LogInformation($"Mixer access_token refreshed");
+					}
+				});
+
+				return true;
+			}
+			catch (Exception e)
+			{
+				Logger.LogError(e, "Mixer shortcode auth failed");
+				return false;
+			}
+		}
+
+		private void StoreToken(OAuthToken token)
+		{
+		}
+
+		private class OAuthToken
+		{
+			public static OAuthToken Parse(string json)
+			{
+				var doc = JToken.Parse(json);
+				return new OAuthToken
+				{
+					AccessToken = doc["access_token"].Value<string>(),
+					RefreshToken = doc["refresh_token"].Value<string>(),
+					ValidUntil = DateTime.UtcNow.AddSeconds(doc["expires_in"].Value<int>())
+				};
+			}
+
+			public void Update(string newAccessToken, int expiresIn)
+			{
+				AccessToken = newAccessToken;
+				ValidUntil = DateTime.UtcNow.AddSeconds(expiresIn);
+			}
+
+			public string AccessToken { get; private set; }
+			public DateTime ValidUntil { get; private set; }
+			public string RefreshToken { get; private set; }
+		}
+
+#endregion
+	}
 }

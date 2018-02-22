@@ -111,7 +111,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 			catch (Exception e)
 			{
-				_logger.LogError(e, "Connection to mixer chat failed");
+				_logger.LogError("Connection to mixer chat failed: {0}", e.Message);
 				return false;
 			}
 		}

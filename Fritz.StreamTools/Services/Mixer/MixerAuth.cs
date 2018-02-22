@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
-using System.Threading;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +19,6 @@ namespace Fritz.StreamTools.Services.Mixer
 		string AccessToken { get; }
 
 		Task<bool> DoShortCodeAuthAsync();
-		void EnsureTokenRefresherStarted();
 		Task RefreshTokenIfNeeded();
 	}
 
@@ -33,15 +32,12 @@ namespace Fritz.StreamTools.Services.Mixer
 		IConfiguration _config;
 		ILogger _logger;
 		HttpClient _client;
-		Task _tokenRefresherTask;
-		CancellationToken _shutdownRequested;
 
-		public MixerAuth(IConfiguration config,  ILoggerFactory loggerFactory, HttpClient client, CancellationToken shutdown)
+		public MixerAuth(IConfiguration config,  ILoggerFactory loggerFactory, HttpClient client)
 		{
 			_config = config;
 			_logger = loggerFactory.CreateLogger<MixerAuth>();
 			_client = client;
-			_shutdownRequested = shutdown;
 
 			_token = LoadToken();
 		}
@@ -140,57 +136,6 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		public void Stop()
-		{
-
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public void EnsureTokenRefresherStarted()
-		{
-			// Start automaticly refreshing access_token
-			if (_tokenRefresherTask == null) _tokenRefresherTask = Task.Run(TokenRefresher);
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		private async Task TokenRefresher()
-		{
-			try
-			{
-				while (!_shutdownRequested.IsCancellationRequested)
-				{
-					// Refresh token before it expires
-					var delay = TimeSpan.FromSeconds((int)((_token.ValidUntil - DateTime.UtcNow).TotalSeconds * .9));
-					if (delay.TotalSeconds < 0) delay = TimeSpan.Zero;
-					if (delay != TimeSpan.Zero)
-					{
-						_logger.LogInformation($"Refreshing mixer access_token in {delay.ToString()}");
-						await Task.Delay(delay, _shutdownRequested);
-					}
-
-					await RefreshToken();
-				}
-			}
-			catch (OperationCanceledException)
-			{
-				// Shutdown requested
-			}
-			catch (Exception e)
-			{
-				_logger.LogError(e, "Mixer access_token refreshed failed. You need to restart app to authenticate");
-				_token = null;
-			}
-
-			_tokenRefresherTask = null;
-		}
-
 		private async Task RefreshToken()
 		{
 			// Refresh token
@@ -210,6 +155,10 @@ namespace Fritz.StreamTools.Services.Mixer
 				_token = OAuthToken.Parse(json);
 				StoreToken(_token);
 			}
+
+			// Update shared HttpClient with new token
+			// NOTE: Can we actually do this ??? Time will tell
+			_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token.AccessToken);
 
 			_logger.LogInformation("Mixer access_token refreshed");
 		}

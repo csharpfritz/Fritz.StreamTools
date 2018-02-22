@@ -50,6 +50,8 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			_myUserId = userId;
 
+			await _auth.RefreshTokenIfNeeded();
+
 			// Get chat authkey and chat endpoints
 			var response = await _client.GetStringAsync($"chats/{channelId}");
 			var doc = JToken.Parse(response);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Services.Mixer;
@@ -43,7 +44,7 @@ namespace Fritz.StreamTools.Services
 			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-			_auth = auth ?? new MixerAuth(config, loggerFactory, _client, _shutdownRequested.Token);
+			_auth = auth ?? new MixerAuth(config, loggerFactory, _client);
 			_live = live ?? new MixerLive(config, loggerFactory, _auth, _client, _shutdownRequested.Token);
 			_chat = chat ?? new MixerChat(config, loggerFactory, _auth, _client, _shutdownRequested.Token);
 		}
@@ -66,9 +67,8 @@ namespace Fritz.StreamTools.Services
 			}
 			if(_auth.AccessToken != null)
 			{
-				_auth.EnsureTokenRefresherStarted();
 				await _auth.RefreshTokenIfNeeded();
-				_client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_auth.AccessToken}");
+				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _auth.AccessToken);
 			}
 
 			// Get our channel information
@@ -147,6 +147,8 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		async Task GetChannelInfo()
 		{
+			await _auth.RefreshTokenIfNeeded();
+
 			var channel = _config["StreamServices:Mixer:Channel"];
 			var response = JObject.Parse(await _client.GetStringAsync($"channels/{channel}?fields=id,userId,numFollowers,viewersCurrent"));
 			_channelId = response["id"].Value<int>();

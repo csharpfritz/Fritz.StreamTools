@@ -67,6 +67,7 @@ namespace Fritz.StreamTools.Services
 			if(_auth.AccessToken != null)
 			{
 				_auth.EnsureTokenRefresherStarted();
+				await _auth.RefreshTokenIfNeeded();
 				_client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_auth.AccessToken}");
 			}
 

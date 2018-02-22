@@ -20,6 +20,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		Task<bool> DoShortCodeAuthAsync();
 		void EnsureTokenRefresherStarted();
+		Task RefreshTokenIfNeeded();
 	}
 
 	public class MixerAuth : IMixerAuth
@@ -174,25 +175,7 @@ namespace Fritz.StreamTools.Services.Mixer
 						await Task.Delay(delay, _shutdownRequested);
 					}
 
-					// Refresh token
-					_logger.LogInformation("Refreshing access_token");
-					var refreshData = new
-					{
-						grant_type = "refresh_token",
-						refresh_token = _token.RefreshToken,
-						client_id = _config["StreamServices:Mixer:ClientId"],
-						client_secret = _config["StreamServices:Mixer:ClientSecret"]
-					};
-					var result = await _client.PostAsync("oauth/token", new JsonContent(refreshData));
-					result.EnsureSuccessStatusCode();
-					var json = await result.Content.ReadAsStringAsync();
-					lock (_tokenLock)
-					{
-						_token = OAuthToken.Parse(json);
-						StoreToken(_token);
-					}
-
-					_logger.LogInformation("Mixer access_token refreshed");
+					await RefreshToken();
 				}
 			}
 			catch (OperationCanceledException)
@@ -206,6 +189,41 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 
 			_tokenRefresherTask = null;
+		}
+
+		private async Task RefreshToken()
+		{
+			// Refresh token
+			_logger.LogInformation("Refreshing access_token");
+			var refreshData = new
+			{
+				grant_type = "refresh_token",
+				refresh_token = _token.RefreshToken,
+				client_id = _config["StreamServices:Mixer:ClientId"],
+				client_secret = _config["StreamServices:Mixer:ClientSecret"]
+			};
+			var result = await _client.PostAsync("oauth/token", new JsonContent(refreshData));
+			result.EnsureSuccessStatusCode();
+			var json = await result.Content.ReadAsStringAsync();
+			lock (_tokenLock)
+			{
+				_token = OAuthToken.Parse(json);
+				StoreToken(_token);
+			}
+
+			_logger.LogInformation("Mixer access_token refreshed");
+		}
+
+		/// <summary>
+		/// If the token is about to expire, then refresh it
+		/// </summary>
+		public async Task RefreshTokenIfNeeded()
+		{
+			if (_token == null) return;
+			var refreshInSecondes = (int)((_token.ValidUntil - DateTime.UtcNow).TotalSeconds * .9);
+			if (refreshInSecondes > 0) return;  // Not expired yet
+
+			await RefreshToken();
 		}
 
 		private class OAuthToken
@@ -273,7 +291,5 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 			return token;
 		}
-
-
 	}
 }

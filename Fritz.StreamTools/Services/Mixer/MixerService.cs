@@ -33,6 +33,7 @@ namespace Fritz.StreamTools.Services
 
 		int _nextCommandId;
 		int _channelId;
+		private int _userId;
 		int _numberOfFollowers;
 		int _numberOfViewers;
 
@@ -50,7 +51,12 @@ namespace Fritz.StreamTools.Services
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
 
 			_auth = auth ?? new MixerAuth(config, loggerFactory, _client, _shutdownRequested.Token);
-			_chat = chat ?? new MixerChat();
+			if (!string.IsNullOrEmpty(_auth.AccessToken))
+			{
+				_client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_auth.AccessToken}");
+			}
+
+			_chat = chat ?? new MixerChat(config, loggerFactory, _auth, _client, _shutdownRequested.Token);
 
 			_config = config;
 			_logger = loggerFactory.CreateLogger("MixerService");
@@ -82,7 +88,7 @@ namespace Fritz.StreamTools.Services
 			_logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
 
 			var _ = Task.Factory.StartNew(MixerUpdater);
-			await ConnectChat(_shutdownRequested.Token);
+			await _chat.ConnectAndJoinAsync(_userId, _channelId);
 		}
 
 		/// <summary>
@@ -191,8 +197,9 @@ namespace Fritz.StreamTools.Services
 		async Task GetChannelInfo()
 		{
 			var channel = _config["StreamServices:Mixer:Channel"];
-			var response = JObject.Parse(await _client.GetStringAsync($"channels/{channel}?fields=id,numFollowers,viewersCurrent"));
+			var response = JObject.Parse(await _client.GetStringAsync($"channels/{channel}?fields=id,userId,numFollowers,viewersCurrent"));
 			_channelId = response["id"].Value<int>();
+			_userId = response["userId"].Value<int>();
 			_numberOfFollowers = response["numFollowers"].Value<int>();
 			_numberOfViewers = response["viewersCurrent"].Value<int>();
 		}

@@ -25,7 +25,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	public class MixerAuth : IMixerAuth
   {
 		const string TOKEN_FILENAME = "fritz_streamtools_mixer_token.json";
-		const string REQUIRED_OAUTH_SCOPES = "";
+		const string REQUIRED_OAUTH_SCOPES = "chat:chat chat:connect chat:whisper chat:change_ban chat:timeout";
 
 		object _tokenLock = new object();
 		OAuthToken _token;

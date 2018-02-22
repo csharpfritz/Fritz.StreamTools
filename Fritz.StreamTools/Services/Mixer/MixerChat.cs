@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -12,19 +11,6 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public interface IMixerChat
-	{
-		event EventHandler<ChatMessageEventArgs> OnChatMessage;
-		Task ConnectAndJoinAsync(int userId, int channelId);
-	}
-
-	public class ChatMessageEventArgs : EventArgs
-	{
-		public int UserId { get; set; }
-		public string UserName { get; set; }
-		public string Message { get; set; }
-	}
-
 	public class MixerChat : IMixerChat
 	{
 		readonly IConfiguration _config;
@@ -34,6 +20,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		int _myUserId;
+		JsonRpcWebSocket _channel;
 
 		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerAuth auth, HttpClient client, CancellationToken shutdown)
 		{
@@ -45,8 +32,17 @@ namespace Fritz.StreamTools.Services.Mixer
 			_logger = loggerFactory.CreateLogger<MixerChat>();
 		}
 
+		/// <summary>
+		/// Raised each time a chat message is received
+		/// </summary>
 		public event EventHandler<ChatMessageEventArgs> OnChatMessage;
 
+		/// <summary>
+		/// Connect to the chat server, and join our channel
+		/// </summary>
+		/// <param name="userId">Our userId</param>
+		/// <param name="channelId">Out channelId</param>
+		/// <returns></returns>
 		public async Task ConnectAndJoinAsync(int userId, int channelId)
 		{
 			// We need a access_token for this to succeed
@@ -60,8 +56,8 @@ namespace Fritz.StreamTools.Services.Mixer
 			var chatAuthKey = doc["authkey"].Value<string>();
 			var endpoints = doc["endpoints"].Values<string>().ToArray();
 
-			var chat = new JsonRpcWebSocket(_loggerFactory);
-			var endpointIndex = 0;
+			_channel = new JsonRpcWebSocket(_loggerFactory, isChat: true);
+			var endpointIndex = 1; // Skip 1st one, seems to fail often
 
 			// Connect to the chat endpoint
 			while (true)
@@ -70,17 +66,54 @@ namespace Fritz.StreamTools.Services.Mixer
 				endpointIndex = (endpointIndex + 1) % endpoints.Length;
 				_logger.LogInformation($"Connecting to {endpoint}");
 
-				if (await chat.TryConnectAsync(endpoint))
+				if (await _channel.TryConnectAsync(endpoint))
 				{
 					_logger.LogInformation($"Connecting to {endpoint} succeeded");
 					break;
 				}
 			}
 
-			chat.OnEventReceived += Chat_OnEventReceived;
+			_channel.OnEventReceived += Chat_OnEventReceived;
 
 			// Join the channel and send authkey
-			await chat.SendAsync("auth", channelId, userId, chatAuthKey);
+			await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+		}
+
+		/// <summary>
+		/// Send a chat message
+		/// </summary>
+		public async Task<bool> SendMessageAsync(string message)
+		{
+			var success = await _channel.SendAsync("msg", message);
+			if (success) _logger.LogTrace($"Send message '{message}'");
+			return success;
+		}
+
+		/// <summary>
+		/// Send a whisper message to a user
+		/// </summary>
+		public async Task<bool> SendWhisperAsync(string userName, string message)
+		{
+			var success = await _channel.SendAsync("whisper", userName, message);
+			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
+			return success;
+		}
+
+		public async Task<bool> BanUserAsync(string userName)
+		{
+			//
+			// NOTE: Cant find the command in the docs, so I dont known how to do this !!!!!!!
+			//
+			var success = await _channel.SendAsync("ban", userName);
+			if (success) _logger.LogWarning($"BANNED {userName} on Mixer");
+			return success;
+		}
+
+		public async Task<bool> TimeoutUserAsync(string userName, TimeSpan time)
+		{
+			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");
+			if (success) _logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");
+			return success;
 		}
 
 		/// <summary>
@@ -92,11 +125,10 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				var userId = e.Data["user_id"].Value<int>();
 
-#if false
 				// Ignore my own messages
 				if (userId == _myUserId)
 					return;
-#endif
+
 				var text = e.Data["message"]["message"][0]["text"].Value<string>();
 				OnChatMessage?.Invoke(this, new ChatMessageEventArgs
 				{
@@ -104,6 +136,16 @@ namespace Fritz.StreamTools.Services.Mixer
 					UserName = e.Data["user_name"].Value<string>(),
 					Message = text
 				});
+			}
+			else if(e.Event == "UserJoin")
+			{
+				_logger.LogTrace($"{e.Data["username"]} joined the Mixer channel");
+
+			}
+			else if (e.Event == "UserLeave")
+			{
+				_logger.LogTrace($"{e.Data["username"]} left the Mixer channel");
+
 			}
 		}
 	}

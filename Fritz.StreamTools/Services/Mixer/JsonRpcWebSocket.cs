@@ -26,12 +26,20 @@ namespace Fritz.StreamTools.Services.Mixer
 		bool _disposed;
 		int _nextId = 0;
 		ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
+		readonly bool _isChat;
 
+		/// <summary>
+		/// Raised each time an event is received on the websocket
+		/// </summary>
 		public event EventHandler<EventEventArgs> OnEventReceived;
 
-		public JsonRpcWebSocket(ILoggerFactory loggerFactory)
+		/// <summary>
+		/// Construct a new JsonRpcWebSocket object
+		/// </summary>
+		public JsonRpcWebSocket(ILoggerFactory loggerFactory, bool isChat)
 		{
 			_logger = loggerFactory.CreateLogger<JsonRpcWebSocket>();
+			_isChat = isChat;
 		}
 
 		/// <summary>
@@ -61,6 +69,7 @@ namespace Fritz.StreamTools.Services.Mixer
 					while (!_cancellationToken.IsCancellationRequested)
 					{
 						// Get next packet (will block)
+						// NOTE: I expect to receive a complete packet, which might not be correct ?!?
 						var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
 						if (result == null || result.Count == 0)
 						{
@@ -74,10 +83,17 @@ namespace Fritz.StreamTools.Services.Mixer
 						{
 							case "reply":
 								// We received a reply to a command
+
 								var id = doc["id"].Value<int>();
+								var error = doc["error"];
+								if(error.HasValues)
+								{
+									_logger.LogError($"Code: {(int)error["code"]} Message: '{(string)error["message"]}'");
+								}
+
 								if (_pendingRequests.TryGetValue(id, out var task))
 								{
-									if (doc["error"].Value<string>() == null)
+									if (error.HasValues)
 										task.SetResult(true);
 									else
 										task.SetResult(false);
@@ -115,7 +131,16 @@ namespace Fritz.StreamTools.Services.Mixer
 				{ "type", "method" },
 				{ "method", method }
 			};
-			if (args != null && args.Length != 0) doc.Add(new JProperty("arguments", args));
+
+			if (_isChat)
+			{
+				if (args != null && args.Length != 0) doc.Add(new JProperty("arguments", args));
+			}
+			else
+			{
+				doc.Add("params", JObject.FromObject(new { events = args }));
+			}
+
 			var json = doc.ToString(Newtonsoft.Json.Formatting.None);
 			var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
 

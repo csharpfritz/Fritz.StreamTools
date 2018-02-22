@@ -128,23 +128,17 @@ namespace Fritz.StreamTools.Services.Mixer
 				var userId = e.Data["user_id"].Value<int>();
 				var roles = e.Data["user_roles"].Values<string>();
 
-#if false
-				// Ignore my own messages
-				if (userId == _myUserId)
-					return;
-#endif
+				// Combine text from all elements
+				var segments = e.Data["message"]["message"];
+				var combinedText = string.Join("", segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
 
-				// FIXME
-				// Just getting the first element in the message array, which might not be
-				// correct, but I dont really known ?!?
-				var text = e.Data["message"]["message"][0]["text"].Value<string>();
 				OnChatMessage?.Invoke(this, new ChatMessageEventArgs
 				{
 					UserId = userId,
 					UserName = e.Data["user_name"].Value<string>(),
 					IsModerator = roles.Contains("Mod"),
 					IsOwner = roles.Contains("Owner"),
-					Message = text
+					Message = combinedText
 				});
 			}
 			else if(e.Event == "UserJoin")

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,15 +11,25 @@ namespace Fritz.StreamTools.Services
 {
 	public class SampleChatBot : IHostedService
 	{
+		private const string QUOTES_FILENAME = "SampleQuotes.txt";
 		readonly IServiceProvider _serviceProvider;
 		readonly ILogger _logger;
-		private IChatService[] _chatServices;
+		readonly Random _random = new Random();
+		readonly string[] _quotes;
+		IChatService[] _chatServices;
+
+
 
 		public SampleChatBot(IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 		{
 			_serviceProvider = serviceProvider;
 			_logger = loggerFactory.CreateLogger<SampleChatBot>();
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
+
+			if(File.Exists(QUOTES_FILENAME))
+			{
+				_quotes = File.ReadLines(QUOTES_FILENAME).ToArray();
+			}
 		}
 
 		#region IHostedService
@@ -56,14 +67,18 @@ namespace Fritz.StreamTools.Services
 			switch (segments[0].ToLowerInvariant())
 			{
 				case "ping":
-					await chatService.SendWhisperAsync(e.UserName, "BOT: pong");
+					await chatService.SendWhisperAsync(e.UserName, "pong");
 					break;
 				case "echo":
 					if (segments.Length < 2) return;
-					await chatService.SendMessageAsync("BOT: " + string.Join(' ', segments.Skip(1)));
+					await chatService.SendMessageAsync("Echo reply: " + string.Join(' ', segments.Skip(1)));
 					break;
 				case "uptime":
-					await chatService.SendMessageAsync("BOT: The stream has be up some time :)");
+					await chatService.SendMessageAsync("The stream has be up some time :)");
+					break;
+				case "quote":
+					if (_quotes == null) break;
+					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
 					break;
 			}
 		}

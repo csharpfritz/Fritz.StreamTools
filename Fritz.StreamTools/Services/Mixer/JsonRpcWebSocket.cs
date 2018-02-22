@@ -26,7 +26,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		bool _disposed;
 		int _nextId = 0;
 		ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
+		private int? _receiverThreadId;
 		readonly bool _isChat;
+		ConcurrentQueue<string> _myMessages = new ConcurrentQueue<string>();
 
 		/// <summary>
 		/// Raised each time an event is received on the websocket
@@ -62,8 +64,9 @@ namespace Fritz.StreamTools.Services.Mixer
 				await _ws.ConnectAsync(new Uri(url), new CancellationTokenSource(10000).Token);
 
 				// Start task for received data
-				_task = Task.Run(async () =>
+				_task = Task.Factory.StartNew(async () =>
 				{
+					_receiverThreadId = Thread.CurrentThread.ManagedThreadId;
 					var segment = new ArraySegment<byte>(new byte[4096]);
 
 					while (!_cancellationToken.IsCancellationRequested)
@@ -79,7 +82,8 @@ namespace Fritz.StreamTools.Services.Mixer
 						// Wait for the next packet from the server
 						var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
 						var doc = JToken.Parse(json);
-						switch(doc["type"].Value<string>())
+
+						switch (doc["type"].Value<string>())
 						{
 							case "reply":
 								// We received a reply to a command
@@ -91,8 +95,16 @@ namespace Fritz.StreamTools.Services.Mixer
 									_logger.LogError($"Code: {(int)error["code"]} Message: '{(string)error["message"]}'");
 								}
 
+								if (doc["data"] != null && doc["data"]["id"] != null)
+								{
+									// Remember last 5 messages I have send
+									_myMessages.Enqueue((string)doc["data"]["id"]);
+									while (_myMessages.Count > 5) _myMessages.TryDequeue(out var _);
+								}
+
 								if (_pendingRequests.TryGetValue(id, out var task))
 								{
+									// Signal waiting task that we have received a reply
 									if (error.HasValues)
 										task.SetResult(true);
 									else
@@ -100,18 +112,23 @@ namespace Fritz.StreamTools.Services.Mixer
 								}
 								break;
 							case "event":
+								// Ignore messages I have send
+								var msgId = (string)doc["data"]["id"];
+								if (_myMessages.Contains(msgId))
+									break;
+
 								// Some event received, chat message maybe ?
 								OnEventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = doc["data"] });
 								break;
 						}
 					}
-				});
+				}, TaskCreationOptions.LongRunning);
 
 				return true;
 			}
 			catch (Exception e)
 			{
-				_logger.LogError("Connection to mixer chat failed: {0}", e.Message);
+				_logger.LogWarning("Connection to mixer chat failed: {0}", e.Message);
 				return false;
 			}
 		}
@@ -123,6 +140,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		public async Task<bool> SendAsync(string method, params object[] args)
 		{
 			if (_disposed) throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
+			if (Thread.CurrentThread.ManagedThreadId == _receiverThreadId)
+				throw new Exception("Cannot call SendAsync on same thread as websocket receiver thread!");
 
 			var id = _nextId++;
 			var doc = new JObject

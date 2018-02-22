@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 
 // https://dev.mixer.com/reference/oauth/index.html
 // https://dev.mixer.com/rest.html#oauth_shortcode_post
+// https://www.mixerdevtools.com/gettoken
 
 namespace Fritz.StreamTools.Services.Mixer
 {
@@ -25,7 +26,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	public class MixerAuth : IMixerAuth
   {
 		const string TOKEN_FILENAME = "fritz_streamtools_mixer_token.json";
-		const string REQUIRED_OAUTH_SCOPES = "chat:chat chat:connect chat:whisper chat:change_ban chat:timeout";
+		const string REQUIRED_OAUTH_SCOPES = "chat:chat chat:connect chat:whisper chat:change_ban chat:timeout chat:bypass_catbot chat:bypass_filter chat:bypass_links chat:bypass_slowchat";
 
 		object _tokenLock = new object();
 		OAuthToken _token;

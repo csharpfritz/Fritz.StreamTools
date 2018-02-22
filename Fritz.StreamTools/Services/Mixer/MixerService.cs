@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -34,6 +35,10 @@ namespace Fritz.StreamTools.Services
 		public int CurrentFollowerCount { get => _numberOfFollowers; }
 		public int CurrentViewerCount { get => _numberOfViewers; }
 		public string Name { get { return "Mixer"; } }
+
+		TimeSpan? _cachedUptime;
+		DateTime? _lastUptimeRequest;
+
 
 		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerAuth auth = null, IMixerChat chat = null, IMixerLive live = null)
 		{
@@ -161,5 +166,37 @@ namespace Fritz.StreamTools.Services
 		public Task<bool> BanUserAsync(string userName) => _chat.BanUserAsync(userName);
 		public Task<bool> SendMessageAsync(string message) => _chat.SendMessageAsync(message);
 		public Task<bool> TimeoutUserAsync(string userName, TimeSpan time) => _chat.TimeoutUserAsync(userName, time);
+
+		public TimeSpan? Uptime
+		{
+			get
+			{
+				if (!_lastUptimeRequest.HasValue || DateTime.UtcNow - _lastUptimeRequest.Value > TimeSpan.FromSeconds(10))
+				{
+					_cachedUptime = GetUptime().Result;
+					_lastUptimeRequest = DateTime.UtcNow;
+				}
+				return _cachedUptime;
+			}
+		}
+
+		private async Task<TimeSpan?> GetUptime()
+		{
+			var response = await _client.GetAsync($"channels/{_channelId}/manifest.light2");
+			if (response.StatusCode != System.Net.HttpStatusCode.OK) return null;
+			var json = await response.Content.ReadAsStringAsync();
+			var doc = JToken.Parse(json);
+
+			if (doc["now"] != null && doc["startedAt"] != null)
+			{
+				if (DateTimeOffset.TryParse((string)doc["now"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var now) &&
+						DateTimeOffset.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
+				{
+					if (now > startedAt)
+						return TimeSpan.FromSeconds((int)(now - startedAt).TotalSeconds);
+				}
+			}
+			return null;
+		}
 	}
 }

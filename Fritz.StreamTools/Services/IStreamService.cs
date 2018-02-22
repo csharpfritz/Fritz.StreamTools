@@ -13,6 +13,8 @@ namespace Fritz.StreamTools.Services
 
 		int CurrentViewerCount { get; }
 
+		TimeSpan? Uptime { get; }
+
 		/// <summary>
 		/// Event raised when the number of Followers or Viewers changes
 		/// </summary>

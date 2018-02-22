@@ -11,22 +11,22 @@ namespace Fritz.StreamTools.Services
 {
 	public class SampleChatBot : IHostedService
 	{
-		private const string QUOTES_FILENAME = "SampleQuotes.txt";
+		const string QUOTES_FILENAME = "SampleQuotes.txt";
 		readonly IServiceProvider _serviceProvider;
 		readonly ILogger _logger;
 		readonly Random _random = new Random();
 		readonly string[] _quotes;
 		IChatService[] _chatServices;
-
-
+		readonly IStreamService[] _streamServices;
 
 		public SampleChatBot(IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 		{
 			_serviceProvider = serviceProvider;
 			_logger = loggerFactory.CreateLogger<SampleChatBot>();
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
+			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
 
-			if(File.Exists(QUOTES_FILENAME))
+			if (File.Exists(QUOTES_FILENAME))
 			{
 				_quotes = File.ReadLines(QUOTES_FILENAME).ToArray();
 			}
@@ -74,8 +74,14 @@ namespace Fritz.StreamTools.Services
 					await chatService.SendMessageAsync("Echo reply: " + string.Join(' ', segments.Skip(1)));
 					break;
 				case "uptime":
-					await chatService.SendMessageAsync("The stream has be up some time :)");
-					break;
+					{
+						// Get uptime from the mixer stream service
+						var mixer = _streamServices.Where(x => x.Name == "Mixer").FirstOrDefault();
+						if (mixer == null) break;
+						if(mixer.Uptime.HasValue)
+							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
+						break;
+					}
 				case "quote":
 					if (_quotes == null) break;
 					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);

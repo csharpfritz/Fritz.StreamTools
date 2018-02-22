@@ -47,6 +47,7 @@ namespace Fritz.StreamTools.Services
 			}
 		}
 
+		public TimeSpan? Uptime => null;
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated
 		{

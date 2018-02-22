@@ -37,6 +37,8 @@ namespace Fritz.StreamTools.Services
 
 		public int CurrentViewerCount => _numberOfViewers;
 
+		public TimeSpan? Uptime => null;
+
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 
 		public Task StartAsync(CancellationToken cancellationToken)

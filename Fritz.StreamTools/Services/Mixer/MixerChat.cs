@@ -27,7 +27,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_loggerFactory = loggerFactory;
 			_client = client;
 			_shutdown = shutdown;
-			_logger = loggerFactory.CreateLogger<MixerChat>();
+			_logger = loggerFactory.CreateLogger("MixerChat");
 		}
 
 		/// <summary>
@@ -55,7 +55,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			var chatAuthKey = doc["authkey"].Value<string>();
 			var endpoints = doc["endpoints"].Values<string>().ToArray();
 
-			_channel = new JsonRpcWebSocket(_loggerFactory, isChat: true);
+			_channel = new JsonRpcWebSocket(_logger, isChat: true);
 			var endpointIndex = 1; // Skip 1st one, seems to fail often
 
 			// Connect to the chat endpoint

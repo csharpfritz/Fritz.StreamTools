@@ -13,7 +13,7 @@ namespace Fritz.StreamTools.Services
 
 		public int? NewViewers { get; set; }
 
-
+		public bool? IsOnline { get; set; }
 	}
 
 }

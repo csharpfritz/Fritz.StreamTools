@@ -34,7 +34,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_loggerFactory = loggerFactory;
 			_client = client;
 			_shutdown = shutdown;
-			_logger = loggerFactory.CreateLogger<MixerLive>();
+			_logger = loggerFactory.CreateLogger("MixerLive");
 		}
 
 		/// <summary>
@@ -51,9 +51,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			// Include token on connect if available
 			var token = _config["StreamServices:Mixer:Token"];
-			if (!string.IsNullOrWhiteSpace(token)) token = null;
+			if (string.IsNullOrWhiteSpace(token)) token = null;
 
-			_channel = new JsonRpcWebSocket(_loggerFactory, isChat: false);
+			_channel = new JsonRpcWebSocket(_logger, isChat: false);
 
 			// Connect to the chat endpoint
 			while (true)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
@@ -39,9 +40,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Construct a new JsonRpcWebSocket object
 		/// </summary>
-		public JsonRpcWebSocket(ILoggerFactory loggerFactory, bool isChat)
+		public JsonRpcWebSocket(ILogger logger, bool isChat)
 		{
-			_logger = loggerFactory.CreateLogger<JsonRpcWebSocket>();
+			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_isChat = isChat;
 		}
 
@@ -83,15 +84,17 @@ namespace Fritz.StreamTools.Services.Mixer
 					}
 
 					// Connect the websocket
+					_logger.LogInformation("Connecting to {0}", url);
 					await ws.ConnectAsync(new Uri(url), _cancellationToken.Token).OrTimeout(CONNECT_TIMEOUT);
+					_logger.LogInformation("Connected to {0}", url);
 					_ws = ws;
+
+					await EatWelcomeMessage().OrTimeout(10000);
 
 					// start receiving data
 					_receiverTask = Task.Factory.StartNew(() => ReceiverTask(reconnect), TaskCreationOptions.LongRunning);
 
 					if (connectCompleted != null) await connectCompleted();
-
-					_logger.LogInformation("Connected to {0}", url);
 				}
 				catch (Exception e)
 				{
@@ -102,6 +105,14 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			await connect();
 			return _ws != null;
+		}
+
+		private async Task EatWelcomeMessage()
+		{
+			var segment = new ArraySegment<byte>(new byte[100]);
+			var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
+			var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
+			_logger.LogTrace("<< " + json);
 		}
 
 		/// <summary>
@@ -121,11 +132,13 @@ namespace Fritz.StreamTools.Services.Mixer
 				{
 					// Get next packet (will block)
 					// NOTE: I expect to receive a complete packet, which might not be correct ?!?
-					var result = await ws.ReceiveAsync(segment, CancellationToken.None);
+					var result = await ws.ReceiveAsync(segment, _cancellationToken.Token);
 					if (result == null || result.Count == 0) return;
 
 					var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
+					_logger.LogTrace("<< " + json);
 					doc = JToken.Parse(json);
+
 
 					switch (doc["type"].Value<string>())
 					{
@@ -216,6 +229,21 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 
 			var json = doc.ToString(Newtonsoft.Json.Formatting.None);
+
+			if (_logger.IsEnabled(LogLevel.Trace))
+			{
+				if (method == "auth")
+				{
+					// hide the authKey from log
+					Debug.Assert(args.Length >= 3);
+					_logger.LogTrace(">> " + json.Replace((string)args[2], "(chatAuthKey)"));
+				}
+				else
+				{
+					_logger.LogTrace(">> " + json);
+				}
+			}
+
 			var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
 
 			// Send request and wait for reply (or timeout)

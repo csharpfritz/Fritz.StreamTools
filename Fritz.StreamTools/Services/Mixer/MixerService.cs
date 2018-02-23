@@ -47,6 +47,7 @@ namespace Fritz.StreamTools.Services
 
 			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
+			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
 
 			_live = live ?? new MixerLive(config, loggerFactory, _client, _shutdownRequested.Token);
 			_chat = chat ?? new MixerChat(config, loggerFactory, _client, _shutdownRequested.Token);
@@ -110,17 +111,15 @@ namespace Fritz.StreamTools.Services
 		private void _live_OnLiveEvent(object sender, EventEventArgs e)
 		{
 			var data = e.Data;
+			ServiceUpdatedEventArgs update = null;
 
 			if (data["numFollowers"] != null && data["numFollowers"].Value<int>() != _numberOfFollowers)
 			{
 				Interlocked.Exchange(ref _numberOfFollowers, data["numFollowers"].Value<int>());
 				_logger.LogTrace($"New Followers on Mixer, new total: {_numberOfFollowers}");
 
-				Updated?.Invoke(this, new ServiceUpdatedEventArgs
-				{
-					ServiceName = Name,
-					NewFollowers = data["numFollowers"].Value<int>()
-				});
+				update = update ?? new ServiceUpdatedEventArgs();
+				update.NewFollowers = data["numFollowers"].Value<int>();
 			}
 
 			if (data["viewersCurrent"] != null)
@@ -129,12 +128,22 @@ namespace Fritz.StreamTools.Services
 				if (n != Interlocked.Exchange(ref _numberOfViewers, n))
 				{
 					_logger.LogTrace($"Viewers on Mixer changed, new total: {_numberOfViewers}");
-					Updated?.Invoke(this, new ServiceUpdatedEventArgs
-					{
-						ServiceName = Name,
-						NewViewers = data["viewersCurrent"].Value<int>()
-					});
+					update = update ?? new ServiceUpdatedEventArgs();
+					update.NewViewers = data["viewersCurrent"].Value<int>();
 				}
+			}
+
+			if(data["online"] != null)
+			{
+				update = update ?? new ServiceUpdatedEventArgs();
+				update.IsOnline = data["online"].Value<bool>();
+				_logger.LogTrace($"Online status changed to  {update.IsOnline}");
+			}
+
+			if(update != null)
+			{
+				update.ServiceName = Name;
+				Updated?.Invoke(this, update);
 			}
 		}
 
@@ -176,10 +185,10 @@ namespace Fritz.StreamTools.Services
 			var json = await response.Content.ReadAsStringAsync();
 			var doc = JToken.Parse(json);
 
-			if (doc["now"] != null && doc["startedAt"] != null)
+			if (doc["startedAt"] != null)
 			{
-				if (DateTimeOffset.TryParse((string)doc["now"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var now) &&
-						DateTimeOffset.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
+				var now = DateTimeOffset.UtcNow;
+				if (DateTimeOffset.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
 				{
 					if (now > startedAt)
 						return TimeSpan.FromSeconds((int)(now - startedAt).TotalSeconds);

@@ -19,7 +19,6 @@ namespace Fritz.StreamTools.Services
 		IConfiguration _config;
 		HttpClient _client;
 		public ILogger _logger;
-		IMixerAuth _auth;
 		IMixerChat _chat;
 		IMixerLive _live;
 		CancellationTokenSource _shutdownRequested;
@@ -40,7 +39,7 @@ namespace Fritz.StreamTools.Services
 		DateTime? _lastUptimeRequest;
 
 
-		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerAuth auth = null, IMixerChat chat = null, IMixerLive live = null)
+		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerChat chat = null, IMixerLive live = null)
 		{
 			_shutdownRequested = new CancellationTokenSource();
 			_config = config;
@@ -49,9 +48,8 @@ namespace Fritz.StreamTools.Services
 			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-			_auth = auth ?? new MixerAuth(config, loggerFactory, _client);
-			_live = live ?? new MixerLive(config, loggerFactory, _auth, _client, _shutdownRequested.Token);
-			_chat = chat ?? new MixerChat(config, loggerFactory, _auth, _client, _shutdownRequested.Token);
+			_live = live ?? new MixerLive(config, loggerFactory, _client, _shutdownRequested.Token);
+			_chat = chat ?? new MixerChat(config, loggerFactory, _client, _shutdownRequested.Token);
 		}
 
 
@@ -62,18 +60,11 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			var authConfigured = !string.IsNullOrEmpty(_config["StreamServices:Mixer:ClientId"]) &&
-													 !string.IsNullOrEmpty(_config["StreamServices:Mixer:ClientSecret"]);
-
-			if (_auth.AccessToken == null && authConfigured)
+			var token = _config["StreamServices:Mixer:Token"];
+			var authConfigured = !string.IsNullOrEmpty(token);
+			if (authConfigured)
 			{
-				// Authorize using short code
-				await _auth.DoShortCodeAuthAsync();
-			}
-			if(_auth.AccessToken != null)
-			{
-				await _auth.RefreshTokenIfNeeded();
-				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _auth.AccessToken);
+				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 			}
 
 			// Get our channel information
@@ -152,8 +143,6 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		async Task GetChannelInfo()
 		{
-			await _auth.RefreshTokenIfNeeded();
-
 			var channel = _config["StreamServices:Mixer:Channel"];
 			var response = JObject.Parse(await _client.GetStringAsync($"channels/{channel}?fields=id,userId,numFollowers,viewersCurrent"));
 			_channelId = response["id"].Value<int>();

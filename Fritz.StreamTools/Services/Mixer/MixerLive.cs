@@ -23,17 +23,15 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		readonly IConfiguration _config;
 		readonly ILoggerFactory _loggerFactory;
-		readonly IMixerAuth _auth;
 		readonly HttpClient _client;
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		JsonRpcWebSocket _channel;
 
-		public MixerLive(IConfiguration config, ILoggerFactory loggerFactory, IMixerAuth auth, HttpClient client, CancellationToken shutdown)
+		public MixerLive(IConfiguration config, ILoggerFactory loggerFactory, HttpClient client, CancellationToken shutdown)
 		{
 			_config = config;
 			_loggerFactory = loggerFactory;
-			_auth = auth;
 			_client = client;
 			_shutdown = shutdown;
 			_logger = loggerFactory.CreateLogger<MixerLive>();
@@ -51,15 +49,16 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns></returns>
 		public async Task ConnectAndJoinAsync(int channelId)
 		{
-			// We need a access_token for this to succeed
-			if (string.IsNullOrEmpty(_auth.AccessToken)) return;
+			// Include token on connect if available
+			var token = _config["StreamServices:Mixer:Token"];
+			if (!string.IsNullOrWhiteSpace(token)) token = null;
 
 			_channel = new JsonRpcWebSocket(_loggerFactory, isChat: false);
 
 			// Connect to the chat endpoint
 			while (true)
 			{
-				if (await _channel.TryConnectAsync(() => WS_URL, _auth.AccessToken, () => {
+				if (await _channel.TryConnectAsync(() => WS_URL, token, () => {
 					// Join the channel and request live updates
 					return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
 				}))

@@ -15,18 +15,16 @@ namespace Fritz.StreamTools.Services.Mixer
 	{
 		readonly IConfiguration _config;
 		readonly ILoggerFactory _loggerFactory;
-		readonly IMixerAuth _auth;
 		readonly HttpClient _client;
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		int _myUserId;
 		JsonRpcWebSocket _channel;
 
-		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerAuth auth, HttpClient client, CancellationToken shutdown)
+		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, HttpClient client, CancellationToken shutdown)
 		{
 			_config = config;
 			_loggerFactory = loggerFactory;
-			_auth = auth;
 			_client = client;
 			_shutdown = shutdown;
 			_logger = loggerFactory.CreateLogger<MixerChat>();
@@ -46,11 +44,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		public async Task ConnectAndJoinAsync(int userId, int channelId)
 		{
 			// We need a access_token for this to succeed
-			if (string.IsNullOrEmpty(_auth.AccessToken)) return;
+			var token = _config["StreamServices:Mixer:Token"];
+			if (string.IsNullOrEmpty(token)) return;
 
 			_myUserId = userId;
-
-			await _auth.RefreshTokenIfNeeded();
 
 			// Get chat authkey and chat endpoints
 			var response = await _client.GetStringAsync($"chats/{channelId}");

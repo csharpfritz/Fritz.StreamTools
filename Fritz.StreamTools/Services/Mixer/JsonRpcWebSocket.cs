@@ -19,16 +19,17 @@ namespace Fritz.StreamTools.Services.Mixer
 
 	public class JsonRpcWebSocket : IDisposable
   {
+		const int CONNECT_TIMEOUT = 20000;	// In milliseconds
 		ClientWebSocket _ws;
 		CancellationTokenSource _cancellationToken = new CancellationTokenSource();
 		ILogger _logger;
 		bool _disposed;
-		int _nextId = 0;
+		int _nextPacketId = 0;
 		ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
-		private int? _receiverThreadId;
 		readonly bool _isChat;
 		ConcurrentQueue<string> _myMessages = new ConcurrentQueue<string>();
 		Task _receiverTask;
+		int? _receiverThreadId;
 
 		/// <summary>
 		/// Raised each time an event is received on the websocket
@@ -59,11 +60,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				while (true)
 				{
 					await connect();
-					if (_ws != null)
-					{
-						if (connectCompleted != null) await connectCompleted();
-						return;
-					}
+					if (_ws != null) return;
 
 					// Connect failed, wait a little and try again
 					await Task.Delay(5000, _cancellationToken.Token);
@@ -86,33 +83,25 @@ namespace Fritz.StreamTools.Services.Mixer
 					}
 
 					// Connect the websocket
-					await ws.ConnectAsync(new Uri(url), new CancellationTokenSource(10000).Token);
+					await ws.ConnectAsync(new Uri(url), _cancellationToken.Token).OrTimeout(CONNECT_TIMEOUT);
 					_ws = ws;
 
 					// start receiving data
 					_receiverTask = Task.Factory.StartNew(() => ReceiverTask(reconnect), TaskCreationOptions.LongRunning);
 
+					if (connectCompleted != null) await connectCompleted();
+
 					_logger.LogInformation("Connected to {0}", url);
 				}
 				catch (Exception e)
 				{
+					_ws = null;
 					_logger.LogWarning("Connection to '{0}' failed: {1}", url, e.Message);
 				}
 			}
 
-
-			// Connect first
 			await connect();
-			if (_ws != null)
-			{
-				if (connectCompleted != null) await connectCompleted();
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
+			return _ws != null;
 		}
 
 		/// <summary>
@@ -123,6 +112,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			_receiverThreadId = Thread.CurrentThread.ManagedThreadId;
 			var segment = new ArraySegment<byte>(new byte[4096]);
+			var ws = _ws;
 
 			while (!_cancellationToken.IsCancellationRequested)
 			{
@@ -131,10 +121,9 @@ namespace Fritz.StreamTools.Services.Mixer
 				{
 					// Get next packet (will block)
 					// NOTE: I expect to receive a complete packet, which might not be correct ?!?
-					var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
+					var result = await ws.ReceiveAsync(segment, CancellationToken.None);
 					if (result == null || result.Count == 0) return;
 
-					// Wait for the next packet from the server
 					var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
 					doc = JToken.Parse(json);
 
@@ -205,7 +194,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (Thread.CurrentThread.ManagedThreadId == _receiverThreadId)
 				throw new Exception("Cannot call SendAsync on same thread as websocket receiver thread!");
 
-			var id = _nextId++;
+			var ws = _ws;
+			if (ws == null)
+				return false;
+
+			var id = Interlocked.Increment(ref _nextPacketId);
 			var doc = new JObject
 			{
 				{ "id", id },
@@ -231,7 +224,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		
 			try
 			{
-				await _ws.SendAsync(buffer, WebSocketMessageType.Text, true, _cancellationToken.Token);
+				await ws.SendAsync(buffer, WebSocketMessageType.Text, true, _cancellationToken.Token);
 				await tcs.Task.OrTimeout();
 				return tcs.Task.Result;
 			}
@@ -248,15 +241,12 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (_disposed) throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
 
-			if(_ws != null)
-			{
-				_cancellationToken.Cancel();
-				_ws.Dispose();
+			_cancellationToken.Cancel();
 
-				if (_receiverTask != null)
-				{
-					_receiverTask.Wait();
-				}
+			if (_ws != null)
+			{
+				_ws.Dispose();
+				if (_receiverTask != null) _receiverTask.Wait();
 			}
 			_disposed = true;
 		}

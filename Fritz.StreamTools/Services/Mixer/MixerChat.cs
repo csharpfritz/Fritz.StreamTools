@@ -73,6 +73,10 @@ namespace Fritz.StreamTools.Services.Mixer
 
 				if (await _channel.TryConnectAsync(resolveUrl, null, () =>
 				{
+					//
+					// NOTE: Maybe we should request a new chat authKey if this if called due to reconnect ???
+					//
+
 					// Join the channel and send authkey
 					return _channel.SendAsync("auth", channelId, userId, chatAuthKey);
 				}))

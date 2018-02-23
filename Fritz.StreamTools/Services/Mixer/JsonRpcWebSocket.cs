@@ -22,13 +22,13 @@ namespace Fritz.StreamTools.Services.Mixer
 		ClientWebSocket _ws;
 		CancellationTokenSource _cancellationToken = new CancellationTokenSource();
 		ILogger _logger;
-		Task _task;
 		bool _disposed;
 		int _nextId = 0;
 		ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
 		private int? _receiverThreadId;
 		readonly bool _isChat;
 		ConcurrentQueue<string> _myMessages = new ConcurrentQueue<string>();
+		Task _receiverTask;
 
 		/// <summary>
 		/// Raised each time an event is received on the websocket
@@ -47,89 +47,151 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Try connecting to the specified websocker url
 		/// </summary>
-		public async Task<bool> TryConnectAsync(string url, string accessToken = null)
+		public async Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> connectCompleted)
 		{
+			if (resolveUrl == null)
+				throw new ArgumentNullException(nameof(resolveUrl));
 			if (_disposed) throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
 
-			_ws = new ClientWebSocket();
-			_ws.Options.SetRequestHeader("x-is-bot", "true");
-			if (!string.IsNullOrEmpty(accessToken))
+			// Local function that will try to reconnect forever
+			async Task reconnect()
 			{
-				_ws.Options.SetRequestHeader("Authorization", $"Bearer {accessToken}");
+				while (true)
+				{
+					await connect();
+					if (_ws != null)
+					{
+						if (connectCompleted != null) await connectCompleted();
+						return;
+					}
+
+					// Connect failed, wait a little and try again
+					await Task.Delay(5000, _cancellationToken.Token);
+				}
 			}
 
-			try
+			// Local function used for connect and re-connects
+			async Task connect()
 			{
-				// Connect the websocket
-				await _ws.ConnectAsync(new Uri(url), new CancellationTokenSource(10000).Token);
+				_ws = null;
+				var url = resolveUrl();
 
-				// Start task for received data
-				_task = Task.Factory.StartNew(async () =>
+				try
 				{
-					_receiverThreadId = Thread.CurrentThread.ManagedThreadId;
-					var segment = new ArraySegment<byte>(new byte[4096]);
-
-					while (!_cancellationToken.IsCancellationRequested)
+					var ws = new ClientWebSocket();
+					ws.Options.SetRequestHeader("x-is-bot", "true");
+					if (!string.IsNullOrEmpty(accessToken))
 					{
-						// Get next packet (will block)
-						// NOTE: I expect to receive a complete packet, which might not be correct ?!?
-						var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
-						if (result == null || result.Count == 0)
-						{
-							break;  // Websocket closed
-						}
-
-						// Wait for the next packet from the server
-						var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
-						var doc = JToken.Parse(json);
-
-						switch (doc["type"].Value<string>())
-						{
-							case "reply":
-								// We received a reply to a command
-
-								var id = doc["id"].Value<int>();
-								var error = doc["error"];
-								if(error.HasValues)
-								{
-									_logger.LogError($"Code: {(int)error["code"]} Message: '{(string)error["message"]}'");
-								}
-
-								if (doc["data"] != null && doc["data"]["id"] != null)
-								{
-									// Remember last 5 messages I have send
-									_myMessages.Enqueue((string)doc["data"]["id"]);
-									while (_myMessages.Count > 5) _myMessages.TryDequeue(out var _);
-								}
-
-								if (_pendingRequests.TryGetValue(id, out var task))
-								{
-									// Signal waiting task that we have received a reply
-									if (error.HasValues)
-										task.SetResult(true);
-									else
-										task.SetResult(false);
-								}
-								break;
-							case "event":
-								// Ignore messages I have send
-								var msgId = (string)doc["data"]["id"];
-								if (_myMessages.Contains(msgId))
-									break;
-
-								// Some event received, chat message maybe ?
-								OnEventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = doc["data"] });
-								break;
-						}
+						ws.Options.SetRequestHeader("Authorization", $"Bearer {accessToken}");
 					}
-				}, TaskCreationOptions.LongRunning);
+
+					// Connect the websocket
+					await ws.ConnectAsync(new Uri(url), new CancellationTokenSource(10000).Token);
+					_ws = ws;
+
+					// start receiving data
+					_receiverTask = Task.Factory.StartNew(() => ReceiverTask(reconnect), TaskCreationOptions.LongRunning);
+
+					_logger.LogInformation("Connected to {0}", url);
+				}
+				catch (Exception e)
+				{
+					_logger.LogWarning("Connection to '{0}' failed: {1}", url, e.Message);
+				}
+			}
+
+
+			// Connect first
+			await connect();
+			if (_ws != null)
+			{
+				if (connectCompleted != null) await connectCompleted();
 
 				return true;
 			}
-			catch (Exception e)
+			else
 			{
-				_logger.LogWarning("Connection to mixer chat failed: {0}", e.Message);
 				return false;
+			}
+		}
+
+		/// <summary>
+		/// Received data from the websocket.
+		/// This will run for the lifetime of the connection or until cancellation is requested
+		/// </summary>
+		private async Task ReceiverTask(Func<Task> reconnect)
+		{
+			_receiverThreadId = Thread.CurrentThread.ManagedThreadId;
+			var segment = new ArraySegment<byte>(new byte[4096]);
+
+			while (!_cancellationToken.IsCancellationRequested)
+			{
+				JToken doc;
+				try
+				{
+					// Get next packet (will block)
+					// NOTE: I expect to receive a complete packet, which might not be correct ?!?
+					var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
+					if (result == null || result.Count == 0) return;
+
+					// Wait for the next packet from the server
+					var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
+					doc = JToken.Parse(json);
+
+					switch (doc["type"].Value<string>())
+					{
+						case "reply":
+							HandleReply(doc);
+							break;
+						case "event":
+							HandleEvent(doc);
+							break;
+					}
+				}
+				catch (Exception e)
+				{
+					_logger.LogWarning("Error in ReceiverTask() {0}. Will reconnect", e.Message);
+					if (_cancellationToken.IsCancellationRequested) return;
+
+					await reconnect();  // Will spawn a new receiver task
+					return;
+				}
+			}
+		}
+
+		private void HandleEvent(JToken doc)
+		{
+			// Ignore messages I have send
+			var msgId = (string)doc["data"]["id"];
+			if (_myMessages.Contains(msgId)) return;
+
+			// Some event received, chat message maybe ?
+			OnEventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = doc["data"] });
+		}
+
+		private void HandleReply(JToken doc)
+		{
+			var error = doc["error"];
+			if (error.HasValues)
+			{
+				_logger.LogError($"Code: {(int)error["code"]} Message: '{(string)error["message"]}'");
+			}
+
+			if (doc["data"] != null && doc["data"]["id"] != null)
+			{
+				// Remember last 5 messages I have send
+				_myMessages.Enqueue((string)doc["data"]["id"]);
+				while (_myMessages.Count > 5) _myMessages.TryDequeue(out var _);
+			}
+
+			var id = doc["id"].Value<int>();
+			if (_pendingRequests.TryGetValue(id, out var task))
+			{
+				// Signal waiting task that we have received a reply
+				if (error.HasValues)
+					task.SetResult(true);
+				else
+					task.SetResult(false);
 			}
 		}
 
@@ -191,9 +253,9 @@ namespace Fritz.StreamTools.Services.Mixer
 				_cancellationToken.Cancel();
 				_ws.Dispose();
 
-				if (_task != null)
+				if (_receiverTask != null)
 				{
-					_task.Wait();
+					_receiverTask.Wait();
 				}
 			}
 			_disposed = true;

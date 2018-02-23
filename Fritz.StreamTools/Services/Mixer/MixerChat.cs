@@ -64,21 +64,24 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Connect to the chat endpoint
 			while (true)
 			{
-				var endpoint = endpoints[endpointIndex];
-				endpointIndex = (endpointIndex + 1) % endpoints.Length;
-				_logger.LogInformation($"Connecting to {endpoint}");
-
-				if (await _channel.TryConnectAsync(endpoint))
+				string resolveUrl()
 				{
-					_logger.LogInformation($"Connecting to {endpoint} succeeded");
+					var endpoint = endpoints[endpointIndex];
+					endpointIndex = (endpointIndex + 1) % endpoints.Length;
+					return endpoints[endpointIndex];
+				}
+
+				if (await _channel.TryConnectAsync(resolveUrl, null, () =>
+				{
+					// Join the channel and send authkey
+					return _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+				}))
+				{
 					break;
 				}
 			}
 
 			_channel.OnEventReceived += Chat_OnEventReceived;
-
-			// Join the channel and send authkey
-			await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
 		}
 
 		/// <summary>

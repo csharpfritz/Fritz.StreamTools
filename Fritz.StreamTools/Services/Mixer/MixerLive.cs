@@ -59,19 +59,16 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Connect to the chat endpoint
 			while (true)
 			{
-				_logger.LogInformation($"Connecting to {WS_URL}");
-
-				if (await _channel.TryConnectAsync(WS_URL, _auth.AccessToken))
+				if (await _channel.TryConnectAsync(() => WS_URL, _auth.AccessToken, () => {
+					// Join the channel and request live updates
+					return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
+				}))
 				{
-					_logger.LogInformation($"Connecting to {WS_URL} succeeded");
 					break;
 				}
 			}
 
 			_channel.OnEventReceived += Chat_OnEventReceived;
-
-			// Join the channel and request live updates
-			await _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
 		}
 
 		/// <summary>

@@ -176,7 +176,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			var error = doc["error"];
 			if (error.HasValues)
 			{
-				_logger.LogError($"Code: {(int)error["code"]} Message: '{(string)error["message"]}'");
+				_logger.LogError($"Error from server: Code = {(int)error["code"]} Message = '{(string)error["message"]}'");
 			}
 
 			if (doc["data"] != null && doc["data"]["id"] != null)
@@ -191,9 +191,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				// Signal waiting task that we have received a reply
 				if (error.HasValues)
-					task.SetResult(true);
-				else
 					task.SetResult(false);
+				else
+					task.SetResult(true);
 			}
 		}
 

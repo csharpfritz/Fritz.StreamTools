@@ -67,24 +67,30 @@ namespace Fritz.StreamTools.Services.Mixer
 			_channel = new JsonRpcWebSocket(_logger, isChat: true);
 			var endpointIndex = 1; // Skip 1st one, seems to fail often
 
+			// Chose next endpoint
+			string getNextEnpoint()
+			{
+				var endpoint = endpoints[endpointIndex];
+				endpointIndex = (endpointIndex + 1) % endpoints.Length;
+				return endpoints[endpointIndex];
+			}
+
 			// Connect to the chat endpoint
 			while (true)
 			{
-				string resolveUrl()
+				if (await _channel.TryConnectAsync(getNextEnpoint, null, async () =>
 				{
-					var endpoint = endpoints[endpointIndex];
-					endpointIndex = (endpointIndex + 1) % endpoints.Length;
-					return endpoints[endpointIndex];
-				}
-
-				if (await _channel.TryConnectAsync(resolveUrl, null, () =>
-				{
-					//
-					// NOTE: Maybe we should request a new chat authKey if this if called due to reconnect ???
-					//
-
 					// Join the channel and send authkey
-					return _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+					var succeeded = await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+					if(!succeeded)
+					{
+						// Try again with a new chatAuthKey
+						doc = JToken.Parse(await _client.GetStringAsync($"chats/{channelId}"));
+						chatAuthKey = doc["authkey"].Value<string>();
+
+						// If this fail give up !
+						await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+					}
 				}))
 				{
 					break;

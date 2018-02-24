@@ -38,7 +38,7 @@ namespace Fritz.StreamTools.Services
 		{
 			foreach(var chat in _chatServices)
 			{
-				chat.OnChatMessage += Chat_OnChatMessage;
+				chat.ChatMessage += Chat_ChatMessage;
 			}
 			return Task.CompletedTask;
 		}
@@ -47,14 +47,14 @@ namespace Fritz.StreamTools.Services
 		{
 			foreach (var chat in _chatServices)
 			{
-				chat.OnChatMessage -= Chat_OnChatMessage;
+				chat.ChatMessage -= Chat_ChatMessage;
 			}
 			return Task.CompletedTask;
 		}
 
 		#endregion
 
-		private async void Chat_OnChatMessage(object sender, ChatMessageEventArgs e)
+		private async void Chat_ChatMessage(object sender, ChatMessageEventArgs e)
 		{
 			if (!e.Message.StartsWith('!')) return;
 			var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);

@@ -35,7 +35,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Raised each time an event is received on the websocket
 		/// </summary>
-		public event EventHandler<EventEventArgs> OnEventReceived;
+		public event EventHandler<EventEventArgs> EventReceived;
 
 		/// <summary>
 		/// Construct a new JsonRpcWebSocket object
@@ -168,7 +168,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (_myMessages.Contains(msgId)) return;
 
 			// Some event received, chat message maybe ?
-			OnEventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = doc["data"] });
+			EventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = doc["data"] });
 		}
 
 		private void HandleReply(JToken doc)

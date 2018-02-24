@@ -12,7 +12,7 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IMixerLive
 	{
-		event EventHandler<EventEventArgs> OnLiveEvent;
+		event EventHandler<EventEventArgs> LiveEvent;
 		Task ConnectAndJoinAsync(int channelId);
 	}
 
@@ -40,7 +40,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Raised each time a chat message is received
 		/// </summary>
-		public event EventHandler<EventEventArgs> OnLiveEvent;
+		public event EventHandler<EventEventArgs> LiveEvent;
 
 		/// <summary>
 		/// Connect to the live event server, and join our channel
@@ -67,18 +67,18 @@ namespace Fritz.StreamTools.Services.Mixer
 				}
 			}
 
-			_channel.OnEventReceived += Chat_OnEventReceived;
+			_channel.EventReceived += Chat_EventReceived;
 		}
 
 		/// <summary>
 		/// Called when we receive a new live event from server
 		/// </summary>
-		private void Chat_OnEventReceived(object sender, EventEventArgs e)
+		private void Chat_EventReceived(object sender, EventEventArgs e)
 		{
 			if(e.Event == "live")
 			{
 				Debug.Assert(e.Data["payload"] != null);
-				OnLiveEvent?.Invoke(this, new EventEventArgs { Event = e.Event, Data = e.Data["payload"] });
+				LiveEvent?.Invoke(this, new EventEventArgs { Event = e.Event, Data = e.Data["payload"] });
 			}
 		}
 	}

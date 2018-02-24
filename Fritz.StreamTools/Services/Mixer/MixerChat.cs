@@ -13,7 +13,7 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IMixerChat
 	{
-		event EventHandler<ChatMessageEventArgs> OnChatMessage;
+		event EventHandler<ChatMessageEventArgs> ChatMessage;
 		Task ConnectAndJoinAsync(int userId, int channelId);
 		Task<bool> SendWhisperAsync(string userName, string message);
 		Task<bool> SendMessageAsync(string message);
@@ -42,7 +42,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Raised each time a chat message is received
 		/// </summary>
-		public event EventHandler<ChatMessageEventArgs> OnChatMessage;
+		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 
 		/// <summary>
 		/// Connect to the chat server, and join our channel
@@ -91,7 +91,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				}
 			}
 
-			_channel.OnEventReceived += Chat_OnEventReceived;
+			_channel.EventReceived += Chat_EventReceived;
 		}
 
 		/// <summary>
@@ -124,7 +124,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Called when we receive a new event from the chat server
 		/// </summary>
-		private void Chat_OnEventReceived(object sender, EventEventArgs e)
+		private void Chat_EventReceived(object sender, EventEventArgs e)
 		{
 			if(e.Event == "ChatMessage")
 			{
@@ -135,7 +135,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				var segments = e.Data["message"]["message"];
 				var combinedText = string.Join("", segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
 
-				OnChatMessage?.Invoke(this, new ChatMessageEventArgs
+				ChatMessage?.Invoke(this, new ChatMessageEventArgs
 				{
 					UserId = userId,
 					UserName = e.Data["user_name"].Value<string>(),

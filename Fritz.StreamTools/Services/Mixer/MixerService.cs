@@ -31,7 +31,7 @@ namespace Fritz.StreamTools.Services
 		int _numberOfViewers;
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
-		public event EventHandler<ChatMessageEventArgs> OnChatMessage;
+		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 
 		public int CurrentFollowerCount { get => _numberOfFollowers; }
 		public int CurrentViewerCount { get => _numberOfViewers; }
@@ -75,13 +75,13 @@ namespace Fritz.StreamTools.Services
 
 			// Connect to live events (viewer/follower count)
 			await _live.ConnectAndJoinAsync(_channelId);
-			_live.OnLiveEvent += _live_OnLiveEvent;
+			_live.LiveEvent += _live_LiveEvent;
 
 			if(authConfigured)
 			{
 				// Connect to chat server
 				await _chat.ConnectAndJoinAsync(_userId, _channelId);
-				_chat.OnChatMessage += _chat_OnChatMessage;
+				_chat.ChatMessage += _chat_ChatMessage;
 			}
 
 			_logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
@@ -101,16 +101,16 @@ namespace Fritz.StreamTools.Services
 		/// <summary>
 		/// Chat message event handler
 		/// </summary>
-		private void _chat_OnChatMessage(object sender, ChatMessageEventArgs e)
+		private void _chat_ChatMessage(object sender, ChatMessageEventArgs e)
 		{
 			e.ServiceName = Name;
-			OnChatMessage?.Invoke(this, e);
+			ChatMessage?.Invoke(this, e);
 		}
 
 		/// <summary>
 		/// Viewers/followers event handler
 		/// </summary>
-		private void _live_OnLiveEvent(object sender, EventEventArgs e)
+		private void _live_LiveEvent(object sender, EventEventArgs e)
 		{
 			var data = e.Data;
 			ServiceUpdatedEventArgs update = null;

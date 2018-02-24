@@ -14,6 +14,7 @@ namespace Fritz.StreamTools.Services
 		Task<bool> SendWhisperAsync(string userName, string message);
 		Task<bool> TimeoutUserAsync(string userName, TimeSpan time);
 		Task<bool> BanUserAsync(string userName);
+		Task<bool> UnbanUserAsync(string userName);
 
 	}
 }

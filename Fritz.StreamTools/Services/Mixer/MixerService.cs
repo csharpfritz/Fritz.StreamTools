@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -160,11 +161,76 @@ namespace Fritz.StreamTools.Services
 			_numberOfViewers = response["viewersCurrent"].Value<int>();
 		}
 
+		/// <summary>
+		/// Ban the  user
+		/// </summary>
+		public async Task<bool> BanUserAsync(string userName)
+		{
+			try
+			{
+				var userId = await LookupUserId(userName);
+
+				// Add user as banned from our channel
+				var req = new HttpRequestMessage(new HttpMethod("PATCH"), $"channels/{_channelId}/users/{userId}")
+				{
+					Content = new JsonContent(new { add = new[] { "Banned" } })
+				};
+				var response = await _client.SendAsync(req);
+				return true;
+			}
+			catch (Exception e)
+			{
+				_logger.LogError("Error unbanning user '{0}': {1}", userName, e.Message);
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Unban the  user
+		/// </summary>
+		public async Task<bool> UnbanUserAsync(string userName)
+		{
+			try
+			{
+				var userId = await LookupUserId(userName);
+
+				// Add user as banned from our channel
+				var req = new HttpRequestMessage(new HttpMethod("PATCH"), $"channels/{_channelId}/users/{userId}")
+				{
+					Content = new JsonContent(new { remove = new[] { "Banned" } })
+				};
+				var response = await _client.SendAsync(req);
+				return true;  // Just always return true
+			}
+			catch (Exception e)
+			{
+				_logger.LogError("Error unbanning user '{0}': {1}", userName, e.Message);
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Use the REST API to get id of username
+		/// </summary>
+		/// <param name="userName">Name of the user</param>
+		/// <returns>Id of the user</returns>
+		private async Task<int> LookupUserId(string userName)
+		{
+			var json = await _client.GetStringAsync($"channels/{userName}?noCount=1");
+			var doc = JToken.Parse(json);
+			var userId = (int)doc["id"];
+			return userId;
+		}
+
 		public Task<bool> SendWhisperAsync(string userName, string message) => _chat.SendWhisperAsync(userName, message);
-		public Task<bool> BanUserAsync(string userName) => _chat.BanUserAsync(userName);
 		public Task<bool> SendMessageAsync(string message) => _chat.SendMessageAsync(message);
 		public Task<bool> TimeoutUserAsync(string userName, TimeSpan time) => _chat.TimeoutUserAsync(userName, time);
 
+		/// <summary>
+		/// Get stream uptime (cached for 10 seconds)
+		/// NOTE: This will hit the REST API when cached value expires
+		/// Will be null if stream is offline
+		/// </summary>
 		public TimeSpan? Uptime
 		{
 			get
@@ -178,6 +244,10 @@ namespace Fritz.StreamTools.Services
 			}
 		}
 
+		/// <summary>
+		/// Get stream uptime from REST API
+		/// </summary>
+		/// <returns>Uptime, or null if stream is offline</returns>
 		private async Task<TimeSpan?> GetUptime()
 		{
 			var response = await _client.GetAsync($"channels/{_channelId}/manifest.light2");

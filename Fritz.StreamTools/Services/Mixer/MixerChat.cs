@@ -11,6 +11,15 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
+	public interface IMixerChat
+	{
+		event EventHandler<ChatMessageEventArgs> OnChatMessage;
+		Task ConnectAndJoinAsync(int userId, int channelId);
+		Task<bool> SendWhisperAsync(string userName, string message);
+		Task<bool> SendMessageAsync(string message);
+		Task<bool> TimeoutUserAsync(string userName, TimeSpan time);
+	}
+
 	public class MixerChat : IMixerChat
 	{
 		readonly IConfiguration _config;
@@ -102,16 +111,6 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			var success = await _channel.SendAsync("whisper", userName, message);
 			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
-			return success;
-		}
-
-		public async Task<bool> BanUserAsync(string userName)
-		{
-			//
-			// NOTE: Cant find the command in the docs, so I dont known how to do this !!!!!!!
-			//
-			var success = await _channel.SendAsync("ban", userName);
-			if (success) _logger.LogWarning($"BANNED {userName} on Mixer");
 			return success;
 		}
 

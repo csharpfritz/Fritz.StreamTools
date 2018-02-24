@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -154,7 +155,7 @@ namespace Fritz.StreamTools.Services
 		async Task GetChannelInfo()
 		{
 			var channel = _config["StreamServices:Mixer:Channel"];
-			var response = JObject.Parse(await _client.GetStringAsync($"channels/{channel}?fields=id,userId,numFollowers,viewersCurrent"));
+			var response = JObject.Parse(await _client.GetStringAsync($"channels/{WebUtility.UrlEncode(channel)}?fields=id,userId,numFollowers,viewersCurrent"));
 			_channelId = response["id"].Value<int>();
 			_userId = response["userId"].Value<int>();
 			_numberOfFollowers = response["numFollowers"].Value<int>();
@@ -176,6 +177,7 @@ namespace Fritz.StreamTools.Services
 					Content = new JsonContent(new { add = new[] { "Banned" } })
 				};
 				var response = await _client.SendAsync(req);
+				response.EnsureSuccessStatusCode();
 				return true;
 			}
 			catch (Exception e)
@@ -200,7 +202,8 @@ namespace Fritz.StreamTools.Services
 					Content = new JsonContent(new { remove = new[] { "Banned" } })
 				};
 				var response = await _client.SendAsync(req);
-				return true;  // Just always return true
+				response.EnsureSuccessStatusCode();
+				return true; 
 			}
 			catch (Exception e)
 			{
@@ -216,7 +219,7 @@ namespace Fritz.StreamTools.Services
 		/// <returns>Id of the user</returns>
 		private async Task<int> LookupUserId(string userName)
 		{
-			var json = await _client.GetStringAsync($"channels/{userName}?noCount=1");
+			var json = await _client.GetStringAsync($"channels/{WebUtility.UrlEncode(userName)}?noCount=1");
 			var doc = JToken.Parse(json);
 			var userId = (int)doc["id"];
 			return userId;

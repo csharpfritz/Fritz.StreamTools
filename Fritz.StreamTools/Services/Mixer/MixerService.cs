@@ -37,8 +37,8 @@ namespace Fritz.StreamTools.Services
 		public int CurrentViewerCount { get => _numberOfViewers; }
 		public string Name { get { return "Mixer"; } }
 
-		TimeSpan? _cachedUptime;
-		DateTime? _lastUptimeRequest;
+		private bool? _isOnline;
+		DateTimeOffset? _streamStartedAt;
 
 
 		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerChat chat = null, IMixerLive live = null)
@@ -139,6 +139,8 @@ namespace Fritz.StreamTools.Services
 			{
 				update = update ?? new ServiceUpdatedEventArgs();
 				update.IsOnline = data["online"].Value<bool>();
+				_isOnline = update.IsOnline.Value;
+				_streamStartedAt = null;	// Clear cached stream start time
 				_logger.LogTrace($"Online status changed to  {update.IsOnline}");
 			}
 
@@ -238,33 +240,37 @@ namespace Fritz.StreamTools.Services
 		{
 			get
 			{
-				if (!_lastUptimeRequest.HasValue || DateTime.UtcNow - _lastUptimeRequest.Value > TimeSpan.FromSeconds(10))
+				if (_isOnline.HasValue && !_isOnline.Value) return null;
+				if (!_streamStartedAt.HasValue)
 				{
-					_cachedUptime = GetUptime().Result;
-					_lastUptimeRequest = DateTime.UtcNow;
+					_streamStartedAt = GetStreamStartedAt().Result;
 				}
-				return _cachedUptime;
+				var startedAt = _streamStartedAt;
+				if (!startedAt.HasValue) return null;
+
+				// Remove milliseconds
+				var t = DateTimeOffset.UtcNow - startedAt.Value;
+				return TimeSpan.FromSeconds(Math.Round(t.TotalSeconds));
 			}
 		}
 
 		/// <summary>
-		/// Get stream uptime from REST API
+		/// Get stream start time from REST API
 		/// </summary>
-		/// <returns>Uptime, or null if stream is offline</returns>
-		private async Task<TimeSpan?> GetUptime()
+		/// <returns>Start time of stream, or null if stream is offline</returns>
+		private async Task<DateTimeOffset?> GetStreamStartedAt()
 		{
+			_logger.LogInformation("Getting startedAt from REST API");
 			var response = await _client.GetAsync($"channels/{_channelId}/manifest.light2");
-			if (response.StatusCode != System.Net.HttpStatusCode.OK) return null;
+			if (response.StatusCode != HttpStatusCode.OK) return null;
 			var json = await response.Content.ReadAsStringAsync();
 			var doc = JToken.Parse(json);
 
 			if (doc["startedAt"] != null)
 			{
-				var now = DateTimeOffset.UtcNow;
 				if (DateTimeOffset.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
 				{
-					if (now > startedAt)
-						return TimeSpan.FromSeconds((int)(now - startedAt).TotalSeconds);
+					return startedAt;
 				}
 			}
 			return null;

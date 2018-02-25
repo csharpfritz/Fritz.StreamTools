@@ -98,7 +98,7 @@ namespace Fritz.StreamTools.Services.Mixer
 					_logger.LogInformation("Connected to {0}", url);
 					_ws = ws;
 
-					await EatWelcomeMessage().OrTimeout(10000);
+					await EatWelcomeMessageAsync().OrTimeout(10000);
 
 					// start receiving data
 					_receiverTask = Task.Factory.StartNew(() => ReceiverTask(reconnect), TaskCreationOptions.LongRunning);
@@ -116,7 +116,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			return _ws != null;
 		}
 
-		private async Task EatWelcomeMessage()
+		private async Task EatWelcomeMessageAsync()
 		{
 			// Wait for next message
 			var json = await ReceiveNextMessageAsync(_ws);

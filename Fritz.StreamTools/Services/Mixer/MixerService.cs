@@ -174,7 +174,7 @@ namespace Fritz.StreamTools.Services
 
 			try
 			{
-				var userId = await LookupUserId(userName);
+				var userId = await LookupUserIdAsync(userName);
 
 				// Add user as banned from our channel
 				var req = new HttpRequestMessage(new HttpMethod("PATCH"), $"channels/{_channelId}/users/{userId}")
@@ -202,7 +202,7 @@ namespace Fritz.StreamTools.Services
 
 			try
 			{
-				var userId = await LookupUserId(userName);
+				var userId = await LookupUserIdAsync(userName);
 
 				// Add user as banned from our channel
 				var req = new HttpRequestMessage(new HttpMethod("PATCH"), $"channels/{_channelId}/users/{userId}")
@@ -225,7 +225,7 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		/// <param name="userName">Name of the user</param>
 		/// <returns>Id of the user</returns>
-		private async Task<int> LookupUserId(string userName)
+		private async Task<int> LookupUserIdAsync(string userName)
 		{
 			var json = await _client.GetStringAsync($"channels/{WebUtility.UrlEncode(userName)}?noCount=1");
 			var doc = JToken.Parse(json);
@@ -249,7 +249,7 @@ namespace Fritz.StreamTools.Services
 				if (_isOnline.HasValue && !_isOnline.Value) return null;
 				if (!_streamStartedAt.HasValue)
 				{
-					_streamStartedAt = GetStreamStartedAt().Result;
+					_streamStartedAt = GetStreamStartedAtAsync().Result;
 				}
 				var startedAt = _streamStartedAt;
 				if (!startedAt.HasValue) return null;
@@ -264,7 +264,7 @@ namespace Fritz.StreamTools.Services
 		/// Get stream start time from REST API
 		/// </summary>
 		/// <returns>Start time of stream, or null if stream is offline</returns>
-		private async Task<DateTimeOffset?> GetStreamStartedAt()
+		private async Task<DateTimeOffset?> GetStreamStartedAtAsync()
 		{
 			_logger.LogInformation("Getting startedAt from REST API");
 			var response = await _client.GetAsync($"channels/{_channelId}/manifest.light2");

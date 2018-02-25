@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Globalization;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -14,16 +9,14 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services
 {
-	public class MixerService : IHostedService, IStreamService, IChatService
+	public class MixerService : IHostedService, IStreamService, IChatService, IDisposable
 	{
-		const string API_URL = "https://mixer.com/api/v1/";
-
-		IConfiguration _config;
-		HttpClient _client;
-		public ILogger _logger;
-		IMixerChat _chat;
-		IMixerLive _live;
-		CancellationTokenSource _shutdownRequested;
+		readonly IConfiguration _config;
+		readonly ILogger _logger;
+		readonly IMixerChat _chat;
+		readonly IMixerLive _live;
+		readonly CancellationTokenSource _shutdownRequested;
+		readonly IMixerRestClient _restClient;
 
 		int _channelId;
 		int _userId;
@@ -41,18 +34,21 @@ namespace Fritz.StreamTools.Services
 		DateTimeOffset? _streamStartedAt;
 
 
-		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerChat chat = null, IMixerLive live = null)
+		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory = null)
 		{
+			if (loggerFactory == null)
+				throw new ArgumentNullException(nameof(loggerFactory));
+
 			_shutdownRequested = new CancellationTokenSource();
-			_config = config;
+			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_logger = loggerFactory.CreateLogger("MixerService");
 
-			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
-			_client.DefaultRequestHeaders.Add("Accept", "application/json");
-			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
+			factory = factory ?? new MixerFactory(config, loggerFactory);
 
-			_live = live ?? new MixerLive(config, loggerFactory, _client, _shutdownRequested.Token);
-			_chat = chat ?? new MixerChat(config, loggerFactory, _client, _shutdownRequested.Token);
+			_restClient = factory.CreateMixerRestClient(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
+
+			_live = factory.CreateMixerLive(_shutdownRequested.Token);
+			_chat = factory.CreateMixerChat(_restClient, _shutdownRequested.Token);
 		}
 
 
@@ -63,21 +59,18 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			var token = _config["StreamServices:Mixer:Token"];
-			var authConfigured = !string.IsNullOrEmpty(token);
-			if (authConfigured)
-			{
-				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-			}
-
-			// Get our channel information
-			await GetChannelInfo();
+			// Get our current channel information
+			var info = await _restClient.GetChannelInfoAsync();
+			_channelId = info.Id;
+			_userId = info.UserId;
+			_numberOfFollowers = info.NumberOfFollowers;
+			_numberOfViewers = info.NumberOfViewers;
 
 			// Connect to live events (viewer/follower count)
 			await _live.ConnectAndJoinAsync(_channelId);
 			_live.LiveEvent += _live_LiveEvent;
 
-			if(authConfigured)
+			if(_restClient.HasToken)
 			{
 				// Connect to chat server
 				await _chat.ConnectAndJoinAsync(_userId, _channelId);
@@ -151,88 +144,8 @@ namespace Fritz.StreamTools.Services
 			}
 		}
 
-		/// <summary>
-		/// Get our channel id number and current followers from the api
-		/// </summary>
-		async Task GetChannelInfo()
-		{
-			var channel = _config["StreamServices:Mixer:Channel"];
-			var response = JObject.Parse(await _client.GetStringAsync($"channels/{WebUtility.UrlEncode(channel)}?fields=id,userId,numFollowers,viewersCurrent"));
-			_channelId = response["id"].Value<int>();
-			_userId = response["userId"].Value<int>();
-			_numberOfFollowers = response["numFollowers"].Value<int>();
-			_numberOfViewers = response["viewersCurrent"].Value<int>();
-		}
-
-		/// <summary>
-		/// Ban the  user
-		/// </summary>
-		public async Task<bool> BanUserAsync(string userName)
-		{
-			if (string.IsNullOrWhiteSpace(userName))
-				throw new ArgumentException("Must not be null or empty", nameof(userName));
-
-			try
-			{
-				var userId = await LookupUserIdAsync(userName);
-
-				// Add user as banned from our channel
-				var req = new HttpRequestMessage(new HttpMethod("PATCH"), $"channels/{_channelId}/users/{userId}")
-				{
-					Content = new JsonContent(new { add = new[] { "Banned" } })
-				};
-				var response = await _client.SendAsync(req);
-				response.EnsureSuccessStatusCode();
-				return true;
-			}
-			catch (Exception e)
-			{
-				_logger.LogError("Error unbanning user '{0}': {1}", userName, e.Message);
-				return false;
-			}
-		}
-
-		/// <summary>
-		/// Unban the  user
-		/// </summary>
-		public async Task<bool> UnbanUserAsync(string userName)
-		{
-			if (string.IsNullOrWhiteSpace(userName))
-				throw new ArgumentException("Must not be null or empty", nameof(userName));
-
-			try
-			{
-				var userId = await LookupUserIdAsync(userName);
-
-				// Add user as banned from our channel
-				var req = new HttpRequestMessage(new HttpMethod("PATCH"), $"channels/{_channelId}/users/{userId}")
-				{
-					Content = new JsonContent(new { remove = new[] { "Banned" } })
-				};
-				var response = await _client.SendAsync(req);
-				response.EnsureSuccessStatusCode();
-				return true; 
-			}
-			catch (Exception e)
-			{
-				_logger.LogError("Error unbanning user '{0}': {1}", userName, e.Message);
-				return false;
-			}
-		}
-
-		/// <summary>
-		/// Use the REST API to get id of username
-		/// </summary>
-		/// <param name="userName">Name of the user</param>
-		/// <returns>Id of the user</returns>
-		private async Task<int> LookupUserIdAsync(string userName)
-		{
-			var json = await _client.GetStringAsync($"channels/{WebUtility.UrlEncode(userName)}?noCount=1");
-			var doc = JToken.Parse(json);
-			var userId = (int)doc["id"];
-			return userId;
-		}
-
+		public Task<bool> BanUserAsync(string userName) => _restClient.BanUserAsync(userName);
+		public Task<bool> UnbanUserAsync(string userName) => _restClient.UnbanUserAsync(userName);
 		public Task<bool> SendWhisperAsync(string userName, string message) => _chat.SendWhisperAsync(userName, message);
 		public Task<bool> SendMessageAsync(string message) => _chat.SendMessageAsync(message);
 		public Task<bool> TimeoutUserAsync(string userName, TimeSpan time) => _chat.TimeoutUserAsync(userName, time);
@@ -249,7 +162,7 @@ namespace Fritz.StreamTools.Services
 				if (_isOnline.HasValue && !_isOnline.Value) return null;
 				if (!_streamStartedAt.HasValue)
 				{
-					_streamStartedAt = GetStreamStartedAtAsync().Result;
+					_streamStartedAt = _restClient.GetStreamStartedAtAsync().Result;
 				}
 				var startedAt = _streamStartedAt;
 				if (!startedAt.HasValue) return null;
@@ -260,26 +173,13 @@ namespace Fritz.StreamTools.Services
 			}
 		}
 
-		/// <summary>
-		/// Get stream start time from REST API
-		/// </summary>
-		/// <returns>Start time of stream, or null if stream is offline</returns>
-		private async Task<DateTimeOffset?> GetStreamStartedAtAsync()
+		public void Dispose()
 		{
-			_logger.LogInformation("Getting startedAt from REST API");
-			var response = await _client.GetAsync($"channels/{_channelId}/manifest.light2");
-			if (response.StatusCode != HttpStatusCode.OK) return null;
-			var json = await response.Content.ReadAsStringAsync();
-			var doc = JToken.Parse(json);
-
-			if (doc["startedAt"] != null)
-			{
-				if (DateTimeOffset.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
-				{
-					return startedAt;
-				}
-			}
-			return null;
+			_chat.Dispose();
+			_live.Dispose();
+			_restClient.Dispose();
+			_shutdownRequested.Dispose();
+			GC.SuppressFinalize(this);
 		}
 	}
 }

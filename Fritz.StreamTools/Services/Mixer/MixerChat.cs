@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +10,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public interface IMixerChat
+	public interface IMixerChat : IDisposable
 	{
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
 		Task ConnectAndJoinAsync(int userId, int channelId);
@@ -20,21 +19,23 @@ namespace Fritz.StreamTools.Services.Mixer
 		Task<bool> TimeoutUserAsync(string userName, TimeSpan time);
 	}
 
-	public class MixerChat : IMixerChat
+	internal class MixerChat : IMixerChat
 	{
 		readonly IConfiguration _config;
 		readonly ILoggerFactory _loggerFactory;
-		readonly HttpClient _client;
+		readonly IMixerFactory _factory;
+		readonly IMixerRestClient _client;
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		int _myUserId;
-		JsonRpcWebSocket _channel;
+		IJsonRpcWebSocket _channel;
 
-		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, HttpClient client, CancellationToken shutdown)
+		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, IMixerRestClient client, CancellationToken shutdown)
 		{
-			_config = config;
-			_loggerFactory = loggerFactory;
-			_client = client;
+			_config = config ?? throw new ArgumentNullException(nameof(config));
+			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
+			_client = client ?? throw new ArgumentNullException(nameof(client));
 			_shutdown = shutdown;
 			_logger = loggerFactory.CreateLogger("MixerChat");
 		}
@@ -58,35 +59,31 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			_myUserId = userId;
 
-			// Get chat authkey and chat endpoints
-			var response = await _client.GetStringAsync($"chats/{channelId}");
-			var doc = JToken.Parse(response);
-			var chatAuthKey = doc["authkey"].Value<string>();
-			var endpoints = doc["endpoints"].Values<string>().ToArray();
+			// Get chat authkey and endpoints
+			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 
-			_channel = new JsonRpcWebSocket(_logger, isChat: true);
+			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
 			var endpointIndex = 1; // Skip 1st one, seems to fail often
 
 			// Chose next endpoint
 			string getNextEnpoint()
 			{
-				var endpoint = endpoints[endpointIndex];
-				endpointIndex = (endpointIndex + 1) % endpoints.Length;
-				return endpoints[endpointIndex];
+				var endpoint = chatData.Endpoints[endpointIndex];
+				endpointIndex = (endpointIndex + 1) % chatData.Endpoints.Length;
+				return chatData.Endpoints[endpointIndex];
 			}
 
 			// Connect to the chat endpoint
 			while (!await _channel.TryConnectAsync(getNextEnpoint, null, async () => {
 				// Join the channel and send authkey
-				var succeeded = await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+				var succeeded = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
 				if (!succeeded)
 				{
 					// Try again with a new chatAuthKey
-					doc = JToken.Parse(await _client.GetStringAsync($"chats/{channelId}"));
-					chatAuthKey = doc["authkey"].Value<string>();
+					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 
 					// If this fail give up !
-					await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+					await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
 				}
 			}));
 
@@ -164,6 +161,13 @@ namespace Fritz.StreamTools.Services.Mixer
 				_logger.LogTrace($"{e.Data["username"]} left the Mixer channel");
 
 			}
+		}
+
+		public void Dispose()
+		{
+			// Dont dispose _client here!
+			_channel.Dispose();
+			GC.SuppressFinalize(this);
 		}
 	}
 }

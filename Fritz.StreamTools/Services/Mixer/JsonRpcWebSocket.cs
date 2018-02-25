@@ -13,18 +13,27 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
+	public interface IJsonRpcWebSocket
+	{
+		event EventHandler<EventEventArgs> EventReceived;
+		Task<bool> SendAsync(string method, params object[] args);
+		Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> connectCompleted);
+		void Dispose();
+	}
+
 	public class EventEventArgs : EventArgs
 	{
 		public string Event { get; set; }
 		public JToken Data { get; set; }
 	}
 
-	public class JsonRpcWebSocket : IDisposable
-  {
+	internal class JsonRpcWebSocket : IJsonRpcWebSocket, IDisposable
+	{
 		const int CONNECT_TIMEOUT = 20000;  // In milliseconds
 		const int SOCKET_BUFFER_SIZE = 1024;
 
 		readonly ILogger _logger;
+		readonly IMixerFactory _factory;
 		readonly bool _isChat;
 		readonly byte[] _receiveBuffer;
 
@@ -45,9 +54,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Construct a new JsonRpcWebSocket object
 		/// </summary>
-		public JsonRpcWebSocket(ILogger logger, bool isChat)
+		public JsonRpcWebSocket(ILogger logger, IMixerFactory factory, bool isChat)
 		{
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_isChat = isChat;
 			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
 		}
@@ -84,7 +94,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 				try
 				{
-					var ws = new ClientWebSocket();
+					var ws = _factory.CreateClientWebSocket();
 					ws.Options.KeepAliveInterval = TimeSpan.FromMinutes(1);
 					ws.Options.SetRequestHeader("x-is-bot", "true");
 					if (!string.IsNullOrEmpty(accessToken))
@@ -324,6 +334,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				_ws.Dispose();
 				if (_receiverTask != null) _receiverTask.Wait();
 			}
+
 			_disposed = true;
 		}
 	}

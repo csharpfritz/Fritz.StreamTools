@@ -10,29 +10,28 @@ using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public interface IMixerLive
+	public interface IMixerLive : IDisposable
 	{
 		event EventHandler<EventEventArgs> LiveEvent;
 		Task ConnectAndJoinAsync(int channelId);
 	}
 
-	public class MixerLive : IMixerLive
+	internal class MixerLive : IMixerLive
 	{
 		const string WS_URL = "wss://constellation.mixer.com";
-		const int RECONNECT_DELAY = 10;
 
 		readonly IConfiguration _config;
 		readonly ILoggerFactory _loggerFactory;
-		readonly HttpClient _client;
+		readonly IMixerFactory _factory;
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
-		JsonRpcWebSocket _channel;
+		IJsonRpcWebSocket _channel;
 
-		public MixerLive(IConfiguration config, ILoggerFactory loggerFactory, HttpClient client, CancellationToken shutdown)
+		public MixerLive(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, CancellationToken shutdown)
 		{
-			_config = config;
-			_loggerFactory = loggerFactory;
-			_client = client;
+			_config = config ?? throw new ArgumentNullException(nameof(config));
+			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_shutdown = shutdown;
 			_logger = loggerFactory.CreateLogger("MixerLive");
 		}
@@ -53,7 +52,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			var token = _config["StreamServices:Mixer:Token"];
 			if (string.IsNullOrWhiteSpace(token)) token = null;
 
-			_channel = new JsonRpcWebSocket(_logger, isChat: false);
+			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: false);
 
 			// Connect to the chat endpoint
 			while (!await _channel.TryConnectAsync(() => WS_URL, token, () =>	{
@@ -74,6 +73,12 @@ namespace Fritz.StreamTools.Services.Mixer
 				Debug.Assert(e.Data["payload"] != null);
 				LiveEvent?.Invoke(this, new EventEventArgs { Event = e.Event, Data = e.Data["payload"] });
 			}
+		}
+
+		public void Dispose()
+		{
+			_channel.Dispose();
+			GC.SuppressFinalize(this);
 		}
 	}
 }

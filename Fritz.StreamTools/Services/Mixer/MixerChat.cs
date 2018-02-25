@@ -76,26 +76,19 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 
 			// Connect to the chat endpoint
-			while (true)
-			{
-				if (await _channel.TryConnectAsync(getNextEnpoint, null, async () =>
+			while (!await _channel.TryConnectAsync(getNextEnpoint, null, async () => {
+				// Join the channel and send authkey
+				var succeeded = await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
+				if (!succeeded)
 				{
-					// Join the channel and send authkey
-					var succeeded = await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
-					if(!succeeded)
-					{
-						// Try again with a new chatAuthKey
-						doc = JToken.Parse(await _client.GetStringAsync($"chats/{channelId}"));
-						chatAuthKey = doc["authkey"].Value<string>();
+					// Try again with a new chatAuthKey
+					doc = JToken.Parse(await _client.GetStringAsync($"chats/{channelId}"));
+					chatAuthKey = doc["authkey"].Value<string>();
 
-						// If this fail give up !
-						await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
-					}
-				}))
-				{
-					break;
+					// If this fail give up !
+					await _channel.SendAsync("auth", channelId, userId, chatAuthKey);
 				}
-			}
+			}));
 
 			_channel.EventReceived += Chat_EventReceived;
 		}

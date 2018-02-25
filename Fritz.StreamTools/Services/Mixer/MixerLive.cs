@@ -56,16 +56,10 @@ namespace Fritz.StreamTools.Services.Mixer
 			_channel = new JsonRpcWebSocket(_logger, isChat: false);
 
 			// Connect to the chat endpoint
-			while (true)
-			{
-				if (await _channel.TryConnectAsync(() => WS_URL, token, () => {
-					// Join the channel and request live updates
-					return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
-				}))
-				{
-					break;
-				}
-			}
+			while (!await _channel.TryConnectAsync(() => WS_URL, token, () =>	{
+				// Join the channel and request live updates
+				return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
+			}));
 
 			_channel.EventReceived += Chat_EventReceived;
 		}

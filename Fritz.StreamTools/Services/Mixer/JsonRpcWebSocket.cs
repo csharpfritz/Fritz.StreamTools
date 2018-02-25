@@ -20,7 +20,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 	public class JsonRpcWebSocket : IDisposable
   {
-		const int CONNECT_TIMEOUT = 20000;	// In milliseconds
+		const int CONNECT_TIMEOUT = 20000;  // In milliseconds
 		ClientWebSocket _ws;
 		CancellationTokenSource _cancellationToken = new CancellationTokenSource();
 		ILogger _logger;
@@ -77,6 +77,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				try
 				{
 					var ws = new ClientWebSocket();
+					ws.Options.KeepAliveInterval = TimeSpan.FromMinutes(1);
 					ws.Options.SetRequestHeader("x-is-bot", "true");
 					if (!string.IsNullOrEmpty(accessToken))
 					{

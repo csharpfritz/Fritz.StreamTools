@@ -169,6 +169,9 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		public async Task<bool> BanUserAsync(string userName)
 		{
+			if (string.IsNullOrWhiteSpace(userName))
+				throw new ArgumentException("Must not be null or empty", nameof(userName));
+
 			try
 			{
 				var userId = await LookupUserId(userName);
@@ -194,6 +197,9 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		public async Task<bool> UnbanUserAsync(string userName)
 		{
+			if (string.IsNullOrWhiteSpace(userName))
+				throw new ArgumentException("Must not be null or empty", nameof(userName));
+
 			try
 			{
 				var userId = await LookupUserId(userName);

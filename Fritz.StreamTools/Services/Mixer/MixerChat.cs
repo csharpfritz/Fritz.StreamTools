@@ -98,6 +98,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		public async Task<bool> SendMessageAsync(string message)
 		{
+			if (string.IsNullOrEmpty(message))
+				throw new ArgumentException("Must not be null or empty", nameof(message));
+
 			var success = await _channel.SendAsync("msg", message);
 			if (success) _logger.LogTrace($"Send message '{message}'");
 			return success;
@@ -108,6 +111,11 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		public async Task<bool> SendWhisperAsync(string userName, string message)
 		{
+			if (string.IsNullOrWhiteSpace(userName))
+				throw new ArgumentException("Must not be null or empty", nameof(userName));
+			if (string.IsNullOrEmpty(message))
+				throw new ArgumentException("Must not be null or empty", nameof(message));
+
 			var success = await _channel.SendAsync("whisper", userName, message);
 			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
 			return success;
@@ -115,6 +123,9 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public async Task<bool> TimeoutUserAsync(string userName, TimeSpan time)
 		{
+			if (string.IsNullOrWhiteSpace(userName))
+				throw new ArgumentException("Must not be null or empty", nameof(userName));
+
 			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");
 			if (success) _logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");
 			return success;

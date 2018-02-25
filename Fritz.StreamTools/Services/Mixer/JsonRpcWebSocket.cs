@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
@@ -21,14 +22,18 @@ namespace Fritz.StreamTools.Services.Mixer
 	public class JsonRpcWebSocket : IDisposable
   {
 		const int CONNECT_TIMEOUT = 20000;  // In milliseconds
+		const int SOCKET_BUFFER_SIZE = 1024;
+
+		readonly ILogger _logger;
+		readonly bool _isChat;
+		readonly byte[] _receiveBuffer;
+
 		ClientWebSocket _ws;
 		CancellationTokenSource _cancellationToken = new CancellationTokenSource();
-		ILogger _logger;
 		bool _disposed;
 		int _nextPacketId = 0;
 		ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
-		readonly bool _isChat;
-		ConcurrentQueue<string> _myMessages = new ConcurrentQueue<string>();
+		ConcurrentQueue<string> _myLatestMessages = new ConcurrentQueue<string>();
 		Task _receiverTask;
 		int? _receiverThreadId;
 
@@ -44,10 +49,13 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_isChat = isChat;
+			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
 		}
 
 		/// <summary>
-		/// Try connecting to the specified websocker url
+		/// Try connecting to the specified websocker url once.
+		/// If the connection is successfull, it will complete the function and you dont have to worry
+		/// about reconnects
 		/// </summary>
 		public async Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> connectCompleted)
 		{
@@ -110,9 +118,8 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		private async Task EatWelcomeMessage()
 		{
-			var segment = new ArraySegment<byte>(new byte[100]);
-			var result = await _ws.ReceiveAsync(segment, CancellationToken.None);
-			var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
+			// Wait for next message
+			var json = await ReceiveNextMessageAsync(_ws);
 			_logger.LogTrace("<< " + json);
 		}
 
@@ -123,25 +130,23 @@ namespace Fritz.StreamTools.Services.Mixer
 		private async Task ReceiverTask(Func<Task> reconnect)
 		{
 			_receiverThreadId = Thread.CurrentThread.ManagedThreadId;
-			var segment = new ArraySegment<byte>(new byte[4096]);
 			var ws = _ws;
 
 			while (!_cancellationToken.IsCancellationRequested)
 			{
-				JToken doc;
 				try
 				{
-					// Get next packet (will block)
-					// NOTE: I expect to receive a complete packet, which might not be correct ?!?
-					var result = await ws.ReceiveAsync(segment, _cancellationToken.Token);
-					if (result == null || result.Count == 0) return;
-
-					var json = Encoding.UTF8.GetString(segment.Array.Take(result.Count).ToArray());
+					// Wait for next message
+					var json = await ReceiveNextMessageAsync(ws);
+					if (json == null) return;	// Connection closed maybe ?
 					_logger.LogTrace("<< " + json);
-					doc = JToken.Parse(json);
+					var doc = JToken.Parse(json);
+					if (doc.IsNullOrEmpty()) continue;
 
+					var type = doc["type"];
+					if (type.IsNullOrEmpty()) continue;
 
-					switch (doc["type"].Value<string>())
+					switch ((string)type)
 					{
 						case "reply":
 							HandleReply(doc);
@@ -162,29 +167,43 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 		}
 
+		/// <summary>
+		/// Handle an event message from the websocket
+		/// </summary>
 		private void HandleEvent(JToken doc)
 		{
+			if (doc.IsNullOrEmpty()) return;
+
+			var data = doc["data"];
+			if (data.IsNullOrEmpty() || data["id"].IsNullOrEmpty()) return;
+
 			// Ignore messages I have send
-			var msgId = (string)doc["data"]["id"];
-			if (_myMessages.Contains(msgId)) return;
+			var msgId = (string)data["id"];
+			if (_myLatestMessages.Contains(msgId)) return;
 
 			// Some event received, chat message maybe ?
-			EventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = doc["data"] });
+			EventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = data });
 		}
 
+		/// <summary>
+		/// Handle a reply message from the websocket
+		/// </summary>
 		private void HandleReply(JToken doc)
 		{
+			if (doc.IsNullOrEmpty()) return;
+
 			var error = doc["error"];
-			if (error.HasValues)
+			if(!error.IsNullOrEmpty())
 			{
 				_logger.LogError($"Error from server: Code = {(int)error["code"]} Message = '{(string)error["message"]}'");
 			}
 
-			if (doc["data"] != null && doc["data"]["id"] != null)
+			var data = doc["data"];
+			if (!data.IsNullOrEmpty() && !data["id"].IsNullOrEmpty())
 			{
 				// Remember last 5 messages I have send
-				_myMessages.Enqueue((string)doc["data"]["id"]);
-				while (_myMessages.Count > 5) _myMessages.TryDequeue(out var _);
+				_myLatestMessages.Enqueue((string)data["id"]);
+				while (_myLatestMessages.Count > 5) _myLatestMessages.TryDequeue(out var _);
 			}
 
 			var id = doc["id"].Value<int>();
@@ -254,12 +273,40 @@ namespace Fritz.StreamTools.Services.Mixer
 			try
 			{
 				await ws.SendAsync(buffer, WebSocketMessageType.Text, true, _cancellationToken.Token);
-				await tcs.Task.OrTimeout();
+				if (Debugger.IsAttached)	// no timeout while debugging
+					await tcs.Task;
+				else
+					await tcs.Task.OrTimeout();
 				return tcs.Task.Result;
 			}
 			finally
 			{
 				_pendingRequests.TryRemove(id, out var _);
+			}
+		}
+
+		/// <summary>
+		/// Reads the complete next text message from the websocket
+		/// </summary>
+		/// <returns>The text message</returns>
+		private async Task<string> ReceiveNextMessageAsync(ClientWebSocket ws)
+		{
+			var buffer = new ArraySegment<byte>(_receiveBuffer);
+			WebSocketReceiveResult result;
+			using (var ms = new MemoryStream())
+			{
+				do
+				{
+					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token);
+					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
+					if (result == null || result.MessageType == WebSocketMessageType.Close) return null;
+					ms.Write(buffer.Array, buffer.Offset, result.Count);
+				}
+				while (!result.EndOfMessage);
+
+				ms.Seek(0, SeekOrigin.Begin);
+				using (var reader = new StreamReader(ms, Encoding.UTF8))
+					return reader.ReadToEnd();
 			}
 		}
 

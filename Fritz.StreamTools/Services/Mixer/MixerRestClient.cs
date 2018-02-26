@@ -37,6 +37,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		public bool HasToken { get; }
 		public string ChannelName { get => _channelName; }
 
+		/// <summary>
+		/// Construct new MixerRestClient
+		/// </summary>
 		public MixerRestClient(ILoggerFactory loggerFactory, string channelName, string token)
 		{
 			if (loggerFactory == null)
@@ -57,23 +60,27 @@ namespace Fritz.StreamTools.Services.Mixer
 			_channelName = channelName;
 		}
 
+		/// <summary>
+		/// Get the channel id number from channel name.
+		/// The value is cached after first lookup
+		/// </summary>
 		public async Task<int> GetChannelIdAsync()
 		{
 			if (_channelId.HasValue) return _channelId.Value;
 
 			var req = $"channels/{WebUtility.UrlEncode(_channelName)}?fields=id";
-			_logger.LogTrace("GET {0}{1}", API_URL, req);
-			var json = await _client.GetStringAsync(req).ConfigureAwait(false);
-			_channelId = JObject.Parse(json)["id"].Value<int>();
+			var doc = await GetJTokenAsync(req);
+			_channelId = (int)doc["id"];
 			return _channelId.Value;
 		}
 
+		/// <summary>
+		/// Get basic channel information, including current follower and viewer count
+		/// </summary>
 		public async Task<ChannelInfo> GetChannelInfoAsync()
 		{
 			var req = $"channels/{WebUtility.UrlEncode(_channelName)}?fields=id,userId,numFollowers,viewersCurrent";
-			_logger.LogTrace("GET {0}{1}", API_URL, req);
-			var json = await _client.GetStringAsync(req).ConfigureAwait(false);
-			var result = JsonConvert.DeserializeObject<ChannelInfo>(json);
+			var result = await GetAsync<ChannelInfo>(req);
 			_channelId = result.Id;
 			return result;
 		}
@@ -88,20 +95,19 @@ namespace Fritz.StreamTools.Services.Mixer
 			try
 			{
 				var req = $"channels/{WebUtility.UrlEncode(userName)}?noCount=1";
-				_logger.LogTrace("GET {0}{1}", API_URL, req);
-				var json = await _client.GetStringAsync(req);
-				var doc = JToken.Parse(json);
-				var userId = (int)doc["id"];
-				return userId;
-
+				var doc = await GetJTokenAsync(req);
+				return (int)doc["id"];
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
-				_logger.LogError("Cant find user '0': {1}", userName, e.Message);
+				_logger.LogError("Unknown user '{0}'", userName);
 				return null;
 			}
 		}
 
+		/// <summary>
+		/// Ban user from chat
+		/// </summary>
 		public async Task<bool> BanUserAsync(string userName)
 		{
 			if (string.IsNullOrWhiteSpace(userName))
@@ -116,15 +122,8 @@ namespace Fritz.StreamTools.Services.Mixer
 
 				// Add user as banned from our channel
 				var req = $"channels/{_channelId}/users/{userId}";
-				_logger.LogTrace("PATCH {0}{1}", API_URL, req);
-				var message = new HttpRequestMessage(new HttpMethod("PATCH"), req)
-				{
-					Content = new JsonContent(new { add = new[] { "Banned" } })
-				};
-				var response = await _client.SendAsync(message);
-				response.EnsureSuccessStatusCode();
+				await PatchAsync(req, new { add = new[] { "Banned" } });
 				return true;
-
 			}
 			catch (Exception e)
 			{
@@ -133,6 +132,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 		}
 
+		/// <summary>
+		/// Unban user from chat
+		/// </summary>
 		public async Task<bool> UnbanUserAsync(string userName)
 		{
 			if (string.IsNullOrWhiteSpace(userName))
@@ -144,13 +146,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 				// Add user as banned from our channel
 				var req = $"channels/{_channelId}/users/{userId}";
-				_logger.LogTrace("PATCH {0}{1}", API_URL, req);
-				var message = new HttpRequestMessage(new HttpMethod("PATCH"), req)
-				{
-					Content = new JsonContent(new { remove = new[] { "Banned" } })
-				};
-				var response = await _client.SendAsync(message);
-				response.EnsureSuccessStatusCode();
+				await PatchAsync(req, new { remove = new[] { "Banned" } });
 				return true;
 			}
 			catch (Exception e)
@@ -183,15 +179,48 @@ namespace Fritz.StreamTools.Services.Mixer
 			return null;
 		}
 
+		/// <summary>
+		/// Get auth key and endpoints for connecting websocket to chat
+		/// </summary>
 		public async Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync()
 		{
 			// Get chat authkey and chat endpoints
 			var id = await GetChannelIdAsync();
 			var req = $"chats/{id}";
-			_logger.LogTrace("GET {0}{1}", API_URL, req);
-			var json = await _client.GetStringAsync(req);
-			return JsonConvert.DeserializeObject<ChatAuthKeyAndEndpoints>(json);
+			return await GetAsync<ChatAuthKeyAndEndpoints>(req);
 		}
+
+		#region HttpClient helpers
+
+		async Task<T> GetAsync<T>(string requestUri)
+		{
+			_logger.LogTrace("GET {0}{1}", API_URL, requestUri);
+
+			var json = await _client.GetStringAsync(requestUri);
+			return JsonConvert.DeserializeObject<T>(json);
+		}
+
+		async Task<JToken> GetJTokenAsync(string requestUri)
+		{
+			_logger.LogTrace("GET {0}{1}", API_URL, requestUri);
+
+			var json = await _client.GetStringAsync(requestUri);
+			return JToken.Parse(json);
+		}
+
+		async Task PatchAsync<T>(string requestUri, T data)
+		{
+			_logger.LogTrace("PATCH {0}{1}", API_URL, requestUri);
+
+			var message = new HttpRequestMessage(new HttpMethod("PATCH"), requestUri)
+			{
+				Content = new JsonContent(data)
+			};
+			var response = await _client.SendAsync(message);
+			response.EnsureSuccessStatusCode();
+		}
+
+		#endregion
 
 		public void Dispose()
 		{

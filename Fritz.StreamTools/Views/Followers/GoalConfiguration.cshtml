@@ -38,12 +38,7 @@
 	</div>
 </div>
 
-	@section scripts {
-		<script>
-			const GoogleFontsApiKey = '@ViewBag.GoogleFontsApiKey';	
-		</script>
-		<script src="/js/GoalConfiguration.min.js"></script>
-	}
+	
 <div class="row">
 	<div class="col-md-6 mb-3 form-inline">
 		<label for="emptyBgColor">Empty Bg Color:</label>
@@ -86,6 +81,12 @@
 	<p><a id="outputUrl" href="#" target="_blank"></a></p>
 </div>
 
+@section scripts {
+		<script>
+			const GoogleFontsApiKey = '@ViewBag.GoogleFontsApiKey';	
+		</script>
+		<script src="/js/GoalConfiguration.min.js"></script>
+	}
 
 @section styles {
 	<link type="text/css" rel="stylesheet" href="~/css/cachedGoogleFont.css"/>

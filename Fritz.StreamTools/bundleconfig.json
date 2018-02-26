@@ -24,6 +24,8 @@
 	{
 		"outputFileName": "wwwroot/js/GoalConfiguration.min.js",
 		"inputFiles": [
+					"ClientApp/GoalConfiguration/Preview.js",
+					"ClientApp/GoalConfiguration/GoogleFonts.js",
 					"ClientApp/GoalConfiguration/GoalConfiguration.js"
 		],
 		// Optionally specify minification options

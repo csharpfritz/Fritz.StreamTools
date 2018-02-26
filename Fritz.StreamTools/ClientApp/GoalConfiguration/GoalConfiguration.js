@@ -14,15 +14,7 @@ var log = function (message, params) {
 
 	loadPreview();
 
-	const quickPreviewButton = "preview";
-	const quickPreviewTextBoxes = ["caption", "goal", "current", "emptyBgColor", "emptyFontColor", "bgcolor1", "bgblend1"];
-
-	for (var tb of quickPreviewTextBoxes) {
-		document.getElementById(tb).onchange = loadPreview;
-	}
-
-	document.getElementById(quickPreviewButton).onclick = loadPreview;
-
+	InitPreview();
 
 	function onload() {
 

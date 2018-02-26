@@ -1,3 +1,16 @@
+function InitPreview(){
+    const quickPreviewButton = "preview";
+	const quickPreviewTextBoxes = ["caption", "goal", "current", "emptyBgColor", "emptyFontColor", "bgcolor1", "bgblend1"];
+
+	for (var tb of quickPreviewTextBoxes) {
+		document.getElementById(tb).onchange = loadPreview;
+	}
+
+	document.getElementById(quickPreviewButton).onclick = loadPreview;
+
+
+}
+
 
 function loadPreview() {
 

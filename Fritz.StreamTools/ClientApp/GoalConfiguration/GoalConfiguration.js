@@ -21,7 +21,7 @@ const quickPreviewTextBoxes = ["preview", "caption", "goal", "current", "emptyBg
 		document.getElementById(tb).onchange = loadPreview;
 	}
 
-	document.getElementById(quickPreviewButton).onchange = loadPreview;
+	document.getElementById(quickPreviewButton).onclick = loadPreview;
 
 
 	function onload() {

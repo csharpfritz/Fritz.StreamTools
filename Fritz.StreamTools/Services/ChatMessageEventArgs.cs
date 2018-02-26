@@ -7,6 +7,7 @@ namespace Fritz.StreamTools.Services
 		public string ServiceName { get; set; }
 		public int UserId { get; set; }
 		public string UserName { get; set; }
+		public bool IsWhisper { get; set; }
 		public bool IsOwner { get; set; }
 		public bool IsModerator { get; set; }
 		public string Message { get; set; }

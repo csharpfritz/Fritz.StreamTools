@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +12,7 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IMixerLive : IDisposable
 	{
-		event EventHandler<EventEventArgs> LiveEvent;
+		event EventHandler<LiveEventArgs> LiveEvent;
 		Task ConnectAndJoinAsync(int channelId);
 	}
 
@@ -33,13 +33,13 @@ namespace Fritz.StreamTools.Services.Mixer
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_shutdown = shutdown;
-			_logger = loggerFactory.CreateLogger("MixerLive");
+			_logger = loggerFactory.CreateLogger(nameof(MixerLive));
 		}
 
 		/// <summary>
 		/// Raised each time a chat message is received
 		/// </summary>
-		public event EventHandler<EventEventArgs> LiveEvent;
+		public event EventHandler<LiveEventArgs> LiveEvent;
 
 		/// <summary>
 		/// Connect to the live event server, and join our channel
@@ -60,18 +60,27 @@ namespace Fritz.StreamTools.Services.Mixer
 				return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
 			}));
 
-			_channel.EventReceived += Chat_EventReceived;
+			_channel.EventReceived += EventReceived;
 		}
 
 		/// <summary>
 		/// Called when we receive a new live event from server
 		/// </summary>
-		private void Chat_EventReceived(object sender, EventEventArgs e)
+		private void EventReceived(object sender, EventEventArgs e)
 		{
 			if(e.Event == "live")
 			{
-				Debug.Assert(e.Data["payload"] != null);
-				LiveEvent?.Invoke(this, new EventEventArgs { Event = e.Event, Data = e.Data["payload"] });
+				var payload = e.Data["payload"];
+				if (payload.IsNullOrEmpty()) return;
+
+				var e2 = new LiveEventArgs();
+				if (payload["numFollowers"] != null) e2.FollowerCount = (int)payload["numFollowers"];
+				if (payload["viewersCurrent"] != null) e2.ViewerCount = (int)payload["viewersCurrent"];
+				if (payload["online"] != null) e2.IsOnline = (bool)payload["online"];
+				if(e2.FollowerCount.HasValue || e2.ViewerCount.HasValue || e2.IsOnline.HasValue)
+				{
+					LiveEvent?.Invoke(this, e2);
+				}
 			}
 		}
 
@@ -80,5 +89,12 @@ namespace Fritz.StreamTools.Services.Mixer
 			_channel.Dispose();
 			GC.SuppressFinalize(this);
 		}
+	}
+
+	public class LiveEventArgs : EventArgs
+	{
+		public int? FollowerCount { get; set; }
+		public int? ViewerCount { get; set; }
+		public bool? IsOnline { get; set; }
 	}
 }

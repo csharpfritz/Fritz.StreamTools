@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -13,6 +14,9 @@ namespace Fritz.StreamTools.Services.Mixer
 	public interface IMixerChat : IDisposable
 	{
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
+		event EventHandler<ChatUserInfoEventArgs> UserJoined;
+		event EventHandler<ChatUserInfoEventArgs> UserLeft;
+
 		Task ConnectAndJoinAsync(int userId, int channelId);
 		Task<bool> SendWhisperAsync(string userName, string message);
 		Task<bool> SendMessageAsync(string message);
@@ -37,13 +41,16 @@ namespace Fritz.StreamTools.Services.Mixer
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_client = client ?? throw new ArgumentNullException(nameof(client));
 			_shutdown = shutdown;
-			_logger = loggerFactory.CreateLogger("MixerChat");
+			_logger = loggerFactory.CreateLogger(nameof(MixerChat));
 		}
 
 		/// <summary>
 		/// Raised each time a chat message is received
 		/// </summary>
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
+
+		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
+		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
 		/// <summary>
 		/// Connect to the chat server, and join our channel
@@ -63,7 +70,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
-			var endpointIndex = 1; // Skip 1st one, seems to fail often
+			var endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1); // Skip 1st one, seems to fail often
 
 			// Chose next endpoint
 			string getNextEnpoint()
@@ -81,15 +88,17 @@ namespace Fritz.StreamTools.Services.Mixer
 				{
 					// Try again with a new chatAuthKey
 					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
+					endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1);
 
 					// If this fail give up !
 					await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
 				}
 			}));
 
-			_channel.EventReceived += Chat_EventReceived;
+			_channel.EventReceived += EventReceived;
 		}
 
+		//
 		/// <summary>
 		/// Send a chat message
 		/// </summary>
@@ -131,7 +140,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Called when we receive a new event from the chat server
 		/// </summary>
-		private void Chat_EventReceived(object sender, EventEventArgs e)
+		private void EventReceived(object sender, EventEventArgs e)
 		{
 			if(e.Event == "ChatMessage")
 			{
@@ -142,10 +151,19 @@ namespace Fritz.StreamTools.Services.Mixer
 				var segments = e.Data["message"]["message"];
 				var combinedText = string.Join("", segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
 
+				var isWhisper = false;
+				var meta = e.Data["message"]["meta"];
+				if(!meta.IsNullOrEmpty() && !meta["whisper"].IsNullOrEmpty())
+				{
+					// "meta":{"whisper":true}},"target":"jobun44"}
+					isWhisper = (bool)meta["whisper"];
+				}
+
 				ChatMessage?.Invoke(this, new ChatMessageEventArgs
 				{
 					UserId = userId,
 					UserName = e.Data["user_name"].Value<string>(),
+					IsWhisper = isWhisper,
 					IsModerator = roles.Contains("Mod"),
 					IsOwner = roles.Contains("Owner"),
 					Message = combinedText
@@ -153,13 +171,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 			else if(e.Event == "UserJoin")
 			{
-				_logger.LogTrace($"{e.Data["username"]} joined the Mixer channel");
-
+				UserJoined?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
 			}
 			else if (e.Event == "UserLeave")
 			{
-				_logger.LogTrace($"{e.Data["username"]} left the Mixer channel");
-
+				UserLeft?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
 			}
 		}
 

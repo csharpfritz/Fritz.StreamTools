@@ -9,6 +9,8 @@ namespace Fritz.StreamTools.Services
 		string Name { get; }
 
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
+		event EventHandler<ChatUserInfoEventArgs> UserJoined;
+		event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
 		Task<bool> SendMessageAsync(string message);
 		Task<bool> SendWhisperAsync(string userName, string message);

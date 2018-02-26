@@ -185,11 +185,14 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (doc.IsNullOrEmpty()) return;
 
 			var data = doc["data"];
-			if (data.IsNullOrEmpty() || data["id"].IsNullOrEmpty()) return;
+			if (data.IsNullOrEmpty()) return;
 
-			// Ignore messages I have send
-			var msgId = (string)data["id"];
-			if (_myLatestMessages.Contains(msgId)) return;
+			if (!data["id"].IsNullOrEmpty())
+			{
+				// Ignore messages I have send
+				var msgId = (string)data["id"];
+				if (_myLatestMessages.Contains(msgId)) return;
+			}
 
 			// Some event received, chat message maybe ?
 			EventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = data });

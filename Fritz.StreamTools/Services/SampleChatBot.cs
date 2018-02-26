@@ -34,7 +34,7 @@ namespace Fritz.StreamTools.Services
 		{
 			_config = config;
 			_serviceProvider = serviceProvider;
-			_logger = loggerFactory.CreateLogger<SampleChatBot>();
+			_logger = loggerFactory.CreateLogger(nameof(SampleChatBot));
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
 
@@ -55,6 +55,8 @@ namespace Fritz.StreamTools.Services
 			foreach(var chat in _chatServices)
 			{
 				chat.ChatMessage += Chat_ChatMessage;
+				chat.UserJoined += Chat_UserJoined;
+				chat.UserLeft += Chat_UserLeft;
 			}
 			return Task.CompletedTask;
 		}
@@ -64,6 +66,8 @@ namespace Fritz.StreamTools.Services
 			foreach (var chat in _chatServices)
 			{
 				chat.ChatMessage -= Chat_ChatMessage;
+				chat.UserJoined -= Chat_UserJoined;
+				chat.UserLeft -= Chat_UserLeft;
 			}
 			return Task.CompletedTask;
 		}
@@ -104,7 +108,7 @@ namespace Fritz.StreamTools.Services
 					break;
 				case "echo":
 					if (segments.Length < 2) return;
-					await chatService.SendMessageAsync("Echo reply: " + string.Join(' ', segments.Skip(1)));
+					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
 					break;
 				case "uptime":
 					{
@@ -129,5 +133,9 @@ namespace Fritz.StreamTools.Services
 			user.LastCommandTime = DateTime.UtcNow;
 			_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
 		}
+
+		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogInformation($"{e.UserName} joined {e.ServiceName} chat");
+		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogInformation($"{e.UserName} left {e.ServiceName} chat");
+
 	}
 }

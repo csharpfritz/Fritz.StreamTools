@@ -25,6 +25,8 @@ namespace Fritz.StreamTools.Services
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
+		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
+		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
 		public int CurrentFollowerCount { get => _numberOfFollowers; }
 		public int CurrentViewerCount { get => _numberOfViewers; }
@@ -41,7 +43,7 @@ namespace Fritz.StreamTools.Services
 
 			_shutdownRequested = new CancellationTokenSource();
 			_config = config ?? throw new ArgumentNullException(nameof(config));
-			_logger = loggerFactory.CreateLogger("MixerService");
+			_logger = loggerFactory.CreateLogger(nameof(MixerService));
 
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
@@ -75,9 +77,23 @@ namespace Fritz.StreamTools.Services
 				// Connect to chat server
 				await _chat.ConnectAndJoinAsync(_userId, _channelId);
 				_chat.ChatMessage += _chat_ChatMessage;
+				_chat.UserJoined += _chat_UserJoined;
+				_chat.UserLeft += _chat_UserLeft;
 			}
 
 			_logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
+		}
+
+		private void _chat_UserJoined(object sender, ChatUserInfoEventArgs e)
+		{
+			e.ServiceName = Name;
+			UserJoined?.Invoke(this, e);
+		}
+
+		private void _chat_UserLeft(object sender, ChatUserInfoEventArgs e)
+		{
+			e.ServiceName = Name;
+			UserLeft?.Invoke(this, e);
 		}
 
 		/// <summary>
@@ -101,38 +117,36 @@ namespace Fritz.StreamTools.Services
 		}
 
 		/// <summary>
-		/// Viewers/followers event handler
+		/// Viewers/followers/IsOnline event handler
 		/// </summary>
-		private void _live_LiveEvent(object sender, EventEventArgs e)
+		private void _live_LiveEvent(object sender, LiveEventArgs e)
 		{
-			var data = e.Data;
 			ServiceUpdatedEventArgs update = null;
 
-			if (data["numFollowers"] != null && data["numFollowers"].Value<int>() != _numberOfFollowers)
+			if (e.FollowerCount.HasValue && e.FollowerCount != _numberOfFollowers)
 			{
-				Interlocked.Exchange(ref _numberOfFollowers, data["numFollowers"].Value<int>());
-				_logger.LogTrace($"New Followers on Mixer, new total: {_numberOfFollowers}");
-
+				var count = e.FollowerCount.Value;
+				Interlocked.Exchange(ref _numberOfFollowers, count);
 				update = update ?? new ServiceUpdatedEventArgs();
-				update.NewFollowers = data["numFollowers"].Value<int>();
+				update.NewFollowers = count;
+				_logger.LogTrace($"New Followers on Mixer, new total: {count}");
 			}
 
-			if (data["viewersCurrent"] != null)
+			if (e.ViewerCount.HasValue)
 			{
-				var n = data["viewersCurrent"].Value<int>();
-				if (n != Interlocked.Exchange(ref _numberOfViewers, n))
+				var count = e.ViewerCount.Value;
+				if (count != Interlocked.Exchange(ref _numberOfViewers, count))
 				{
-					_logger.LogTrace($"Viewers on Mixer changed, new total: {_numberOfViewers}");
 					update = update ?? new ServiceUpdatedEventArgs();
-					update.NewViewers = data["viewersCurrent"].Value<int>();
+					update.NewViewers = count;
+					_logger.LogTrace($"Viewers on Mixer changed, new total: {count}");
 				}
 			}
 
-			if(data["online"] != null)
+			if(e.IsOnline.HasValue)
 			{
 				update = update ?? new ServiceUpdatedEventArgs();
-				update.IsOnline = data["online"].Value<bool>();
-				_isOnline = update.IsOnline.Value;
+				update.IsOnline = _isOnline = e.IsOnline.Value;
 				_streamStartedAt = null;	// Clear cached stream start time
 				_logger.LogTrace($"Online status changed to  {update.IsOnline}");
 			}

@@ -1,103 +1,42 @@
-﻿@section Styles {
-	<style>
+﻿<div class="py-5 text-center">
+	<h2>Configure Follower Goal</h2>
+	<p class="lead">
+		Fill out the options below to generate a customized url to show off your follower goal.
+	</p>
+</div>
 
-		#content {
-			display: flex;
-			align-items: stretch;
-			justify-content: flex-start;
-			flex-direction: column;
-		}
-
-		fieldset {
-			margin: 5px 0;
-		}
-
-		iframe {
-			height: 80px;
-			overflow-x: hidden;
-		}
-
-		input, label, #fontNames {
-			width: 10em;
-			display: inline-block;
-		}
-
-		input[type="color"] {
-			height: 23px;
-			min-width: 3em;
-			width: auto;
-		}
-
-		input[name="bgblend"] {
-			height: 23px;
-			width: 2em;
-			text-align: center;
-		}
-
-		span[name="spanBGColor"] button {
-			height: 23px;
-			margin-right: 5px;
-		}
-
-		span {
-			display: inline-flex;
-		}
-
-		#bgcolors {
-			display: inline-flex;
-		}
-
-		#fontNames {
-			font-size: 2em;
-		}
-
-	</style>
-}
-
-	<div id="content">
-
-		<h1>Configure Follower Goal</h1>
-		<a href="/">Back to home</a>
-
+<div class="row">
+	<div class="col-md-12 mb-6">
+		Preview:
 		<iframe id="widgetPreview" name="widgetPreview" scrolling="no"></iframe>
-
-		<fieldset>
-
-			<label for="caption">Caption:</label> <input type="text" id="caption" value="Configure Me" />
-			<br />
-			<label for="goal">Goal:</label> <input type="text" id="goal" value="100" />
-			<br />
-			<label for="current">Test Count:</label> <input type="text" id="current" value="90" />
-			<br />
-			<label for="fontname">Google Font:</label> <input type="text" id="fontname" value="" />
-			<br />
-			<div id="fontsPanel">
-				<label for="fontname"></label> <select id="fontNames" size="5"></select>
-				<br />
-			</div>
-			<label for="emptyBgColor">Empty Bg Color:</label> <input type="color" id="emptyBgColor" />
-			<br />
-			<label for="emptyFontColor">Empty Font Color:</label> <input type="color" id="emptyFontColor" />
-			<br />
-			<label>Fill Bar Colors:</label>
-			<div id="bgcolors">
-				<span name="spanBGColor">
-					<input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" />
-					<input id="bgblend1" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
-					<button onclick="removeColor()" title="Remove this color from the list.">X</button>
-				</span>
-				<button type="button" onclick="addColor()" title="Add another color picker to the end of the list.">+</button>
-			</div>
-		</fieldset>
-
-		<button id="preview">Preview</button>
-
-		<p>
-			Here is your URL:
-			<a id="outputUrl" href="#" target="_blank"></a>
-		</p>
-
 	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6 mb-3">
+		<label for="caption">Caption:</label>
+		<input class="form-control" type="text" id="caption" value="Configure Me" />
+	</div>
+	<div class="col-md-6 mb-3">
+		<label for="fontname">Google Font:</label>
+		<input class="form-control" type="text" id="fontname" value="Abel" />
+		<div id="fontsPanel">
+			<label for="fontname"></label> <select id="fontNames" size="5"></select>
+			<br />
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6 mb-3 form-group">
+		<label for="goal">Goal:</label>
+		<input class="form-control" type="number" id="goal" value="100" />
+	</div>
+	<div class="col-md-6 mb-3 form-group">
+		<label for="current">Test Count:</label>
+		<input class="form-control" type="number" id="current" value="85" />
+	</div>
+</div>
 
 	@section scripts {
 		<script>
@@ -105,3 +44,56 @@
 		</script>
 		<script src="/js/GoalConfiguration.min.js"></script>
 	}
+<div class="row">
+	<div class="col-md-6 mb-3 form-inline">
+		<label for="emptyBgColor">Empty Bg Color:</label>
+		<input type="color" id="emptyBgColor" value="#CCCCCC" />
+	</div>
+	<div class="col-md-6 mb-3 form-inline">
+		<label for="emptyFontColor">Empty Font Color:</label>
+		<input type="color" id="emptyFontColor" />
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12 mb-3">
+		<label>Fill Bar Colors:</label>
+		<div id="bgcolors" class="form-row">
+			<div name="spanBGColor" style="display: inline-block;" class="col-md-3">
+				<div class="input-group mb-2">
+					<div class="input-group-prepend">
+						<div class="input-group-text"><input id="bgcolor1" type="color" title="Choose one or more colors for the fill bar" value="#0000CC" class="form-control" /></div>
+					</div>
+					<input id="bgblend1" class="form-control" type="number" name="bgblend" value="1" title="How much of the color gets blended 0->1. Not used on the last color." />
+					<div class="input-group-append">
+						<div class="input-group-text btn btn-danger" onclick="removeColor()" title="Remove this color from the list."><i class="far fa-trash-alt"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="row mb-3">
+	<div class="col-sm-12 col-md-12">
+		<button class="btn btn-secondary" onclick="addColor()" title="Add another color picker to the end of the list."><i class="fas fa-plus-circle"></i></button>
+	</div>
+</div>
+
+<button id="preview" class="btn btn-lg btn-primary btn-block mb-3">Preview</button>
+
+<div class="alert alert-info">
+	<h4 class="alert-heading">Here is your URL:</h4>
+	<p><a id="outputUrl" href="#" target="_blank"></a></p>
+</div>
+
+
+@section styles {
+	<link type="text/css" rel="stylesheet" href="~/css/cachedGoogleFont.css"/>
+	<style>
+
+		#bgcolors .input-group-prepend .input-group-text {
+			background-color: inherit;
+			color: inherit;
+		}
+	</style>
+}

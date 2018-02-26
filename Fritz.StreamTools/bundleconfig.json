@@ -12,6 +12,19 @@
 		"outputFileName": "wwwroot/js/site.min.js",
 		"inputFiles": [
 					"wwwroot/js/site.js"
+					
+		],
+		// Optionally specify minification options
+		"minify": {
+			"enabled": false
+		},
+		// Optionally generate .map file
+		"sourceMap": false
+	},
+	{
+		"outputFileName": "wwwroot/js/GoalConfiguration.min.js",
+		"inputFiles": [
+					"ClientApp/GoalConfiguration/GoalConfiguration.js"
 		],
 		// Optionally specify minification options
 		"minify": {

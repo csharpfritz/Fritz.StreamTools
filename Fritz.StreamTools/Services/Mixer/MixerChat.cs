@@ -67,7 +67,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_myUserId = userId;
 
 			// Get chat authkey and endpoints
-			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
+			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync().ConfigureAwait(false);
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
 			var endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1); // Skip 1st one, seems to fail often
@@ -84,19 +84,20 @@ namespace Fritz.StreamTools.Services.Mixer
 			while (!await _channel.TryConnectAsync(getNextEnpoint, null, async () => {
 				// Join the channel and send authkey
 				var succeeded = false;
-				if (string.IsNullOrEmpty(chatData.AuthKey)) succeeded = await _channel.SendAsync("auth", channelId);  // Authenticating anonymously
-				else succeeded = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+				if (string.IsNullOrEmpty(chatData.AuthKey)) succeeded = await _channel.SendAsync("auth", channelId).ConfigureAwait(false);  // Authenticating anonymously
+				else succeeded = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey).ConfigureAwait(false);
 
 				if (!succeeded && !string.IsNullOrEmpty(chatData.AuthKey))
 				{
 					// Try again with a new chatAuthKey
-					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
+					chatData = await _client.GetChatAuthKeyAndEndpointsAsync().ConfigureAwait(false);
 					endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1);
 
 					// If this fail give up !
-					await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+					await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey).ConfigureAwait(false);
 				}
-			}));
+			}).ConfigureAwait(false))
+				;
 
 			_channel.EventReceived += EventReceived;
 		}
@@ -113,7 +114,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!_client.HasToken)
 				return false;
 
-			var success = await _channel.SendAsync("msg", message);
+			var success = await _channel.SendAsync("msg", message).ConfigureAwait(false);
 			if (success) _logger.LogTrace($"Send message '{message}'");
 			return success;
 		}
@@ -131,7 +132,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!_client.HasToken)
 				return false;
 
-			var success = await _channel.SendAsync("whisper", userName, message);
+			var success = await _channel.SendAsync("whisper", userName, message).ConfigureAwait(false);
 			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
 			return success;
 		}
@@ -144,7 +145,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!_client.HasToken)
 				return false;
 
-			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");
+			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s").ConfigureAwait(false);
 			if (success) _logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");
 			return success;
 		}
@@ -161,7 +162,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 				// Combine text from all elements
 				var segments = e.Data["message"]["message"];
-				var combinedText = string.Join("", segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
+				var combinedText = string.Concat(segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
 
 				var isWhisper = false;
 				var meta = e.Data["message"]["meta"];

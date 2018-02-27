@@ -25,10 +25,10 @@ namespace Fritz.StreamTools.Services
 		readonly ILogger _logger;
 		readonly Random _random = new Random();
 		readonly string[] _quotes;
-		IChatService[] _chatServices;
+		readonly IChatService[] _chatServices;
 		readonly IStreamService[] _streamServices;
 		TimeSpan _cooldownTime;
-		ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();	// Could use IMemoryCache for this ???
+		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();	// Could use IMemoryCache for this ???
 
 		public SampleChatBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 		{
@@ -78,7 +78,7 @@ namespace Fritz.StreamTools.Services
 		{
 			if (!e.Message.StartsWith('!')) return;
 			var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-			if (!segments.Any()) return;
+			if (segments.Length == 0) return;
 
 			var chatService = sender as IChatService;
 			Debug.Assert(chatService != null);
@@ -101,29 +101,29 @@ namespace Fritz.StreamTools.Services
 			switch (segments[0].ToLowerInvariant())
 			{
 				case "help":
-					await chatService.SendMessageAsync("Supported commands: !ping !echo !uptime !quote");
+					await chatService.SendMessageAsync("Supported commands: !ping !echo !uptime !quote").ConfigureAwait(false);
 					break;
 				case "ping":
-					await chatService.SendWhisperAsync(e.UserName, "pong");
+					await chatService.SendWhisperAsync(e.UserName, "pong").ConfigureAwait(false);
 					break;
 				case "echo":
 					if (segments.Length < 2) return;
-					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
+					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1))).ConfigureAwait(false);
 					break;
 				case "uptime":
 					{
 						// Get uptime from the mixer stream service
-						var mixer = _streamServices.Where(x => x.Name == "Mixer").FirstOrDefault();
+						var mixer = Array.Find(_streamServices, x => x.Name == "Mixer");
 						if (mixer == null) break;
 						if (mixer.Uptime.HasValue)
-							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
+							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}").ConfigureAwait(false);
 						else
-							await chatService.SendMessageAsync("Stream is offline");
+							await chatService.SendMessageAsync("Stream is offline").ConfigureAwait(false);
 						break;
 					}
 				case "quote":
 					if (_quotes == null) break;
-					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
+					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]).ConfigureAwait(false);
 					break;
 				default:
 					return;	// Unknown command
@@ -136,6 +136,5 @@ namespace Fritz.StreamTools.Services
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogInformation($"{e.UserName} joined {e.ServiceName} chat");
 		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogInformation($"{e.UserName} left {e.ServiceName} chat");
-
 	}
 }

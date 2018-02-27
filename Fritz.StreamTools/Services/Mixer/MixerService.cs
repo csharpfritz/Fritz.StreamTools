@@ -5,7 +5,6 @@ using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services
 {
@@ -35,7 +34,6 @@ namespace Fritz.StreamTools.Services
 		private bool? _isOnline;
 		DateTimeOffset? _streamStartedAt;
 
-
 		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory = null)
 		{
 			if (loggerFactory == null)
@@ -53,27 +51,23 @@ namespace Fritz.StreamTools.Services
 			_chat = factory.CreateMixerChat(_restClient, _shutdownRequested.Token);
 		}
 
-
 		#region IHostedService
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
 			// Get our current channel information
-			var info = await _restClient.GetChannelInfoAsync();
+			var info = await _restClient.GetChannelInfoAsync().ConfigureAwait(false);
 			_channelId = info.Id;
 			_userId = info.UserId;
 			_numberOfFollowers = info.NumberOfFollowers;
 			_numberOfViewers = info.NumberOfViewers;
 
 			// Connect to live events (viewer/follower count)
-			await _live.ConnectAndJoinAsync(_channelId);
+			await _live.ConnectAndJoinAsync(_channelId).ConfigureAwait(false);
 			_live.LiveEvent += _live_LiveEvent;
 
 			// Connect to chat server
-			await _chat.ConnectAndJoinAsync(_userId, _channelId);
+			await _chat.ConnectAndJoinAsync(_userId, _channelId).ConfigureAwait(false);
 			_chat.ChatMessage += _chat_ChatMessage;
 			_chat.UserJoined += _chat_UserJoined;
 			_chat.UserLeft += _chat_UserLeft;
@@ -170,7 +164,7 @@ namespace Fritz.StreamTools.Services
 		{
 			get
 			{
-				if (_isOnline.HasValue && !_isOnline.Value) return null;
+				if (_isOnline == false) return null;
 				if (!_streamStartedAt.HasValue)
 				{
 					_streamStartedAt = _restClient.GetStreamStartedAtAsync().Result;

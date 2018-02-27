@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
@@ -58,7 +57,8 @@ namespace Fritz.StreamTools.Services.Mixer
 			while (!await _channel.TryConnectAsync(() => WS_URL, token, () =>	{
 				// Join the channel and request live updates
 				return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
-			}));
+			}).ConfigureAwait(false))
+				;
 
 			_channel.EventReceived += EventReceived;
 		}

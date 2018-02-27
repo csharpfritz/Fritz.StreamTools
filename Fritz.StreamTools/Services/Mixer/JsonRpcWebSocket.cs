@@ -38,11 +38,11 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly byte[] _receiveBuffer;
 
 		ClientWebSocket _ws;
-		CancellationTokenSource _cancellationToken = new CancellationTokenSource();
+		readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
 		bool _disposed;
 		int _nextPacketId = 0;
-		ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
-		ConcurrentQueue<string> _myLatestMessages = new ConcurrentQueue<string>();
+		readonly ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
+		readonly ConcurrentQueue<string> _myLatestMessages = new ConcurrentQueue<string>();
 		Task _receiverTask;
 		int? _receiverThreadId;
 
@@ -78,11 +78,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				while (true)
 				{
-					await connect();
+					await connect().ConfigureAwait(false);
 					if (_ws != null) return;
 
 					// Connect failed, wait a little and try again
-					await Task.Delay(5000, _cancellationToken.Token);
+					await Task.Delay(5000, _cancellationToken.Token).ConfigureAwait(false);
 				}
 			}
 
@@ -104,16 +104,16 @@ namespace Fritz.StreamTools.Services.Mixer
 
 					// Connect the websocket
 					_logger.LogInformation("Connecting to {0}", url);
-					await ws.ConnectAsync(new Uri(url), _cancellationToken.Token).OrTimeout(CONNECT_TIMEOUT);
+					await ws.ConnectAsync(new Uri(url), _cancellationToken.Token).OrTimeout(CONNECT_TIMEOUT).ConfigureAwait(false);
 					_logger.LogInformation("Connected to {0}", url);
 					_ws = ws;
 
-					await EatWelcomeMessageAsync().OrTimeout(10000);
+					await EatWelcomeMessageAsync().OrTimeout(10000).ConfigureAwait(false);
 
 					// start receiving data
 					_receiverTask = Task.Factory.StartNew(() => ReceiverTask(reconnect), TaskCreationOptions.LongRunning);
 
-					if (connectCompleted != null) await connectCompleted();
+					if (connectCompleted != null) await connectCompleted().ConfigureAwait(false);
 				}
 				catch (Exception e)
 				{
@@ -122,14 +122,14 @@ namespace Fritz.StreamTools.Services.Mixer
 				}
 			}
 
-			await connect();
+			await connect().ConfigureAwait(false);
 			return _ws != null;
 		}
 
 		private async Task EatWelcomeMessageAsync()
 		{
 			// Wait for next message
-			var json = await ReceiveNextMessageAsync(_ws);
+			var json = await ReceiveNextMessageAsync(_ws).ConfigureAwait(false);
 			_logger.LogTrace("<< " + json);
 		}
 
@@ -147,7 +147,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				try
 				{
 					// Wait for next message
-					var json = await ReceiveNextMessageAsync(ws);
+					var json = await ReceiveNextMessageAsync(ws).ConfigureAwait(false);
 					if (json == null) return;	// Connection closed maybe ?
 					_logger.LogTrace("<< " + json);
 					var doc = JToken.Parse(json);
@@ -171,7 +171,7 @@ namespace Fritz.StreamTools.Services.Mixer
 					_logger.LogWarning("Error in ReceiverTask() {0}. Will reconnect", e.Message);
 					if (_cancellationToken.IsCancellationRequested) return;
 
-					await reconnect();  // Will spawn a new receiver task
+					await reconnect().ConfigureAwait(false);  // Will spawn a new receiver task
 					return;
 				}
 			}
@@ -281,14 +281,14 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Send request and wait for reply (or timeout)
 			var tcs = new TaskCompletionSource<bool>();
 			_pendingRequests.TryAdd(id, tcs);
-		
+
 			try
 			{
-				await ws.SendAsync(buffer, WebSocketMessageType.Text, true, _cancellationToken.Token);
+				await ws.SendAsync(buffer, WebSocketMessageType.Text, true, _cancellationToken.Token).ConfigureAwait(false);
 				if (Debugger.IsAttached)	// no timeout while debugging
 					await tcs.Task;
 				else
-					await tcs.Task.OrTimeout();
+					await tcs.Task.OrTimeout().ConfigureAwait(false);
 				return tcs.Task.Result;
 			}
 			finally
@@ -309,7 +309,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				do
 				{
-					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token);
+					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token).ConfigureAwait(false);
 					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
 					if (result == null || result.MessageType == WebSocketMessageType.Close) return null;
 					ms.Write(buffer.Array, buffer.Offset, result.Count);
@@ -334,7 +334,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (_ws != null)
 			{
 				_ws.Dispose();
-				if (_receiverTask != null) _receiverTask.Wait();
+				_receiverTask?.Wait();
 			}
 
 			_disposed = true;

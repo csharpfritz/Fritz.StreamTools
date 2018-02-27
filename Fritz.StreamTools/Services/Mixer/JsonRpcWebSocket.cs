@@ -265,10 +265,9 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			if (_logger.IsEnabled(LogLevel.Trace))
 			{
-				if (method == "auth")
+				if (method == "auth" && args.Length >= 3)
 				{
 					// hide the authKey from log
-					Debug.Assert(args.Length >= 3);
 					_logger.LogTrace(">> " + json.Replace((string)args[2], "(chatAuthKey)"));
 				}
 				else

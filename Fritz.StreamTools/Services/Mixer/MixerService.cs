@@ -72,14 +72,11 @@ namespace Fritz.StreamTools.Services
 			await _live.ConnectAndJoinAsync(_channelId);
 			_live.LiveEvent += _live_LiveEvent;
 
-			if(_restClient.HasToken)
-			{
-				// Connect to chat server
-				await _chat.ConnectAndJoinAsync(_userId, _channelId);
-				_chat.ChatMessage += _chat_ChatMessage;
-				_chat.UserJoined += _chat_UserJoined;
-				_chat.UserLeft += _chat_UserLeft;
-			}
+			// Connect to chat server
+			await _chat.ConnectAndJoinAsync(_userId, _channelId);
+			_chat.ChatMessage += _chat_ChatMessage;
+			_chat.UserJoined += _chat_UserJoined;
+			_chat.UserLeft += _chat_UserLeft;
 
 			_logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
 		}

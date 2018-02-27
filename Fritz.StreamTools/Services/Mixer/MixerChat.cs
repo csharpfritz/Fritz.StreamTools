@@ -62,7 +62,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			// We need a access_token for this to succeed
 			var token = _config["StreamServices:Mixer:Token"];
-			if (string.IsNullOrEmpty(token)) return;
+//			if (string.IsNullOrEmpty(token)) return;
 
 			_myUserId = userId;
 
@@ -83,8 +83,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Connect to the chat endpoint
 			while (!await _channel.TryConnectAsync(getNextEnpoint, null, async () => {
 				// Join the channel and send authkey
-				var succeeded = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
-				if (!succeeded)
+				var succeeded = false;
+				if (string.IsNullOrEmpty(chatData.AuthKey)) succeeded = await _channel.SendAsync("auth", channelId);  // Authenticating anonymously
+				else succeeded = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+
+				if (!succeeded && !string.IsNullOrEmpty(chatData.AuthKey))
 				{
 					// Try again with a new chatAuthKey
 					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
@@ -107,6 +110,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrEmpty(message))
 				throw new ArgumentException("Must not be null or empty", nameof(message));
 
+			if (!_client.HasToken)
+				return false;
+
 			var success = await _channel.SendAsync("msg", message);
 			if (success) _logger.LogTrace($"Send message '{message}'");
 			return success;
@@ -122,6 +128,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrEmpty(message))
 				throw new ArgumentException("Must not be null or empty", nameof(message));
 
+			if (!_client.HasToken)
+				return false;
+
 			var success = await _channel.SendAsync("whisper", userName, message);
 			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
 			return success;
@@ -131,6 +140,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
+
+			if (!_client.HasToken)
+				return false;
 
 			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");
 			if (success) _logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");

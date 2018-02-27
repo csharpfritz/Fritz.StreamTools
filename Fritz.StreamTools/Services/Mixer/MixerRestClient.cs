@@ -113,6 +113,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
 
+			if (!HasToken)
+				return false;
+
 			try
 			{
 				if (string.IsNullOrWhiteSpace(userName))
@@ -139,6 +142,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
+
+			if (!HasToken)
+				return false;
 
 			try
 			{

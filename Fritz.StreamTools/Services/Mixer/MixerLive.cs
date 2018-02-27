@@ -54,11 +54,19 @@ namespace Fritz.StreamTools.Services.Mixer
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: false);
 
 			// Connect to the chat endpoint
-			while (!await _channel.TryConnectAsync(() => WS_URL, token, () =>	{
+			var continueTrying = true;
+			while (continueTrying && !await _channel.TryConnectAsync(() => WS_URL, token, async () =>	{
 				// Join the channel and request live updates
-				return _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
-			}).ConfigureAwait(false))
-				;
+				continueTrying = await _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
+			}));
+
+			if (!continueTrying)
+			{
+				_logger.LogError("Failed to connect to live endpoint {0}, giving up! (Channel wrong?)", WS_URL);
+				_channel.Dispose();
+				_channel = null;
+				return;
+			}
 
 			_channel.EventReceived += EventReceived;
 		}
@@ -86,7 +94,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Dispose()
 		{
-			_channel.Dispose();
+			_channel?.Dispose();
 			GC.SuppressFinalize(this);
 		}
 	}

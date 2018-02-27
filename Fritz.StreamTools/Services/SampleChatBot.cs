@@ -20,6 +20,7 @@ namespace Fritz.StreamTools.Services
 	public class SampleChatBot : IHostedService
 	{
 		const string QUOTES_FILENAME = "SampleQuotes.txt";
+		const char COMMAND_PREFIX = '!';
 		readonly IConfiguration _config;
 		readonly IServiceProvider _serviceProvider;
 		readonly ILogger _logger;
@@ -76,7 +77,7 @@ namespace Fritz.StreamTools.Services
 
 		private async void Chat_ChatMessage(object sender, ChatMessageEventArgs e)
 		{
-			if (!e.Message.StartsWith('!')) return;
+			if (string.IsNullOrEmpty(e.Message) || e.Message[0] != COMMAND_PREFIX) return;	// e.Message.StartsWith(...) did not work for some reason ?!?
 			var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 			if (segments.Length == 0) return;
 
@@ -98,17 +99,18 @@ namespace Fritz.StreamTools.Services
 
 			_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
 
+			// Handle commands
 			switch (segments[0].ToLowerInvariant())
 			{
 				case "help":
-					await chatService.SendMessageAsync("Supported commands: !ping !echo !uptime !quote").ConfigureAwait(false);
+					await chatService.SendMessageAsync("Supported commands: !ping !echo !uptime !quote");
 					break;
 				case "ping":
-					await chatService.SendWhisperAsync(e.UserName, "pong").ConfigureAwait(false);
+					await chatService.SendWhisperAsync(e.UserName, "pong");
 					break;
 				case "echo":
 					if (segments.Length < 2) return;
-					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1))).ConfigureAwait(false);
+					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
 					break;
 				case "uptime":
 					{
@@ -116,14 +118,14 @@ namespace Fritz.StreamTools.Services
 						var mixer = Array.Find(_streamServices, x => x.Name == "Mixer");
 						if (mixer == null) break;
 						if (mixer.Uptime.HasValue)
-							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}").ConfigureAwait(false);
+							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
 						else
-							await chatService.SendMessageAsync("Stream is offline").ConfigureAwait(false);
+							await chatService.SendMessageAsync("Stream is offline");
 						break;
 					}
 				case "quote":
 					if (_quotes == null) break;
-					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]).ConfigureAwait(false);
+					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
 					break;
 				default:
 					return;	// Unknown command

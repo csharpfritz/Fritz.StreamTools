@@ -44,11 +44,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_logger = loggerFactory.CreateLogger(nameof(MixerChat));
 		}
 
-		/// <summary>
-		/// Raised each time a chat message is received
-		/// </summary>
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
-
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
@@ -60,19 +56,17 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns></returns>
 		public async Task ConnectAndJoinAsync(int userId, int channelId)
 		{
-			// We need a access_token for this to succeed
 			var token = _config["StreamServices:Mixer:Token"];
-//			if (string.IsNullOrEmpty(token)) return;
 
 			_myUserId = userId;
 
 			// Get chat authkey and endpoints
-			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync().ConfigureAwait(false);
+			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
 			var endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1); // Skip 1st one, seems to fail often
 
-			// Chose next endpoint
+			// Local function to choose the next endpoint to try
 			string getNextEnpoint()
 			{
 				var endpoint = chatData.Endpoints[endpointIndex];
@@ -80,24 +74,42 @@ namespace Fritz.StreamTools.Services.Mixer
 				return chatData.Endpoints[endpointIndex];
 			}
 
-			// Connect to the chat endpoint
-			while (!await _channel.TryConnectAsync(getNextEnpoint, null, async () => {
-				// Join the channel and send authkey
-				var succeeded = false;
-				if (string.IsNullOrEmpty(chatData.AuthKey)) succeeded = await _channel.SendAsync("auth", channelId).ConfigureAwait(false);  // Authenticating anonymously
-				else succeeded = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey).ConfigureAwait(false);
+			var continueTrying = true;
 
-				if (!succeeded && !string.IsNullOrEmpty(chatData.AuthKey))
+			// Local function to join chat channel
+			async Task postConnect()
+			{
+				// Join the channel and send authkey
+				if (string.IsNullOrEmpty(chatData.AuthKey))
+					continueTrying = await _channel.SendAsync("auth", channelId);  // Authenticating anonymously
+				else
+					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+
+				if (!continueTrying && !string.IsNullOrEmpty(chatData.AuthKey))
 				{
 					// Try again with a new chatAuthKey
-					chatData = await _client.GetChatAuthKeyAndEndpointsAsync().ConfigureAwait(false);
+					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 					endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1);
 
 					// If this fail give up !
-					await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey).ConfigureAwait(false);
+					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
 				}
-			}).ConfigureAwait(false))
-				;
+			}
+
+			// Connect to the chat endpoint
+			while (continueTrying)
+			{
+				if (await _channel.TryConnectAsync(getNextEnpoint, null, postConnect))
+					break;
+			}
+
+			if(!continueTrying)
+			{
+				_logger.LogError("Failed to connect to chat endpoint, giving up! (Channel or Token wrong?)");
+				_channel.Dispose();
+				_channel = null;
+				return;
+			}
 
 			_channel.EventReceived += EventReceived;
 		}
@@ -114,7 +126,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!_client.HasToken)
 				return false;
 
-			var success = await _channel.SendAsync("msg", message).ConfigureAwait(false);
+			var success = await _channel.SendAsync("msg", message);
 			if (success) _logger.LogTrace($"Send message '{message}'");
 			return success;
 		}
@@ -132,7 +144,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!_client.HasToken)
 				return false;
 
-			var success = await _channel.SendAsync("whisper", userName, message).ConfigureAwait(false);
+			var success = await _channel.SendAsync("whisper", userName, message);
 			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
 			return success;
 		}
@@ -145,7 +157,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!_client.HasToken)
 				return false;
 
-			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s").ConfigureAwait(false);
+			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");
 			if (success) _logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");
 			return success;
 		}
@@ -155,47 +167,51 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		private void EventReceived(object sender, EventEventArgs e)
 		{
-			if(e.Event == "ChatMessage")
+			switch (e.Event)
 			{
-				var userId = e.Data["user_id"].Value<int>();
-				var roles = e.Data["user_roles"].Values<string>();
-
-				// Combine text from all elements
-				var segments = e.Data["message"]["message"];
-				var combinedText = string.Concat(segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
-
-				var isWhisper = false;
-				var meta = e.Data["message"]["meta"];
-				if(!meta.IsNullOrEmpty() && !meta["whisper"].IsNullOrEmpty())
-				{
-					// "meta":{"whisper":true}},"target":"jobun44"}
-					isWhisper = (bool)meta["whisper"];
-				}
-
-				ChatMessage?.Invoke(this, new ChatMessageEventArgs
-				{
-					UserId = userId,
-					UserName = e.Data["user_name"].Value<string>(),
-					IsWhisper = isWhisper,
-					IsModerator = roles.Contains("Mod"),
-					IsOwner = roles.Contains("Owner"),
-					Message = combinedText
-				});
+				case "ChatMessage":
+					ParseChatMessage(e);
+					break;
+				case "UserJoin":
+					UserJoined?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
+					break;
+				case "UserLeave":
+					UserLeft?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
+					break;
 			}
-			else if(e.Event == "UserJoin")
+		}
+
+		private void ParseChatMessage(EventEventArgs e)
+		{
+			var userId = e.Data["user_id"].Value<int>();
+			var roles = e.Data["user_roles"].Values<string>();
+
+			// Combine text from all elements
+			var segments = e.Data["message"]["message"];
+			var combinedText = string.Concat(segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
+
+			var isWhisper = false;
+			var meta = e.Data["message"]["meta"];
+			if (!meta.IsNullOrEmpty() && !meta["whisper"].IsNullOrEmpty())
 			{
-				UserJoined?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
+				// "meta":{"whisper":true}},"target":"jobun44"}
+				isWhisper = (bool)meta["whisper"];
 			}
-			else if (e.Event == "UserLeave")
-			{
-				UserLeft?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
-			}
+
+			ChatMessage?.Invoke(this, new ChatMessageEventArgs {
+				UserId = userId,
+				UserName = e.Data["user_name"].Value<string>(),
+				IsWhisper = isWhisper,
+				IsModerator = roles.Contains("Mod"),
+				IsOwner = roles.Contains("Owner"),
+				Message = combinedText
+			});
 		}
 
 		public void Dispose()
 		{
 			// Dont dispose _client here!
-			_channel.Dispose();
+			_channel?.Dispose();
 			GC.SuppressFinalize(this);
 		}
 	}

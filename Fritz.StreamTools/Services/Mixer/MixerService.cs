@@ -56,18 +56,18 @@ namespace Fritz.StreamTools.Services
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
 			// Get our current channel information
-			var info = await _restClient.GetChannelInfoAsync().ConfigureAwait(false);
+			var info = await _restClient.GetChannelInfoAsync();
 			_channelId = info.Id;
 			_userId = info.UserId;
 			_numberOfFollowers = info.NumberOfFollowers;
 			_numberOfViewers = info.NumberOfViewers;
 
 			// Connect to live events (viewer/follower count)
-			await _live.ConnectAndJoinAsync(_channelId).ConfigureAwait(false);
+			await _live.ConnectAndJoinAsync(_channelId);
 			_live.LiveEvent += _live_LiveEvent;
 
 			// Connect to chat server
-			await _chat.ConnectAndJoinAsync(_userId, _channelId).ConfigureAwait(false);
+			await _chat.ConnectAndJoinAsync(_userId, _channelId);
 			_chat.ChatMessage += _chat_ChatMessage;
 			_chat.UserJoined += _chat_UserJoined;
 			_chat.UserLeft += _chat_UserLeft;

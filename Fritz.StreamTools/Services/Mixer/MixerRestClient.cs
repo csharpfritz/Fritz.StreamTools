@@ -67,10 +67,17 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (_channelId.HasValue) return _channelId.Value;
 
-			var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id";
-			var doc = await GetJTokenAsync(req).ConfigureAwait(false);
-			_channelId = (int)doc["id"];
-			return _channelId.Value;
+			try
+			{
+				var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id";
+				var doc = await GetJTokenAsync(req);
+				_channelId = (int)doc["id"];
+				return _channelId.Value;
+			}
+			catch (HttpRequestException ex)
+			{
+				throw new UnknownChannelException(ChannelName, ex);
+			}
 		}
 
 		/// <summary>
@@ -78,10 +85,17 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		public async Task<ChannelInfo> GetChannelInfoAsync()
 		{
-			var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,userId,numFollowers,viewersCurrent";
-			var result = await GetAsync<ChannelInfo>(req).ConfigureAwait(false);
-			_channelId = result.Id;
-			return result;
+			try
+			{
+				var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,userId,numFollowers,viewersCurrent";
+				var result = await GetAsync<ChannelInfo>(req);
+				_channelId = result.Id;
+				return result;
+			}
+			catch (HttpRequestException ex)
+			{
+				throw new UnknownChannelException(ChannelName, ex);
+			}
 		}
 
 		/// <summary>
@@ -94,10 +108,10 @@ namespace Fritz.StreamTools.Services.Mixer
 			try
 			{
 				var req = $"channels/{WebUtility.UrlEncode(userName)}?noCount=1";
-				var doc = await GetJTokenAsync(req).ConfigureAwait(false);
+				var doc = await GetJTokenAsync(req);
 				return (int)doc["id"];
 			}
-			catch (Exception)
+			catch (HttpRequestException)
 			{
 				_logger.LogError("Unknown user '{0}'", userName);
 				return null;
@@ -120,11 +134,11 @@ namespace Fritz.StreamTools.Services.Mixer
 				if (string.IsNullOrWhiteSpace(userName))
 					throw new ArgumentException("Must not be null or empty", nameof(userName));
 
-				var userId = await LookupUserIdAsync(userName).ConfigureAwait(false);
+				var userId = await LookupUserIdAsync(userName);
 
 				// Add user as banned from our channel
 				var req = $"channels/{_channelId}/users/{userId}";
-				await PatchAsync(req, new { add = new[] { "Banned" } }).ConfigureAwait(false);
+				await PatchAsync(req, new { add = new[] { "Banned" } });
 				return true;
 			}
 			catch (Exception e)
@@ -147,11 +161,11 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			try
 			{
-				var userId = await LookupUserIdAsync(userName).ConfigureAwait(false);
+				var userId = await LookupUserIdAsync(userName);
 
 				// Add user as banned from our channel
 				var req = $"channels/{_channelId}/users/{userId}";
-				await PatchAsync(req, new { remove = new[] { "Banned" } }).ConfigureAwait(false);
+				await PatchAsync(req, new { remove = new[] { "Banned" } });
 				return true;
 			}
 			catch (Exception e)
@@ -169,9 +183,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			var req = $"channels/{_channelId}/manifest.light2";
 			_logger.LogTrace("GET {0}{1}", API_URL, req);
-			var response = await _client.GetAsync(req).ConfigureAwait(false);
+			var response = await _client.GetAsync(req);
 			if (response.StatusCode != HttpStatusCode.OK) return null;
-			var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+			var json = await response.Content.ReadAsStringAsync();
 			var doc = JToken.Parse(json);
 
 			if (doc["startedAt"] != null)
@@ -190,9 +204,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		public async Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync()
 		{
 			// Get chat authkey and chat endpoints
-			var id = await GetChannelIdAsync().ConfigureAwait(false);
+			var id = await GetChannelIdAsync();
 			var req = $"chats/{id}";
-			return await GetAsync<ChatAuthKeyAndEndpoints>(req).ConfigureAwait(false);
+			return await GetAsync<ChatAuthKeyAndEndpoints>(req);
 		}
 
 		#region HttpClient helpers
@@ -201,7 +215,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			_logger.LogTrace("GET {0}{1}", API_URL, requestUri);
 
-			var json = await _client.GetStringAsync(requestUri).ConfigureAwait(false);
+			var json = await _client.GetStringAsync(requestUri);
 			return JsonConvert.DeserializeObject<T>(json);
 		}
 
@@ -209,7 +223,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			_logger.LogTrace("GET {0}{1}", API_URL, requestUri);
 
-			var json = await _client.GetStringAsync(requestUri).ConfigureAwait(false);
+			var json = await _client.GetStringAsync(requestUri);
 			return JToken.Parse(json);
 		}
 
@@ -221,7 +235,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				Content = new JsonContent(data)
 			};
-			var response = await _client.SendAsync(message).ConfigureAwait(false);
+			var response = await _client.SendAsync(message);
 			response.EnsureSuccessStatusCode();
 		}
 
@@ -230,7 +244,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		public void Dispose()
 		{
 			// Dont dispose _client here!
-			_client.Dispose();
+			_client?.Dispose();
 			GC.SuppressFinalize(this);
 		}
 	}

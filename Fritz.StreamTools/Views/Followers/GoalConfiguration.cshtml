@@ -33,15 +33,15 @@
 		<input class="form-control" type="number" id="goal" value="100" />
 	</div>
 	<div class="col-md-6 mb-3 form-group">
-		<label for="current">Test Count:</label>
-		<input class="form-control" type="number" id="current" value="85" />
+		<label for="currentValue">Test Count:</label>
+		<input class="form-control" type="number" id="currentValue" value="85" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyBgColor">Empty Bg Color:</label>
-		<input type="color" id="emptyBgColor" value="#CCCCCC" />
+		<label for="emptyBackgroundColor">Empty Bg Color:</label>
+		<input type="color" id="emptyBackgroundColor" value="#CCCCCC" />
 	</div>
 	<div class="col-md-6 mb-3 form-inline">
 		<label for="emptyFontColor">Empty Font Color:</label>
@@ -92,7 +92,7 @@
 
 
 	// "fontname",
-	const quickPreviewTextBoxes = ["preview", "caption", "goal", "current", "emptyBgColor", "emptyFontColor", "bgcolor1", "bgblend1"];
+	const quickPreviewTextBoxes = ["preview", "caption", "goal", "currentValue", "emptyBackgroundColor", "emptyFontColor", "bgcolor1", "bgblend1"];
 
 		(function () {
 
@@ -184,11 +184,11 @@
 				urlTemplate += `?width=${iframeWidth}`;
 				urlTemplate += getBgColors();
 				urlTemplate += getBgBlend();
-				urlTemplate += `&emptyBgColor=${escape(document.getElementById("emptyBgColor").value)}`;
+				urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById("emptyBackgroundColor").value)}`;
 				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
 				urlTemplate += `&fontName=${escape(fontName)}`;
 
-				document.getElementById("widgetPreview").src = urlTemplate + `&current=${document.getElementById("current").value}`
+				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById("currentValue").value}`
 				log(urlTemplate);
 
 				document.getElementById("outputUrl").textContent = urlTemplate;
@@ -222,7 +222,7 @@
 					for (let i = 0; i < spans.length; i++) {
 							result += `,${escape(spans[i].getElementsByTagName('input')[0].value)}`;
 					}
-					result = `&bgcolors=${result.substr(1)}`;
+					result = `&FillBackgroundColor=${result.substr(1)}`;
 				}
 				return result;
 			}
@@ -235,7 +235,7 @@
 					for (let i = 0; i < spans.length; i++) {
 							result += `,${spans[i].getElementsByTagName('input')[1].value}`;
 					}
-					result = `&bgblend=${result.substr(1)}`;
+					result = `&FillBackgroundColorBlend=${result.substr(1)}`;
 				}
 				return result;
 			}

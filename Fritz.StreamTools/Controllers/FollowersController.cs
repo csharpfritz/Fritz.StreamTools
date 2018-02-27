@@ -22,11 +22,11 @@ namespace Fritz.StreamTools.Controllers
         internal static int _TestFollowers;
 
         public FollowersController(
-            StreamService streamService,
-            IOptions<FollowerGoalConfiguration> config,
-            IHostingEnvironment env,
-            FollowerClient followerClient,
-            IConfiguration appConfig)
+                StreamService streamService,
+                IOptions<FollowerGoalConfiguration> config,
+                IHostingEnvironment env,
+                FollowerClient followerClient,
+                IConfiguration appConfig)
         {
             this.StreamService = streamService;
             this.Configuration = config.Value;
@@ -86,10 +86,6 @@ namespace Fritz.StreamTools.Controllers
 
         [ResponseCache(NoStore = true)]
         [Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
-        // public IActionResult Goal(string caption = "", int goal = 0,
-        //     int width = 800, int current = -1, string bgcolors = "",
-        //     string bgblend = "", string emptyBgColor = "", string emptyFontColor = "",
-        //     string fontName = "~")
         public IActionResult Goal(FollowerGoalConfiguration model)
         {
             if (!ModelState.IsValid)
@@ -99,21 +95,9 @@ namespace Fritz.StreamTools.Controllers
                 return View("Docs_Goal");
             }
 
-            // load unspecified values from configuration
+            model.LoadDefaultValues(Configuration);
+            model.CurrentValue = Configuration.CurrentValue == -1 ? StreamService.CurrentFollowerCount : model.CurrentValue;
 
-            model.Caption = string.IsNullOrEmpty(model.Caption) ? Configuration.Caption : model.Caption == "null" ? "" : model.Caption;
-            model.Goal = model.Goal == 0 ? Configuration.Goal : model.Goal;
-            var backColors = string.IsNullOrEmpty(model.FillBackgroundColor) ? Configuration.FillBgColorArray : model.FillBackgroundColor.Split(',');
-            var backBlend = string.IsNullOrEmpty(model.FillBackgroundColorBlend) ? Configuration.FillBgBlendArray : model.FillBackgroundColorBlend.Split(',').Select(a => double.Parse(a)).ToArray();
-
-            model.EmptyBackgroundColor = string.IsNullOrWhiteSpace(model.EmptyBackgroundColor) ? Configuration.EmptyBackgroundColor : model.EmptyBackgroundColor;
-            model.EmptyFontColor = string.IsNullOrWhiteSpace(model.EmptyFontColor) ? Configuration.EmptyFontColor : model.EmptyFontColor;
-            model.FontName = model.FontName == "~" ? Configuration.FontName : model.FontName;
-            model.CurrentValue = model.CurrentValue == -1 ? StreamService.CurrentFollowerCount : model.CurrentValue;
-            //Configuration.Goal = goal;
-            //Configuration.Caption = caption;
-            //Configuration.Width = width;
-            model.Gradient = DisplayHelper.Gradient(backColors, backBlend, model.Width);
 
             return View(model);
         }

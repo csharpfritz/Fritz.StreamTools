@@ -1,7 +1,6 @@
-﻿@model FollowerGoal
+﻿@model FollowerGoalConfiguration
 @{
 	Layout = null;
-	var config = ViewBag.Configuration;
 }
 
 <!DOCTYPE html> 
@@ -9,17 +8,17 @@
 <html>
 <head>
 	<title>Followers Goal</title>
-	<google-font>@config.FontName</google-font>
+	<google-font>@Model.FontName</google-font>
 	<style>
 				.followerBar {
-						background: @config.EmptyBackgroundColor;
-						color: @config.EmptyFontColor;
-						font-family: @config.FontName, Arial;
+						background: @Model.EmptyBackgroundColor;
+						color: @Model.EmptyFontColor;
+						font-family: @Model.FontName, Arial;
 						}
 
 				#fill {
-						background-image: linear-gradient(to right, @( ViewBag.Gradient));
-						color: @config.FillFontColor;
+						background-image: linear-gradient(to right, @( Model.Gradient));
+						color: @Model.FillFontColor;
 				}
 	</style>
 	<style>
@@ -62,17 +61,17 @@
 </head>
 <body>
 		<!--16 is the border (8 for each side)-->
-		<div id="progress" style="width: @((ViewBag.Width * Model.CurrentValue / Model.GoalValue) + 16)px;">
-				<div class="followerBar" id="fill" style="width: @(ViewBag.Width)px">
+		<div id="progress" style="width: @((Model.Width * Model.CurrentValue / Model.Goal) + 16)px;">
+				<div class="followerBar" id="fill" style="width: @(Model.Width)px">
 						<span class="caption">@Model.Caption</span>
 						<span class="current">@Model.CurrentValue</span>
-						<span class="goal">@Model.GoalValue</span>
+						<span class="goal">@Model.Goal</span>
 				</div>
 		</div>
-		<div class="followerBar" style="width: @(ViewBag.Width)px">
+		<div class="followerBar" style="width: @(Model.Width)px">
 				<span class="caption">@Model.Caption</span>
 				<span class="current">@Model.CurrentValue</span>
-				<span class="goal">@Model.GoalValue</span>
+				<span class="goal">@Model.Goal</span>
 		</div>
 
 		<script src="~/lib/signalr/signalr-client.js"></script>

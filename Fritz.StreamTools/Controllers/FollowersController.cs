@@ -109,17 +109,13 @@ namespace Fritz.StreamTools.Controllers
             Configuration.EmptyBackgroundColor = string.IsNullOrWhiteSpace(emptyBgColor) ? Configuration.EmptyBackgroundColor : emptyBgColor;
             Configuration.EmptyFontColor = string.IsNullOrWhiteSpace(emptyFontColor) ? Configuration.EmptyFontColor : emptyFontColor;
             Configuration.FontName = fontName == "~" ? Configuration.FontName : fontName;
+            Configuration.CurrentValue = current == -1 ? StreamService.CurrentFollowerCount : current;
+            Configuration.Goal = goal;
+            Configuration.Caption = caption;
+            Configuration.Width = width;
+            Configuration.Gradient = DisplayHelper.Gradient(backColors, backBlend, width);
 
-            ViewBag.Configuration = Configuration;
-            ViewBag.Width = width;
-            ViewBag.Gradient = DisplayHelper.Gradient(backColors, backBlend, width);
-
-            return View(new FollowerGoal
-            {
-                Caption = caption,
-                CurrentValue = current == -1 ? StreamService.CurrentFollowerCount : current,
-                GoalValue = goal
-            });
+            return View(Configuration);
         }
 
 

@@ -1,4 +1,5 @@
-﻿<div class="py-5 text-center">
+﻿@model FollowerGoalConfiguration
+<div class="py-5 text-center">
 	<h2>Configure Follower Goal</h2>
 	<p class="lead">
 		Fill out the options below to generate a customized url to show off your follower goal.
@@ -14,14 +15,14 @@
 
 <div class="row">
 	<div class="col-md-6 mb-3">
-		<label for="caption">Caption:</label>
-		<input class="form-control" type="text" id="caption" value="Configure Me" />
+		<label for="@nameof(Model.Caption)">@nameof(Model.Caption):</label>
+		<input class="form-control" type="text" id="@nameof(Model.Caption)" value="Configure Me" />
 	</div>
 	<div class="col-md-6 mb-3">
-		<label for="fontname">Google Font:</label>
-		<input class="form-control" type="text" id="fontname" value="Abel" />
+		<label for="@nameof(Model.FontName)">@nameof(Model.FontName):</label>
+		<input class="form-control" type="text" id="@nameof(Model.FontName)" value="Abel" />
 		<div id="fontsPanel">
-			<label for="fontname"></label> <select id="fontNames" size="5"></select>
+			<label for="@nameof(Model.FontName)"></label> <select id="@nameof(Model.FontName)s" size="5"></select>
 			<br />
 		</div>
 	</div>
@@ -29,23 +30,23 @@
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-group">
-		<label for="goal">Goal:</label>
-		<input class="form-control" type="number" id="goal" value="100" />
+		<label for="@nameof(Model.Goal)">@nameof(Model.Goal):</label>
+		<input class="form-control" type="number" id="@nameof(Model.Goal)" value="100" />
 	</div>
 	<div class="col-md-6 mb-3 form-group">
-		<label for="currentValue">Test Count:</label>
-		<input class="form-control" type="number" id="currentValue" value="85" />
+		<label for="@nameof(Model.CurrentValue)">@nameof(Model.CurrentValue):</label>
+		<input class="form-control" type="number" id="@nameof(Model.CurrentValue)" value="85" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyBackgroundColor">Empty Bg Color:</label>
-		<input type="color" id="emptyBackgroundColor" value="#CCCCCC" />
+		<label for="@nameof(Model.EmptyBackgroundColor)">@nameof(Model.EmptyBackgroundColor):</label>
+		<input type="color" id="@nameof(Model.EmptyBackgroundColor)" value="#CCCCCC" />
 	</div>
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyFontColor">Empty Font Color:</label>
-		<input type="color" id="emptyFontColor" />
+		<label for="@nameof(Model.EmptyFontColor)">@nameof(Model.EmptyFontColor):</label>
+		<input type="color" id="@nameof(Model.EmptyFontColor)" />
 	</div>
 </div>
 
@@ -92,7 +93,7 @@
 
 
 	// "fontname",
-	const quickPreviewTextBoxes = ["preview", "caption", "goal", "currentValue", "emptyBackgroundColor", "emptyFontColor", "bgcolor1", "bgblend1"];
+	const quickPreviewTextBoxes = ["preview", "@nameof(Model.Caption)", "@nameof(Model.Goal)", "@nameof(Model.CurrentValue)", "@nameof(Model.EmptyBackgroundColor)", "@nameof(Model.EmptyFontColor)", "bgcolor1", "bgblend1"];
 
 		(function () {
 
@@ -171,7 +172,7 @@
 			function loadPreview() {
 
 				const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
-				const fontName = document.getElementById("fontname").value;
+				const fontName = document.getElementById("@nameof(Model.FontName)").value;
 
 				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
 					alert('Font not supported by Google Fonts');
@@ -179,16 +180,16 @@
 				}
 
 				var urlTemplate = "/followers/goal/";
-				urlTemplate += `${document.getElementById("goal").value}/`;
-				urlTemplate += `${document.getElementById("caption").value}`;
-				urlTemplate += `?width=${iframeWidth}`;
+				urlTemplate += `${document.getElementById("@nameof(Model.Goal)").value}/`;
+				urlTemplate += `${document.getElementById("@nameof(Model.Caption)").value}`;
+				urlTemplate += `?@nameof(Model.Width)=${iframeWidth}`;
 				urlTemplate += getBgColors();
 				urlTemplate += getBgBlend();
-				urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById("emptyBackgroundColor").value)}`;
-				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
-				urlTemplate += `&fontName=${escape(fontName)}`;
+				urlTemplate += `&@nameof(Model.EmptyBackgroundColor)=${escape(document.getElementById("@nameof(Model.EmptyBackgroundColor)").value)}`;
+				urlTemplate += `&@nameof(Model.EmptyFontColor)=${escape(document.getElementById('@nameof(Model.EmptyFontColor)').value)}`;
+				urlTemplate += `&@nameof(Model.FontName)=${escape(fontName)}`;
 
-				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById("currentValue").value}`
+				document.getElementById("widgetPreview").src = urlTemplate + `&@nameof(Model.CurrentValue)=${document.getElementById("@nameof(Model.CurrentValue)").value}`
 				log(urlTemplate);
 
 				document.getElementById("outputUrl").textContent = urlTemplate;
@@ -222,7 +223,7 @@
 					for (let i = 0; i < spans.length; i++) {
 							result += `,${escape(spans[i].getElementsByTagName('input')[0].value)}`;
 					}
-					result = `&FillBackgroundColor=${result.substr(1)}`;
+					result = '&@nameof(Model.FillBackgroundColor)='+result.substr(1);
 				}
 				return result;
 			}
@@ -235,7 +236,7 @@
 					for (let i = 0; i < spans.length; i++) {
 							result += `,${spans[i].getElementsByTagName('input')[1].value}`;
 					}
-					result = `&FillBackgroundColorBlend=${result.substr(1)}`;
+					result = '&@nameof(Model.FillBackgroundColorBlend)='+result.substr(1);
 				}
 				return result;
 			}
@@ -317,7 +318,7 @@
 
 			function updateFontList(fonts) {
 
-				const control = document.getElementById('fontNames');
+				const control = document.getElementById('@nameof(Model.FontName)s');
 				control.innerHTML = '';
 
 				for (let current of fonts) {
@@ -330,7 +331,7 @@
 
 			}
 
-			document.getElementById('fontname').onkeyup = function (d) {
+			document.getElementById('@nameof(Model.FontName)').onkeyup = function (d) {
 
 				// UP: 38,  DOWN: 40
 				const keyCodeTab = 9;
@@ -359,10 +360,10 @@
 
 			};
 
-			document.getElementById('fontNames').onchange = function () {
+			document.getElementById('@nameof(Model.FontName)s').onchange = function () {
 
 				document.getElementById('fontsPanel').style.display = 'none';
-				document.getElementById('fontname').value = this.value;
+				document.getElementById('@nameof(Model.FontName)').value = this.value;
 
 				loadPreview();
 

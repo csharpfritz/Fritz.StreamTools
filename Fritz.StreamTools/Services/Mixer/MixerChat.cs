@@ -76,14 +76,20 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			var continueTrying = true;
 
-			// Local function to join chat channel
-			async Task postConnect()
+			// Local function to join chat channel 
+			async Task joinAndAuth()
 			{
-				// Join the channel and send authkey
 				if (string.IsNullOrEmpty(chatData.AuthKey))
 					continueTrying = await _channel.SendAsync("auth", channelId);  // Authenticating anonymously
 				else
 					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+		  }
+
+			// Local function to join chat channel
+			async Task postConnect()
+			{
+				// Join the channel and send authkey
+				await joinAndAuth();
 
 				if (!continueTrying && !string.IsNullOrEmpty(chatData.AuthKey))
 				{
@@ -91,8 +97,7 @@ namespace Fritz.StreamTools.Services.Mixer
 					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 					endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1);
 
-					// If this fail give up !
-					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+					await joinAndAuth(); // If this fail give up !
 				}
 			}
 
@@ -173,18 +178,45 @@ namespace Fritz.StreamTools.Services.Mixer
 					ParseChatMessage(e);
 					break;
 				case "UserJoin":
-					UserJoined?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
+					ParseUserJoin(e);
 					break;
 				case "UserLeave":
-					UserLeft?.Invoke(this, new ChatUserInfoEventArgs { UserId = (int)e.Data["id"], UserName = (string)e.Data["username"] });
+					ParseUserLeave(e);
 					break;
 			}
+		}
+
+		private void ParseUserLeave(EventEventArgs e)
+		{
+			var roles = e.Data["roles"]?.Values<string>().ToArray();
+
+			UserLeft?.Invoke(this, new ChatUserInfoEventArgs {
+				UserId = (int)e.Data["id"],
+				UserName = (string)e.Data["username"],
+				Properties = {
+					{ "MixerRoles", roles }
+				}
+			});
+		}
+
+		private void ParseUserJoin(EventEventArgs e)
+		{
+			var roles = e.Data["roles"]?.Values<string>().ToArray();
+
+			UserJoined?.Invoke(this, new ChatUserInfoEventArgs {
+				UserId = (int)e.Data["id"],
+				UserName = (string)e.Data["username"],
+				Properties = {
+					{ "MixerRoles", roles }
+				}
+			});
 		}
 
 		private void ParseChatMessage(EventEventArgs e)
 		{
 			var userId = e.Data["user_id"].Value<int>();
-			var roles = e.Data["user_roles"].Values<string>();
+			var roles = e.Data["user_roles"].Values<string>().ToArray();
+			var avatar = e.Data["user_avatar"]?.Value<string>();
 
 			// Combine text from all elements
 			var segments = e.Data["message"]["message"];
@@ -204,7 +236,12 @@ namespace Fritz.StreamTools.Services.Mixer
 				IsWhisper = isWhisper,
 				IsModerator = roles.Contains("Mod"),
 				IsOwner = roles.Contains("Owner"),
-				Message = combinedText
+				Message = combinedText,
+				Properties = {
+					{ "AvatarUrl", avatar ?? string.Empty },
+					{ "MixerUserLevel", e.Data["user_level"]?.Value<int>() },
+					{ "MixerRoles", roles }
+				}
 			});
 		}
 

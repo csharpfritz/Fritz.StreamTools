@@ -129,7 +129,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		private ClientWebSocket CreateWebSocket(string accessToken)
 		{
 			var ws = _factory.CreateClientWebSocket();
-			ws.Options.KeepAliveInterval = TimeSpan.FromMinutes(1);
+			ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
 			ws.Options.SetRequestHeader("x-is-bot", "true");
 			if (!string.IsNullOrEmpty(accessToken))
 			{
@@ -167,7 +167,8 @@ namespace Fritz.StreamTools.Services.Mixer
 				{
 					// Wait for next message
 					var json = await ReceiveNextMessageAsync(ws);
-					if (json == null) return;	// Connection closed maybe ?
+					if (json == null)
+						throw new Exception("Connection closed");
 					_logger.LogTrace("<< " + json);
 					var doc = JToken.Parse(json);
 					if (doc.IsNullOrEmpty()) continue;
@@ -350,8 +351,8 @@ namespace Fritz.StreamTools.Services.Mixer
 				do
 				{
 					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token);
-					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
 					if (result == null || result.Count == 0 || result.MessageType == WebSocketMessageType.Close) return null;
+					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
 					ms.Write(buffer.Array, buffer.Offset, result.Count);
 				}
 				while (!result.EndOfMessage);

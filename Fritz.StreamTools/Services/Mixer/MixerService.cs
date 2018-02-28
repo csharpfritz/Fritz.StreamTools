@@ -46,7 +46,6 @@ namespace Fritz.StreamTools.Services
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
 			_restClient = factory.CreateMixerRestClient(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
-
 			_live = factory.CreateMixerLive(_shutdownRequested.Token);
 			_chat = factory.CreateMixerChat(_restClient, _shutdownRequested.Token);
 		}
@@ -61,6 +60,8 @@ namespace Fritz.StreamTools.Services
 			_userId = info.UserId;
 			_numberOfFollowers = info.NumberOfFollowers;
 			_numberOfViewers = info.NumberOfViewers;
+
+			_logger.LogInformation("JOINING CHANNEL '{0}' as {0}", _restClient.ChannelName, _restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)");
 
 			// Connect to live events (viewer/follower count)
 			await _live.ConnectAndJoinAsync(_channelId);

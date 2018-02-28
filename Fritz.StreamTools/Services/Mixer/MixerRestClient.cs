@@ -16,8 +16,14 @@ namespace Fritz.StreamTools.Services.Mixer
 		bool HasToken { get; }
 		string ChannelName { get; }
 
-		Task<int> GetChannelIdAsync();
+		/// <summary>My user name or null if anonymously connected</summary>
+		string UserName { get; }
+		int UserId { get; }
+
+		/// <summary> Get channel/user info and initializes UserName & UserId properties. Call this first!</summary>
 		Task<ChannelInfo> GetChannelInfoAsync();
+
+		Task<int> GetChannelIdAsync();
 		Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync();
 		Task<int?> LookupUserIdAsync(string userName);
 		Task<bool> BanUserAsync(string userName);
@@ -35,6 +41,8 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public bool HasToken { get; }
 		public string ChannelName { get; }
+		public string UserName { get; private set; }
+		public int UserId { get; private set; }
 
 		/// <summary>
 		/// Construct new MixerRestClient
@@ -87,9 +95,18 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			try
 			{
-				var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,userId,numFollowers,viewersCurrent";
+				var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent";
 				var result = await GetAsync<ChannelInfo>(req);
 				_channelId = result.Id;
+
+				if (HasToken)
+				{
+					// User might not be joining own channel
+					var me = await GetJTokenAsync("users/current");
+					result.UserId = UserId = (int)me["id"];
+					UserName = (string)me["username"];
+				}
+
 				return result;
 			}
 			catch (HttpRequestException ex)

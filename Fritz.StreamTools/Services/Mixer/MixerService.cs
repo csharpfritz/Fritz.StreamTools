@@ -30,6 +30,7 @@ namespace Fritz.StreamTools.Services
 		public int CurrentFollowerCount { get => _numberOfFollowers; }
 		public int CurrentViewerCount { get => _numberOfViewers; }
 		public string Name { get { return "Mixer"; } }
+		public bool IsAuthenticated => ( _chat?.IsAuthenticated ).GetValueOrDefault();
 
 		private bool? _isOnline;
 		DateTimeOffset? _streamStartedAt;

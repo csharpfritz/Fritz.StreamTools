@@ -13,6 +13,7 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IMixerChat : IDisposable
 	{
+		bool IsAuthenticated { get; }
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
 		event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		event EventHandler<ChatUserInfoEventArgs> UserLeft;
@@ -33,6 +34,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ILogger _logger;
 		int _myUserId;
 		IJsonRpcWebSocket _channel;
+
+		public bool IsAuthenticated => _channel.IsAuthenticated;
 
 		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, IMixerRestClient client, CancellationToken shutdown)
 		{
@@ -128,7 +131,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrEmpty(message))
 				throw new ArgumentException("Must not be null or empty", nameof(message));
 
-			if (!_client.HasToken)
+			if (!IsAuthenticated)
 				return false;
 
 			var success = await _channel.SendAsync("msg", message);
@@ -146,7 +149,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrEmpty(message))
 				throw new ArgumentException("Must not be null or empty", nameof(message));
 
-			if (!_client.HasToken)
+			if (!IsAuthenticated)
 				return false;
 
 			var success = await _channel.SendAsync("whisper", userName, message);
@@ -159,7 +162,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
 
-			if (!_client.HasToken)
+			if (!IsAuthenticated)
 				return false;
 
 			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");

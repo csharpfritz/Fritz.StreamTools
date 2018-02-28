@@ -5,8 +5,8 @@ namespace Fritz.StreamTools.Services
 {
 	public interface IChatService
   {
-
 		string Name { get; }
+		bool IsAuthenticated { get; }
 
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
 		event EventHandler<ChatUserInfoEventArgs> UserJoined;
@@ -17,6 +17,5 @@ namespace Fritz.StreamTools.Services
 		Task<bool> TimeoutUserAsync(string userName, TimeSpan time);
 		Task<bool> BanUserAsync(string userName);
 		Task<bool> UnbanUserAsync(string userName);
-
 	}
 }

@@ -83,6 +83,7 @@ namespace Fritz.StreamTools.Services
 
 			var chatService = sender as IChatService;
 			Debug.Assert(chatService != null);
+			if (!chatService.IsAuthenticated) return;
 
 			// Ignore if the normal user is sending commands to fast
 			var userKey = $"{e.ServiceName}:{e.UserName}";

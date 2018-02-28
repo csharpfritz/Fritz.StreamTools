@@ -15,6 +15,8 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IJsonRpcWebSocket
 	{
+		bool IsAuthenticated { get; }
+
 		event EventHandler<EventEventArgs> EventReceived;
 		Task<bool> SendAsync(string method, params object[] args);
 		Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> postConnectFunc);
@@ -45,6 +47,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ConcurrentQueue<string> _myLatestMessages = new ConcurrentQueue<string>();
 		Task _receiverTask;
 		int? _receiverThreadId;
+
+		public bool IsAuthenticated { get; private set; }
 
 		/// <summary>
 		/// Raised each time an event is received on the websocket
@@ -140,6 +144,12 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Wait for next message
 			var json = await ReceiveNextMessageAsync(_ws);
 			_logger.LogTrace("<< " + json);
+			var doc = JToken.Parse(json);
+			if(doc["event"].Value<string>() == "hello")
+			{
+				var b = doc["data"]?["authenticated"]?.Value<bool>();
+				IsAuthenticated = b.GetValueOrDefault();
+			}
 		}
 
 		/// <summary>
@@ -226,6 +236,11 @@ namespace Fritz.StreamTools.Services.Mixer
 				// Remember last 5 messages I have send
 				_myLatestMessages.Enqueue((string)data["id"]);
 				while (_myLatestMessages.Count > 5) _myLatestMessages.TryDequeue(out var _);
+			}
+
+			if(!data.IsNullOrEmpty() && !data["authenticated"].IsNullOrEmpty())
+			{
+				IsAuthenticated = data["authenticated"].Value<bool>();
 			}
 
 			var id = doc["id"].Value<int>();

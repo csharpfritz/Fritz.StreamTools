@@ -1,36 +1,46 @@
 ﻿using Fritz.StreamTools.Helpers;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Fritz.StreamTools.Models
 {
-		public class FollowerGoalConfiguration
+	public class FollowerGoalConfiguration
+	{
+
+		public string Caption { get; set; } = "Follower Goal";
+		public int Goal { get; set; } = 0;
+		[Display(Name = "Current Value")]
+		public int CurrentValue { get; set; } = 0;
+		public int Width { get; set; } = 800;
+		[Display(Name = "Empty Background Color")]
+		public string EmptyBackgroundColor { get; set; }
+
+		[Display(Name = "Empty Font Color")]
+		public string EmptyFontColor { get; set; }
+
+		[Display(Name = "Fill Font Color")]
+		public string FillFontColor { get; set; }
+
+		[Display(Name = "Google Font Name")]
+		public string FontName { get; set; } = "~";
+		public string Gradient { get; set; }
+		public string FillBackgroundColor { get; set; } = "";
+		public string[] FillBgColorArray
 		{
-				public string Caption { get; set; } = "Follower Goal";
-				public int Goal { get; set; } = 0;
-				public int CurrentValue { get; set; } = 0;
-				public int Width { get; set; } = 800;
-				public string EmptyBackgroundColor { get; set; }
-				public string EmptyFontColor { get; set; }
-				public string FillFontColor { get; set; }
-				public string FontName { get; set; } = "~";
-				public string Gradient { get; set; }
-				public string FillBackgroundColor { get; set; } = "";
-				public string[] FillBgColorArray
-				{
-						get
-						{
-								return FillBackgroundColor.Split(',');
-						}
-				}
-				public string FillBackgroundColorBlend { get; set; } = "0";
-				public double[] FillBgBlendArray
-				{
-						get
-						{
-								return FillBackgroundColorBlend.Split(',').Select(x => double.Parse(x)).ToArray();
-						}
-				}
+			get
+			{
+				return FillBackgroundColor.Split(',');
+			}
+		}
+		public string FillBackgroundColorBlend { get; set; } = "0";
+		public double[] FillBgBlendArray
+		{
+			get
+			{
+				return FillBackgroundColorBlend.Split(',').Select(x => double.Parse(x)).ToArray();
+			}
+		}
 
 		internal void LoadDefaultValues(FollowerGoalConfiguration configuration)
 		{

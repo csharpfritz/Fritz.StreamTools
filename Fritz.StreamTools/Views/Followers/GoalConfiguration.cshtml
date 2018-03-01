@@ -15,11 +15,11 @@
 
 <div class="row">
 	<div class="col-md-6 mb-3">
-		<label for="caption">Caption:</label>
+		<label asp-for="Caption"></label>
 		<input class="form-control" type="text" asp-for="Caption"  />
 	</div>
 	<div class="col-md-6 mb-3">
-		<label for="fontname">Google Font:</label>
+		<label asp-for="FontName"></label>
 		<input class="form-control" type="text" asp-for="FontName" />
 		<div id="fontsPanel">
 			<label for="fontname"></label> <select id="fontNames" size="5"></select>
@@ -30,29 +30,31 @@
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-group">
-		<label for="goal">Goal:</label>
+		<label asp-for="Goal"></label>
 		<input class="form-control" type="number" asp-for="Goal" value="100" />
 	</div>
 	<div class="col-md-6 mb-3 form-group">
-		<label for="currentValue">Test Count:</label>
+		<label asp-for="CurrentValue"></label>
 		<input class="form-control" type="number" asp-for="CurrentValue" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyBackgroundColor">Empty Bg Color:</label>
+		<label asp-for="EmptyBackgroundColor"></label>
+		&nbsp;
 		<input type="color" asp-for="EmptyBackgroundColor" value="#CCCCCC" />
 	</div>
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyFontColor">Empty Font Color:</label>
+		<label asp-for="EmptyFontColor"></label>
+		&nbsp;
 		<input type="color" asp-for="EmptyFontColor" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-12 mb-3">
-		<label>Fill Bar Colors:</label>
+		<label>Fill Bar Colors</label>
 		<div id="bgcolors" class="form-row">
 			<div name="spanBGColor" style="display: inline-block;" class="col-md-3">
 				<div class="input-group mb-2">
@@ -431,6 +433,8 @@
 
 @section styles {
 	<style>
+
+		label:after {content: ":"}
 
 		#bgcolors .input-group-prepend .input-group-text {
 			background-color: inherit;

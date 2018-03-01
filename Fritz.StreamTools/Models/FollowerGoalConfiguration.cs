@@ -35,7 +35,7 @@ namespace Fritz.StreamTools.Models
 		internal void LoadDefaultValues(FollowerGoalConfiguration configuration)
 		{
 
-			this.Caption = string.IsNullOrEmpty(this.Caption) ? configuration.Caption : this.Caption == "null" ? "" : this.Caption;
+			this.Caption = string.IsNullOrEmpty(this.Caption) ? configuration.Caption : this.Caption == "null" ? "Add a caption" : this.Caption;
 			this.Goal = this.Goal == 0 ? configuration.Goal : this.Goal;
 			var backColors = string.IsNullOrEmpty(this.FillBackgroundColor) ? configuration.FillBgColorArray : this.FillBackgroundColor.Split(',');
 			var backBlend = string.IsNullOrEmpty(this.FillBackgroundColorBlend) ? configuration.FillBgBlendArray : this.FillBackgroundColorBlend.Split(',').Select(a => double.Parse(a)).ToArray();

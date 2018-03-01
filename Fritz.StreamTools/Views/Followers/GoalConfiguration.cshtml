@@ -1,4 +1,5 @@
-﻿<div class="py-5 text-center">
+﻿@model FollowerGoalConfiguration
+<div class="py-5 text-center">
 	<h2>Configure Follower Goal</h2>
 	<p class="lead">
 		Fill out the options below to generate a customized url to show off your follower goal.
@@ -15,11 +16,11 @@
 <div class="row">
 	<div class="col-md-6 mb-3">
 		<label for="caption">Caption:</label>
-		<input class="form-control" type="text" id="caption" value="Configure Me" />
+		<input class="form-control" type="text" asp-for="Caption"  />
 	</div>
 	<div class="col-md-6 mb-3">
 		<label for="fontname">Google Font:</label>
-		<input class="form-control" type="text" id="fontname" value="Abel" />
+		<input class="form-control" type="text" asp-for="FontName" />
 		<div id="fontsPanel">
 			<label for="fontname"></label> <select id="fontNames" size="5"></select>
 			<br />
@@ -30,22 +31,22 @@
 <div class="row">
 	<div class="col-md-6 mb-3 form-group">
 		<label for="goal">Goal:</label>
-		<input class="form-control" type="number" id="goal" value="100" />
+		<input class="form-control" type="number" asp-for="Goal" value="100" />
 	</div>
 	<div class="col-md-6 mb-3 form-group">
 		<label for="currentValue">Test Count:</label>
-		<input class="form-control" type="number" id="currentValue" value="85" />
+		<input class="form-control" type="number" asp-for="CurrentValue" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-inline">
 		<label for="emptyBackgroundColor">Empty Bg Color:</label>
-		<input type="color" id="emptyBackgroundColor" value="#CCCCCC" />
+		<input type="color" asp-for="EmptyBackgroundColor" value="#CCCCCC" />
 	</div>
 	<div class="col-md-6 mb-3 form-inline">
 		<label for="emptyFontColor">Empty Font Color:</label>
-		<input type="color" id="emptyFontColor" />
+		<input type="color" asp-for="EmptyFontColor" />
 	</div>
 </div>
 
@@ -91,8 +92,24 @@
 		};
 
 
+		const ConfigurationModel = {
+			Caption: "@nameof(Model.Caption)",
+			Goal: "@nameof(Model.Goal)",
+			FontName: "@nameof(Model.FontName)",
+			CurrentValue: "@nameof(Model.CurrentValue)",
+			EmptyBackgroundColor: "@nameof(Model.EmptyBackgroundColor)",
+			EmptyFontColor: "@nameof(Model.EmptyFontColor)"
+		};
+
+
+
 	// "fontname",
-	const quickPreviewTextBoxes = ["preview", "caption", "goal", "currentValue", "emptyBackgroundColor", "emptyFontColor", "bgcolor1", "bgblend1"];
+		const quickPreviewTextBoxes = ["preview", ConfigurationModel.Caption,
+			ConfigurationModel.Goal,
+			ConfigurationModel.CurrentValue,
+			ConfigurationModel.EmptyBackgroundColor,
+			ConfigurationModel.EmptyFontColor,
+			"bgcolor1", "bgblend1"];
 
 		(function () {
 
@@ -171,7 +188,7 @@
 			function loadPreview() {
 
 				const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
-				const fontName = document.getElementById("fontname").value;
+				const fontName = document.getElementById(ConfigurationModel.FontName).value;
 
 				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
 					alert('Font not supported by Google Fonts');
@@ -179,16 +196,16 @@
 				}
 
 				var urlTemplate = "/followers/goal/";
-				urlTemplate += `${document.getElementById("goal").value}/`;
-				urlTemplate += `${document.getElementById("caption").value}`;
+				urlTemplate += `${document.getElementById(ConfigurationModel.Goal).value}/`;
+				urlTemplate += `${document.getElementById(ConfigurationModel.Caption).value}`;
 				urlTemplate += `?width=${iframeWidth}`;
 				urlTemplate += getBgColors();
 				urlTemplate += getBgBlend();
-				urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById("emptyBackgroundColor").value)}`;
-				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
+				urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById(ConfigurationModel.EmptyBackgroundColor).value)}`;
+				urlTemplate += `&emptyFontColor=${escape(document.getElementById(ConfigurationModel.EmptyFontColor).value)}`;
 				urlTemplate += `&fontName=${escape(fontName)}`;
 
-				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById("currentValue").value}`
+				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById(ConfigurationModel.CurrentValue).value}`
 				log(urlTemplate);
 
 				document.getElementById("outputUrl").textContent = urlTemplate;
@@ -330,7 +347,7 @@
 
 			}
 
-			document.getElementById('fontname').onkeyup = function (d) {
+			document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 
 				// UP: 38,  DOWN: 40
 				const keyCodeTab = 9;
@@ -413,7 +430,6 @@
 }
 
 @section styles {
-	<link type="text/css" rel="stylesheet" href="~/css/cachedGoogleFont.css"/>
 	<style>
 
 		#bgcolors .input-group-prepend .input-group-text {

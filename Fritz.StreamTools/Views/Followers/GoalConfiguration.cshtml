@@ -1,4 +1,4 @@
-﻿@model FollowerGoalConfiguration
+@model FollowerGoalConfiguration
 <div class="py-5 text-center">
 	<h2>Configure Follower Goal</h2>
 	<p class="lead">
@@ -217,7 +217,8 @@
 				urlTemplate += `&fontName=${escape(fontName)}`;
 
 				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById(ConfigurationModel.CurrentValue).value}`
-				log(urlTemplate);
+
+        log(urlTemplate);
 
 				document.getElementById("outputUrl").textContent = urlTemplate;
 				document.getElementById("outputUrl").href = urlTemplate;

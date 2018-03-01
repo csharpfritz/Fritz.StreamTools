@@ -1,11 +1,12 @@
-﻿using Fritz.StreamTools.Helpers;
+using Fritz.StreamTools.Helpers;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Fritz.StreamTools.Models
 {
-	public class FollowerGoalConfiguration
+
+public class FollowerGoalConfiguration
 	{
 
 		public string Caption { get; set; } = "Follower Goal";

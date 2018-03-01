@@ -23,14 +23,14 @@
 	},
 	{
 		"outputFileName": "wwwroot/js/GoalConfiguration.min.js",
-		"inputFiles": [
-					"ClientApp/GoalConfiguration/Preview.js",
-					"ClientApp/GoalConfiguration/GoogleFonts.js",
-					"ClientApp/GoalConfiguration/GoalConfiguration.js"
-		],
+			"inputFiles": [
+				"wwwroot/js/GoalConfiguration/GoogleFonts.js",
+				"wwwroot/js/GoalConfiguration/Preview.js",
+				"wwwroot/js/GoalConfiguration/GoalConfiguration.js"
+			],
 		// Optionally specify minification options
 		"minify": {
-			"enabled": false
+			"enabled": true
 		},
 		// Optionally generate .map file
 		"sourceMap": false

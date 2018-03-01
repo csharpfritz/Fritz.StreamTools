@@ -1,10 +1,12 @@
 var log = function (message, params) {
-	// console.log(message, params);
+	console.log(message, params);
 
 };
 
 
 // "fontname",
+
+var isLoadingFromStorage = false;
 
 (function () {
 
@@ -17,6 +19,8 @@ var log = function (message, params) {
 	InitPreview();
 
 	function onload() {
+
+		isLoadingFromStorage = true; 
 
 		const bgArray = new Array();
 
@@ -74,8 +78,10 @@ var log = function (message, params) {
 
 		InitGoogleFonts();
 
+		isLoadingFromStorage = false; 
 
 	}
+
 })();
 
 
@@ -151,7 +157,7 @@ function updateFontList(fonts) {
 
 }
 
-document.getElementById('fontname').onkeyup = function (d) {
+document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 
 	// UP: 38,  DOWN: 40
 	const keyCodeTab = 9;

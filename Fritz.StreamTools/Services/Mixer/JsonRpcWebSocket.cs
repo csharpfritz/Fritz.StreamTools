@@ -170,21 +170,8 @@ namespace Fritz.StreamTools.Services.Mixer
 					if (json == null)
 						throw new Exception("Connection closed");
 					_logger.LogTrace("<< " + json);
-					var doc = JToken.Parse(json);
-					if (doc.IsNullOrEmpty()) continue;
 
-					var type = doc["type"];
-					if (type.IsNullOrEmpty()) continue;
-
-					switch ((string)type)
-					{
-						case "reply":
-							HandleReply(doc);
-							break;
-						case "event":
-							HandleEvent(doc);
-							break;
-					}
+					ProcessReceivedMessage(json);
 				}
 				catch (Exception e)
 				{
@@ -194,6 +181,25 @@ namespace Fritz.StreamTools.Services.Mixer
 					await reconnect();  // Will spawn a new receiver task
 					return;
 				}
+			}
+		}
+
+		private void ProcessReceivedMessage(string json)
+		{
+			var doc = JToken.Parse(json);
+			if (doc.IsNullOrEmpty()) return;
+
+			var type = doc["type"];
+			if (type.IsNullOrEmpty()) return;
+
+			switch ((string)type)
+			{
+				case "reply":
+					HandleReply(doc);
+					break;
+				case "event":
+					HandleEvent(doc);
+					break;
 			}
 		}
 
@@ -377,6 +383,15 @@ namespace Fritz.StreamTools.Services.Mixer
 			_receiverTask?.Wait();
 
 			_disposed = true;
+		}
+
+		/// <summary>
+		/// USE FOR TEST TO INJECT WEBSOCKET MESSAGES
+		/// </summary>
+		/// <param name="json">The json string as it would look received from the server</param>
+		internal void InjectTestPacket(string json)
+		{
+			ProcessReceivedMessage(json);
 		}
 	}
 }

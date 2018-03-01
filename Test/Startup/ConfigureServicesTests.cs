@@ -32,8 +32,8 @@ namespace Test.Startup
 			// assert
 			var provider = serviceCollection.BuildServiceProvider();
 
-			Assert.Equal(expected, provider.GetServices<IHostedService>().Where(x => expected.Contains(x.GetType())).Select(x => x.GetType()));
-			Assert.Equal(expected, provider.GetServices<IStreamService>().Where(x => expected.Contains(x.GetType())).Select(x => x.GetType()));
+			Assert.Equal(expected, provider.GetServices<IHostedService>().Select(x => x.GetType()).Intersect(expected));
+			Assert.Equal(expected, provider.GetServices<IStreamService>().Select(x => x.GetType()).Intersect(expected));
 		}
 
 		public static IEnumerable<object[]> Configurations

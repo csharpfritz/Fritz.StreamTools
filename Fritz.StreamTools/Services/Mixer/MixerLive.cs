@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 // https://dev.mixer.com/reference/constellation/index.html
 
@@ -81,11 +82,12 @@ namespace Fritz.StreamTools.Services.Mixer
 				var payload = e.Data["payload"];
 				if (payload.IsNullOrEmpty()) return;
 
-				var e2 = new LiveEventArgs();
-				if (payload["numFollowers"] != null) e2.FollowerCount = (int)payload["numFollowers"];
-				if (payload["viewersCurrent"] != null) e2.ViewerCount = (int)payload["viewersCurrent"];
-				if (payload["online"] != null) e2.IsOnline = (bool)payload["online"];
-				if(e2.FollowerCount.HasValue || e2.ViewerCount.HasValue || e2.IsOnline.HasValue)
+				var e2 = new LiveEventArgs {
+					FollowerCount = payload["numFollowers"]?.Value<int>(),
+					ViewerCount = payload["viewersCurrent"]?.Value<int>(),
+					IsOnline = payload["online"]?.Value<bool>()
+				};
+				if (e2.FollowerCount.HasValue || e2.ViewerCount.HasValue || e2.IsOnline.HasValue)
 				{
 					LiveEvent?.Invoke(this, e2);
 				}

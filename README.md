@@ -7,10 +7,11 @@ The project is intended to be built as a Docker container and configured with a 
 
 The following features are supported by this project:
 
-*  A checklist rundown of segments of the show (/index) that is updated from another page (/admin)
+*  A checklist rundown of segments of the show (/rundown) that is updated from another page (/admin)
 *  A followers count API that reports the total number of followers: GET /api/Followers
 *  A followers count page that can be easily styled and formatted at /Followers/Count
-*  A followers goal meter that can be sized and have its goal caption and value set: /Followers/Goal/{goalValue}/{goalCaption}?width={meterWidthInPixels}
+*  A followers goal meter that can be sized and have its goal caption and value set, complete with configuration screen at /Followers/Goal/Configuration
+![Follower Goal Sample](docs/images/FollowerGoalSample.PNG)
 
 ## Services Supported
 

@@ -54,7 +54,7 @@ namespace Test.Startup
 			return new Dictionary<string, string>
 			{
 				{"StreamServices:Twitch:ClientId", twitchClientId},
-				{"StreamServices:Mixer:ClientId", mixerClientId},
+				{"StreamServices:Mixer:Channel", mixerClientId},
 				{"StreamServices:Fake:Enabled", enableFake.ToString()}
 			};
 		}

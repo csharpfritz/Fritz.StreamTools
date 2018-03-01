@@ -51,9 +51,11 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (loggerFactory == null)
 				throw new ArgumentNullException(nameof(loggerFactory));
+			if (string.IsNullOrWhiteSpace(channelName))
+				throw new ArgumentException("message", nameof(channelName));
+
 			_logger = loggerFactory.CreateLogger(nameof(MixerRestClient));
 
-			ChannelName = channelName ?? "DUMMY_CHANNEL";
 			HasToken = !string.IsNullOrEmpty(token);
 
 			_client = new HttpClient { BaseAddress = new Uri(API_URL) };
@@ -61,6 +63,8 @@ namespace Fritz.StreamTools.Services.Mixer
 			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
 			if (HasToken)
 				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+			ChannelName = channelName;
 		}
 
 		/// <summary>

@@ -1,4 +1,5 @@
-﻿<div class="py-5 text-center">
+@model FollowerGoalConfiguration
+<div class="py-5 text-center">
 	<h2>Configure Follower Goal</h2>
 	<p class="lead">
 		Fill out the options below to generate a customized url to show off your follower goal.
@@ -14,12 +15,12 @@
 
 <div class="row">
 	<div class="col-md-6 mb-3">
-		<label for="caption">Caption:</label>
-		<input class="form-control" type="text" id="caption" value="Configure Me" />
+		<label asp-for="Caption"></label>
+		<input class="form-control" type="text" asp-for="Caption"  />
 	</div>
 	<div class="col-md-6 mb-3">
-		<label for="fontname">Google Font:</label>
-		<input class="form-control" type="text" id="fontname" value="Abel" />
+		<label asp-for="FontName"></label>
+		<input class="form-control" type="text" asp-for="FontName" />
 		<div id="fontsPanel">
 			<label for="fontname"></label> <select id="fontNames" size="5"></select>
 			<br />
@@ -29,29 +30,31 @@
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-group">
-		<label for="goal">Goal:</label>
-		<input class="form-control" type="number" id="goal" value="100" />
+		<label asp-for="Goal"></label>
+		<input class="form-control" type="number" asp-for="Goal" value="100" />
 	</div>
 	<div class="col-md-6 mb-3 form-group">
-		<label for="currentValue">Test Count:</label>
-		<input class="form-control" type="number" id="currentValue" value="85" />
+		<label asp-for="CurrentValue"></label>
+		<input class="form-control" type="number" asp-for="CurrentValue" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyBackgroundColor">Empty Bg Color:</label>
-		<input type="color" id="emptyBackgroundColor" value="#CCCCCC" />
+		<label asp-for="EmptyBackgroundColor"></label>
+		&nbsp;
+		<input type="color" asp-for="EmptyBackgroundColor" value="#CCCCCC" />
 	</div>
 	<div class="col-md-6 mb-3 form-inline">
-		<label for="emptyFontColor">Empty Font Color:</label>
-		<input type="color" id="emptyFontColor" />
+		<label asp-for="EmptyFontColor"></label>
+		&nbsp;
+		<input type="color" asp-for="EmptyFontColor" />
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-12 mb-3">
-		<label>Fill Bar Colors:</label>
+		<label>Fill Bar Colors</label>
 		<div id="bgcolors" class="form-row">
 			<div name="spanBGColor" style="display: inline-block;" class="col-md-3">
 				<div class="input-group mb-2">
@@ -91,8 +94,26 @@
 		};
 
 
+		const ConfigurationModel = {
+			Caption: "@nameof(Model.Caption)",
+			Goal: "@nameof(Model.Goal)",
+			FontName: "@nameof(Model.FontName)",
+			CurrentValue: "@nameof(Model.CurrentValue)",
+			EmptyBackgroundColor: "@nameof(Model.EmptyBackgroundColor)",
+			EmptyFontColor: "@nameof(Model.EmptyFontColor)"
+		};
+
+
+
 	// "fontname",
-	const quickPreviewTextBoxes = ["preview", "caption", "goal", "currentValue", "emptyBackgroundColor", "emptyFontColor", "bgcolor1", "bgblend1"];
+		const quickPreviewTextBoxes = ["preview", ConfigurationModel.Caption,
+			ConfigurationModel.Goal,
+			ConfigurationModel.CurrentValue,
+			ConfigurationModel.EmptyBackgroundColor,
+			ConfigurationModel.EmptyFontColor,
+			"bgcolor1", "bgblend1"];
+
+		var isLoadingFromStorage = false;
 
 		(function () {
 
@@ -107,6 +128,8 @@
 			}
 
 			function onload() {
+
+				isLoadingFromStorage = true; 
 
 				const bgArray = new Array();
 
@@ -165,13 +188,18 @@
 				if (supportedFonts.length == 0)
 					googleFontsAdapter(setSupportedFontsFromApi);
 
-				}
+				isLoadingFromStorage = false; 
+
+			}
+
 		})();
 
-			function loadPreview() {
+		function loadPreview() {
+
+				if (isLoadingFromStorage) return; 
 
 				const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
-				const fontName = document.getElementById("fontname").value;
+				const fontName = document.getElementById(ConfigurationModel.FontName).value;
 
 				if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
 					alert('Font not supported by Google Fonts');
@@ -179,17 +207,18 @@
 				}
 
 				var urlTemplate = "/followers/goal/";
-				urlTemplate += `${document.getElementById("goal").value}/`;
-				urlTemplate += `${document.getElementById("caption").value}`;
+				urlTemplate += `${document.getElementById(ConfigurationModel.Goal).value}/`;
+				urlTemplate += `${document.getElementById(ConfigurationModel.Caption).value}`;
 				urlTemplate += `?width=${iframeWidth}`;
 				urlTemplate += getBgColors();
 				urlTemplate += getBgBlend();
-				urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById("emptyBackgroundColor").value)}`;
-				urlTemplate += `&emptyFontColor=${escape(document.getElementById('emptyFontColor').value)}`;
+				urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById(ConfigurationModel.EmptyBackgroundColor).value)}`;
+				urlTemplate += `&emptyFontColor=${escape(document.getElementById(ConfigurationModel.EmptyFontColor).value)}`;
 				urlTemplate += `&fontName=${escape(fontName)}`;
 
-				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById("currentValue").value}`
-				log(urlTemplate);
+				document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById(ConfigurationModel.CurrentValue).value}`
+
+        log(urlTemplate);
 
 				document.getElementById("outputUrl").textContent = urlTemplate;
 				document.getElementById("outputUrl").href = urlTemplate;
@@ -330,7 +359,7 @@
 
 			}
 
-			document.getElementById('fontname').onkeyup = function (d) {
+			document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 
 				// UP: 38,  DOWN: 40
 				const keyCodeTab = 9;
@@ -376,7 +405,7 @@
 				const addButton = spans[spans.length - 1].nextSibling,
 					newNode = spans[spans.length - 1].cloneNode(true),
 					bgColorField = newNode.getElementsByTagName('input')[0],
-					bgBlendField = newNode.getElementsByTagName('input')[0];
+					bgBlendField = newNode.getElementsByTagName('input')[1];
 
 				bgColorField.id = key ? `bgcolor${key}` : `bgcolor${spans.length + 1}`;
 				bgColorField.onchange = loadPreview;
@@ -413,8 +442,9 @@
 }
 
 @section styles {
-	<link type="text/css" rel="stylesheet" href="~/css/cachedGoogleFont.css"/>
 	<style>
+
+		label:after {content: ":"}
 
 		#bgcolors .input-group-prepend .input-group-text {
 			background-color: inherit;

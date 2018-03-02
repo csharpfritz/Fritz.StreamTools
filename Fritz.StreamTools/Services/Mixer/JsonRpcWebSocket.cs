@@ -39,7 +39,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly bool _isChat;
 		readonly byte[] _receiveBuffer;
 
-		ClientWebSocket _ws;
+		IClientWebSocketProxy _ws;
 		readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
 		bool _disposed;
 		int _nextPacketId = 0;
@@ -126,14 +126,13 @@ namespace Fritz.StreamTools.Services.Mixer
 			return _ws != null;
 		}
 
-		private ClientWebSocket CreateWebSocket(string accessToken)
+		private IClientWebSocketProxy CreateWebSocket(string accessToken)
 		{
-			var ws = _factory.CreateClientWebSocket();
-			ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
-			ws.Options.SetRequestHeader("x-is-bot", "true");
+			var ws = _factory.CreateClientWebSocket(_isChat);
+			ws.SetRequestHeader("x-is-bot", "true");
 			if (!string.IsNullOrEmpty(accessToken))
 			{
-				ws.Options.SetRequestHeader("Authorization", $"Bearer {accessToken}");
+				ws.SetRequestHeader("Authorization", $"Bearer {accessToken}");
 			}
 
 			return ws;
@@ -145,7 +144,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			var json = await ReceiveNextMessageAsync(_ws);
 			_logger.LogTrace("<< " + json);
 			var doc = JToken.Parse(json);
-			if(doc["event"].Value<string>() == "hello")
+			if(doc["event"]?.Value<string>() == "hello")
 			{
 				var b = doc["data"]?["authenticated"]?.Value<bool>();
 				IsAuthenticated = b.GetValueOrDefault();
@@ -348,7 +347,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// Reads the complete next text message from the websocket
 		/// </summary>
 		/// <returns>The text message, or null if socket was closed</returns>
-		private async Task<string> ReceiveNextMessageAsync(ClientWebSocket ws)
+		private async Task<string> ReceiveNextMessageAsync(IClientWebSocketProxy ws)
 		{
 			var buffer = new ArraySegment<byte>(_receiveBuffer);
 			WebSocketReceiveResult result;
@@ -383,15 +382,6 @@ namespace Fritz.StreamTools.Services.Mixer
 			_receiverTask?.Wait();
 
 			_disposed = true;
-		}
-
-		/// <summary>
-		/// USE FOR TEST TO INJECT WEBSOCKET MESSAGES
-		/// </summary>
-		/// <param name="json">The json string as it would look received from the server</param>
-		internal void InjectTestPacket(string json)
-		{
-			ProcessReceivedMessage(json);
 		}
 	}
 }

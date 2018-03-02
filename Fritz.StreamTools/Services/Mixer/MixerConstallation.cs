@@ -10,13 +10,13 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public interface IMixerLive : IDisposable
+	public interface IMixerConstallation : IDisposable
 	{
-		event EventHandler<LiveEventArgs> LiveEvent;
+		event EventHandler<ConstallationEventArgs> ConstallationEvent;
 		Task ConnectAndJoinAsync(int channelId);
 	}
 
-	internal class MixerLive : IMixerLive
+	internal class MixerConstallation : IMixerConstallation
 	{
 		const string WS_URL = "wss://constellation.mixer.com";
 
@@ -27,19 +27,19 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ILogger _logger;
 		IJsonRpcWebSocket _channel;
 
-		public MixerLive(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, CancellationToken shutdown)
+		public MixerConstallation(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, CancellationToken shutdown)
 		{
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_shutdown = shutdown;
-			_logger = loggerFactory.CreateLogger(nameof(MixerLive));
+			_logger = loggerFactory.CreateLogger(nameof(MixerConstallation));
 		}
 
 		/// <summary>
 		/// Raised each time a chat message is received
 		/// </summary>
-		public event EventHandler<LiveEventArgs> LiveEvent;
+		public event EventHandler<ConstallationEventArgs> ConstallationEvent;
 
 		/// <summary>
 		/// Connect to the live event server, and join our channel
@@ -82,14 +82,14 @@ namespace Fritz.StreamTools.Services.Mixer
 				var payload = e.Data["payload"];
 				if (payload.IsNullOrEmpty()) return;
 
-				var e2 = new LiveEventArgs {
+				var e2 = new ConstallationEventArgs {
 					FollowerCount = payload["numFollowers"]?.Value<int>(),
 					ViewerCount = payload["viewersCurrent"]?.Value<int>(),
 					IsOnline = payload["online"]?.Value<bool>()
 				};
 				if (e2.FollowerCount.HasValue || e2.ViewerCount.HasValue || e2.IsOnline.HasValue)
 				{
-					LiveEvent?.Invoke(this, e2);
+					ConstallationEvent?.Invoke(this, e2);
 				}
 			}
 		}
@@ -101,7 +101,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		}
 	}
 
-	public class LiveEventArgs : EventArgs
+	public class ConstallationEventArgs : EventArgs
 	{
 		public int? FollowerCount { get; set; }
 		public int? ViewerCount { get; set; }

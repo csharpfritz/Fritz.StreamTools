@@ -13,7 +13,7 @@ namespace Fritz.StreamTools.Services
 		readonly IConfiguration _config;
 		readonly ILogger _logger;
 		readonly IMixerChat _chat;
-		readonly IMixerLive _live;
+		readonly IMixerConstallation _live;
 		readonly CancellationTokenSource _shutdownRequested;
 		readonly IMixerRestClient _restClient;
 
@@ -46,9 +46,9 @@ namespace Fritz.StreamTools.Services
 
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
-			_restClient = factory.CreateMixerRestClient(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
-			_live = factory.CreateMixerLive(_shutdownRequested.Token);
-			_chat = factory.CreateMixerChat(_restClient, _shutdownRequested.Token);
+			_restClient = factory.CreateRestClient(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
+			_live = factory.CreateConstallation(_shutdownRequested.Token);
+			_chat = factory.CreateChat(_restClient, _shutdownRequested.Token);
 		}
 
 		#region IHostedService
@@ -66,7 +66,7 @@ namespace Fritz.StreamTools.Services
 
 			// Connect to live events (viewer/follower count)
 			await _live.ConnectAndJoinAsync(_channelId);
-			_live.LiveEvent += _live_LiveEvent;
+			_live.ConstallationEvent += _live_LiveEvent;
 
 			// Connect to chat server
 			await _chat.ConnectAndJoinAsync(_userId, _channelId);
@@ -112,7 +112,7 @@ namespace Fritz.StreamTools.Services
 		/// <summary>
 		/// Viewers/followers/IsOnline event handler
 		/// </summary>
-		private void _live_LiveEvent(object sender, LiveEventArgs e)
+		private void _live_LiveEvent(object sender, ConstallationEventArgs e)
 		{
 			ServiceUpdatedEventArgs update = null;
 

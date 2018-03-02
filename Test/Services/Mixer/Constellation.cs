@@ -1,49 +1,33 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using FluentAssertions;
 using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Test.Services.Mixer
 {
-	public class Constellation
+	public class Constellation : Base
 	{
-		private readonly LoggerFactory _loggerFactory;
-		private readonly IConfiguration _config;
-		public Simulator Sim { get;  }
-
-		public Constellation()
-		{
-			_loggerFactory = new LoggerFactory();
-			var set = new Dictionary<string, string>() {
-				{ "StreamServices:Mixer:Channel", "MyChannel" },
-				{ "StreamServices:Mixer:Token", "abcd1234" }
-			};
-			_config = new ConfigurationBuilder().AddInMemoryCollection(set).Build();
-			Sim = new Simulator(_config, _loggerFactory);
-		}
-
 		[Fact]
 		public async Task WillConnectAndJoin()
 		{
-			var ws = Sim.ConstallationWebSocket;
-			using (var sut = new MixerService(_config, _loggerFactory, Sim))
+			var sim = SimAnon.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 
 				ws.JoinedConstallation.Should().BeTrue();
 				// {{"id": 1,"type": "method","method": "livesubscribe","params": {"events": ["channel:1234:update" ]}}}
 				ws.LastPacket["method"].Should().NotBeNull();
-				ws.LastPacket["method"].Value<string>().Should().Equals("livesubscribe");
-				var args = $"[{Sim.ChannelInfo.Id},{Sim.ChannelInfo.UserId},\"{Sim.ChatAuthKey}\"]";
+				ws.LastPacket["method"].Value<string>().Should().Be("livesubscribe");
+				var args = $"[{sim.ChannelInfo.Id},{sim.ChannelInfo.UserId},\"{sim.ChatAuthKey}\"]";
 				ws.LastPacket["params"].Should().NotBeNull();
 				ws.LastPacket["params"]["events"].Should().NotBeNull();
-				ws.LastPacket["params"]["events"].ToString(Formatting.None).Should().ContainAll($"channel:{Sim.ChannelInfo.Id}:update");
+				var events = ws.LastPacket["params"]["events"].ToString(Formatting.None);
+				events.Should().ContainAll($"channel:{sim.ChannelInfo.Id}:update");
 			}
 		}
 
@@ -52,15 +36,16 @@ namespace Test.Services.Mixer
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
 
-			var ws = Sim.ConstallationWebSocket;
-			using (var sut = new MixerService(_config, _loggerFactory, Sim))
+			var sim = SimAnon.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 66, a => a.NewViewers == null, a => a.IsOnline == null, a => a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 66 && a.NewViewers == null && a.IsOnline == null && a.ServiceName == "Mixer")
 						.WithSender(sut);
 				}
 			}
@@ -70,15 +55,17 @@ namespace Test.Services.Mixer
 		public async Task RaiseViewersEvent()
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
-			var ws = Sim.ConstallationWebSocket;
-			using (var sut = new MixerService(_config, _loggerFactory, Sim))
+
+			var sim = SimAnon.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null, a => a.NewViewers == 35, a => a.IsOnline == null, a => a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null && a.NewViewers == 35 && a.IsOnline == null && a.ServiceName == "Mixer")
 						.WithSender(sut);
 				}
 			}
@@ -89,10 +76,11 @@ namespace Test.Services.Mixer
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
 
-			var ws = Sim.ConstallationWebSocket;
-			using (var sut = new MixerService(_config, _loggerFactory, Sim))
+			var sim = SimAnon.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				await ws.InjectPacket(PACKET);		// 1st
 				using (var monitor = sut.Monitor())
 				{
@@ -107,15 +95,16 @@ namespace Test.Services.Mixer
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':43,'numFollowers':22,'online':true}}}".Replace("'", "\"");
 
-			var ws = Sim.ConstallationWebSocket;
-			using (var sut = new MixerService(_config, _loggerFactory, Sim))
+			var sim = SimAnon.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 22, a => a.NewViewers == 43, a => a.IsOnline == true, a => a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 22 && a.NewViewers == 43 && a.IsOnline == true && a.ServiceName == "Mixer")
 						.WithSender(sut);
 				}
 			}
@@ -126,10 +115,11 @@ namespace Test.Services.Mixer
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
 
-			var ws = Sim.ConstallationWebSocket;
-			using (var sut = new MixerService(_config, _loggerFactory, Sim))
+			var sim = SimAnon.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				var result = Assert.Raises<ServiceUpdatedEventArgs>(x => sut.Updated += x, x => sut.Updated -= x, () => ws.InjectPacket(PACKET).Wait() );
 				Assert.IsAssignableFrom<IChatService>(result.Sender);
 				Assert.IsAssignableFrom<IStreamService>(result.Sender);

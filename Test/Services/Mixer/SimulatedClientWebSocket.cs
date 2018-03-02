@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -24,11 +25,13 @@ namespace Test.Services.Mixer
 		readonly ConcurrentQueue<string> _data = new ConcurrentQueue<string>();
 		readonly string _welcomeMessage;
 		bool _isFirstSend = true;
+		private readonly bool _isAuthenticated;
 
-		public SimulatedClientWebSocket(bool isChat, string welcomeMessage = null)
+		public SimulatedClientWebSocket(bool isChat, bool isAuthenticated, string welcomeMessage = null)
 		{
 			IsChat = isChat;
 			_welcomeMessage = welcomeMessage;
+			_isAuthenticated = isAuthenticated;
 		}
 
 		virtual public Task ConnectAsync(Uri uri, CancellationToken cancellationToken)
@@ -83,12 +86,19 @@ namespace Test.Services.Mixer
 				if (IsChat)
 				{
 					JoinedChat = true;
-					InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':false,'roles':[]}}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString())).Forget();
+					InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':<ISAUTH>,'roles':[]}}"
+						.Replace("'", "\"")
+						.Replace("<MSGID>", LastId.ToString())
+						.Replace("<ISAUTH>", _isAuthenticated ? "true" : "false")
+					).Forget();
 				}
 				else
 				{
 					JoinedConstallation = true;
-					InjectPacket("{'id':<MSGID>,'type':'reply','result':null,'error':null}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString())).Forget();
+					if (_isAuthenticated)
+						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':['Owner','User']}}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString())).Forget();
+					else
+						InjectPacket("{'id':<MSGID>,'type':'reply','result':null,'error':null}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString())).Forget();
 				}
 			}
 
@@ -103,13 +113,16 @@ namespace Test.Services.Mixer
 			// 2. Enqueue data to be sent
 			// 3. Wait for user task to re-enter ReceiveAsync() (its done precessing the message)
 
-			await _readEntered.WaitAsync().OrTimeout(1000);
+			var timeout = 1000;
+			if (Debugger.IsAttached) timeout = Timeout.Infinite;
+
+			await _readEntered.WaitAsync().OrTimeout(timeout);
 			_readEntered.Reset();
 
 			_data.Enqueue(json);
 			_signal.Set();
 
-			await _readEntered.WaitAsync().OrTimeout(1000);
+			await _readEntered.WaitAsync().OrTimeout(timeout);
 		}
 
 		public void SimulateDisconnect()

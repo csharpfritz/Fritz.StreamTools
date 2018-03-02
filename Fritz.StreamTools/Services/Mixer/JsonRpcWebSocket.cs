@@ -16,6 +16,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	public interface IJsonRpcWebSocket
 	{
 		bool IsAuthenticated { get; }
+		TimeSpan SendTimeout { get; set; }
 
 		event EventHandler<EventEventArgs> EventReceived;
 		Task<bool> SendAsync(string method, params object[] args);
@@ -49,6 +50,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		int? _receiverThreadId;
 
 		public bool IsAuthenticated { get; private set; }
+		public TimeSpan SendTimeout { get; set; }
 
 		/// <summary>
 		/// Raised each time an event is received on the websocket
@@ -64,6 +66,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_isChat = isChat;
 			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
+			SendTimeout = TimeSpan.FromSeconds(10);
 		}
 
 		/// <summary>
@@ -258,6 +261,10 @@ namespace Fritz.StreamTools.Services.Mixer
 				else
 					task.SetResult(true);
 			}
+			else
+			{
+				_logger.LogWarning($"Received reply to unknown pending request (packet id={id}). We currently have {_pendingRequests.Count} pending request");
+			}
 		}
 
 		/// <summary>
@@ -289,7 +296,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				if (Debugger.IsAttached)  // no timeout while debugging
 					await tcs.Task;
 				else
-					await tcs.Task.OrTimeout();
+					await tcs.Task.OrTimeout(SendTimeout);
 				return tcs.Task.Result;
 			}
 			finally

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace Test.Services.Mixer
 {
@@ -27,6 +28,108 @@ namespace Test.Services.Mixer
 			SimAnon = new Lazy<Simulator>(() => new Simulator(configAnon, LoggerFactory));
 		}
 
+		protected static string BuildChatMessage(Simulator sim, int userId, string userName, string text, string link = null, string[] roles = null, string avatar = null)
+		{
+			var data = new Packets.ChatMsg {
+				type = "event",
+				@event = "ChatMessage",
+				data = new Packets.ChatMsgData {
+					channel = sim.ChannelInfo.Id,
+					id = Guid.NewGuid(),
+					user_name = userName,
+					user_id = userId,
+					user_roles = roles ?? new string[] { "User" },
+					user_level = 54,
+					user_avatar = avatar,
+					message = new Packets.ChatMsgMessages {
+						message = new Packets.ChatMsgMessage[] {
+							new Packets.ChatMsgMessageText {
+								type = "text",
+								data = text,
+								text = text
+							}
+						}
+					}
+
+				}
+			};
+
+			if (link != null)
+			{
+				data.data.message.message = data.data.message.message.Concat(new Packets.ChatMsgMessage[] {
+					new Packets.ChatMsgMessageLink {
+						type = "link",
+						text = link,
+						url = link
+					}
+				}).ToArray();
+			}
+
+			return JsonConvert.SerializeObject(data, Formatting.None);
+		}
+
+		private static Packets.ChatMsgMessages _BuildContentMessages(string text, string link, bool isWhisper)
+		{
+			Packets.ChatMsgMessages messages;
+			if (!isWhisper)
+			{
+				messages = new Packets.ChatMsgMessages {
+					message = new Packets.ChatMsgMessage[] {
+							new Packets.ChatMsgMessageText {
+								type = "text",
+								data = text,
+								text = text
+							}
+						}
+				};
+			}
+			else
+			{
+				messages = new Packets.ChatMsgMessagesMeta {
+					message = new Packets.ChatMsgMessage[] {
+							new Packets.ChatMsgMessageText {
+								type = "text",
+								data = text,
+								text = text
+							}
+						},
+					meta = new Packets.MetaWhisper {
+						whisper = true
+					}
+				};
+			}
+			if (link != null)
+			{
+				messages.message = messages.message.Concat(new Packets.ChatMsgMessage[] {
+					new Packets.ChatMsgMessageLink {
+						type = "link",
+						text = link,
+						url = link
+					}
+				}).ToArray();
+			}
+
+			return messages;
+		}
+
+		protected static string BuildChatWhisper(Simulator sim, int userId, string userName, string text, string link = null, string[] roles = null)
+		{
+			var data = new Packets.ChatMsg {
+				type = "event",
+				@event = "ChatMessage",
+				data = new Packets.ChatMsgData {
+					channel = sim.ChannelInfo.Id,
+					id = Guid.NewGuid(),
+					user_name = userName,
+					user_id = userId,
+					user_roles = roles ?? new string[] { "User" },
+					user_level = 54,
+					user_avatar = null,
+					message = _BuildContentMessages(text, link, true)
+				}
+			};
+			return JsonConvert.SerializeObject(data, Formatting.None);
+		}
 
 		protected static string BuildMsgReply(Simulator sim, int id, string text)
 		{
@@ -46,7 +149,7 @@ namespace Test.Services.Mixer
 						message = new Packets.MsgReplyMessage[] {
 							new Packets.MsgReplyMessage { type = "text", data = text, text = text }
 						},
-						meta = new Packets.MsgReplyMeta {
+						meta = new Packets.Meta {
 							// empty
 						}
 					}
@@ -74,7 +177,7 @@ namespace Test.Services.Mixer
 						message = new Packets.MsgReplyMessage[] {
 							new Packets.MsgReplyMessage { type = "text", data = text, text = text }
 						},
-						meta = new Packets.MsgReplyMetaWhisper {
+						meta = new Packets.MetaWhisper {
 							whisper = true
 						}
 					},

@@ -52,16 +52,15 @@ namespace Test.Services.Mixer
 		[Fact]
 		public async Task RaisesEventOnMessage()
 		{
-			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
-
 			var sim = SimAnon.Value;
+			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner" });
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					await ws.InjectPacket(PACKET);
+					await ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789 && !a.IsModerator && a.IsOwner && !a.IsWhisper)
 						.WithSender(sut);
@@ -72,16 +71,15 @@ namespace Test.Services.Mixer
 		[Fact]
 		public async Task RaisesEventOnWhisper()
 		{
-			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}],'meta':{'whisper':true}}}}".Replace("'", "\"");
-
 			var sim = SimAnon.Value;
+			var packet = BuildChatWhisper(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner" });
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					await ws.InjectPacket(PACKET);
+					await ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789 && !a.IsModerator && a.IsOwner && a.IsWhisper)
 						.WithSender(sut);
@@ -92,16 +90,16 @@ namespace Test.Services.Mixer
 		[Fact]
 		public async Task DetectsUserRoles()
 		{
-			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner','Mod'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
-
 			var sim = SimAnon.Value;
+			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner", "Mod" });
 			var ws = sim.ChatWebSocket;
+
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					await ws.InjectPacket(PACKET);
+					await ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789 && a.IsModerator && a.IsOwner && !a.IsWhisper)
 						.WithSender(sut);
@@ -152,14 +150,13 @@ namespace Test.Services.Mixer
 		[Fact]
 		public async Task ImplementsCorrectInterfaces()
 		{
-			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
-
 			var sim = SimAnon.Value;
+			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!");
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
-				var result = Assert.Raises<ChatMessageEventArgs>(x => sut.ChatMessage += x, x => sut.ChatMessage -= x, () => ws.InjectPacket(PACKET).Wait());
+				var result = Assert.Raises<ChatMessageEventArgs>(x => sut.ChatMessage += x, x => sut.ChatMessage -= x, () => ws.InjectPacket(packet).Wait());
 				Assert.IsAssignableFrom<IChatService>(result.Sender);
 				Assert.IsAssignableFrom<IStreamService>(result.Sender);
 			}
@@ -168,16 +165,15 @@ namespace Test.Services.Mixer
 		[Fact]
 		public async Task HandlesNullAvatar()
 		{
-			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_avatar':null,'user_roles':['Owner','Mod'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
-
 			var sim = SimAnon.Value;
+			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner","Mod" }, avatar: null);
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					await ws.InjectPacket(PACKET);
+					await ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Properties.ContainsKey("AvatarUrl") && a.UserName == "connor")
 						.WithSender(sut);
@@ -188,7 +184,6 @@ namespace Test.Services.Mixer
 		[Fact]
 		public async Task CanSendMessage()
 		{
-
 			var sim = SimAuth.Value;
 			var ws = sim.ChatWebSocket;
 
@@ -232,6 +227,30 @@ namespace Test.Services.Mixer
 
 				await task;	// Wait for SendWhisperAsync to complete
 				task.Result.Should().BeTrue();
+			}
+		}
+
+		[Fact]
+		public async Task CantSendAnononymously()
+		{
+			var sim = SimAnon.Value;
+			var ws = sim.ChatWebSocket;
+
+			const string text = "Some test message";
+
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(sim.START_TIMEOUT);
+
+				var chat = sut as IChatService;
+				var id = ws.LastId.GetValueOrDefault() + 1;
+				var replyJson = BuildMsgReply(sim, id, text);
+
+				var task = chat.SendMessageAsync(text);
+				await ws.InjectPacket(replyJson);
+
+				await task; // Wait for SendMessageAsync to complete
+				task.Result.Should().BeFalse();
 			}
 		}
 	}

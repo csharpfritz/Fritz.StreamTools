@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Services.Mixer;
@@ -10,7 +11,7 @@ namespace Test.Services.Mixer
 {
 	public class Simulator : IMixerFactory
 	{
-		public int START_TIMEOUT = 5000;
+		public int START_TIMEOUT = 2000;
 		static readonly string CHAT_WELCOME = "{'type':'event','event':'WelcomeEvent','data':{'server':'fac96c06-8314-41dd-9092-7e717ec2ee52'}}".Replace("'", "\"");
 		static readonly string LIVE_WELCOME = "{'type':'event','event':'hello','data':{'authenticated':false}}".Replace("'", "\"");
 

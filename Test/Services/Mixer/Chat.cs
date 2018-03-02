@@ -32,9 +32,9 @@ namespace Test.Services.Mixer
 		public async Task WillConnectAndJoin()
 		{
 			var ws = Sim.ChatWebSocket;
-			using (var sim = new MixerService(_config, _loggerFactory, Sim))
+			using (var sut = new MixerService(_config, _loggerFactory, Sim))
 			{
-				await sim.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
 
 				ws.JoinedChat.Should().BeTrue();
 				ws.LastPacket["method"].Should().NotBeNull();
@@ -51,15 +51,15 @@ namespace Test.Services.Mixer
 			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
 
 			var ws = Sim.ChatWebSocket;
-			using (var sim = new MixerService(_config, _loggerFactory, Sim))
+			using (var sut = new MixerService(_config, _loggerFactory, Sim))
 			{
-				await sim.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
-				using (var monitor = sim.Monitor())
+				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
-					monitor.Should().Raise(nameof(sim.ChatMessage))
+					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!", a => a.UserName == "connor", a => a.UserId == 56789, a => !a.IsModerator, a => a.IsOwner, a => !a.IsWhisper)
-						.WithSender(sim);
+						.WithSender(sut);
 				}
 			}
 		}
@@ -70,15 +70,15 @@ namespace Test.Services.Mixer
 			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}],'meta':{'whisper':true}}}}".Replace("'", "\"");
 
 			var ws = Sim.ChatWebSocket;
-			using (var sim = new MixerService(_config, _loggerFactory, Sim))
+			using (var sut = new MixerService(_config, _loggerFactory, Sim))
 			{
-				await sim.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
-				using (var monitor = sim.Monitor())
+				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
-					monitor.Should().Raise(nameof(sim.ChatMessage))
+					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!", a => a.UserName == "connor", a => a.UserId == 56789, a => !a.IsModerator, a => a.IsOwner, a => a.IsWhisper)
-						.WithSender(sim);
+						.WithSender(sut);
 				}
 			}
 		}
@@ -89,15 +89,15 @@ namespace Test.Services.Mixer
 			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner','Mod'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
 
 			var ws = Sim.ChatWebSocket;
-			using (var sim = new MixerService(_config, _loggerFactory, Sim))
+			using (var sut = new MixerService(_config, _loggerFactory, Sim))
 			{
-				await sim.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
-				using (var monitor = sim.Monitor())
+				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
-					monitor.Should().Raise(nameof(sim.ChatMessage))
+					monitor.Should().Raise(nameof(sut.ChatMessage))
 						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!", a => a.UserName == "connor", a => a.UserId == 56789, a => a.IsModerator, a => a.IsOwner, a => !a.IsWhisper)
-						.WithSender(sim);
+						.WithSender(sut);
 				}
 			}
 		}
@@ -108,15 +108,15 @@ namespace Test.Services.Mixer
 			var PACKET = "{'type':'event','event':'UserJoin','data':{'originatingChannel':1234,'username':'SomeNewUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
 
 			var ws = Sim.ChatWebSocket;
-			using (var sim = new MixerService(_config, _loggerFactory, Sim))
+			using (var sut = new MixerService(_config, _loggerFactory, Sim))
 			{
-				await sim.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
-				using (var monitor = sim.Monitor())
+				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
-					monitor.Should().Raise(nameof(sim.UserJoined))
+					monitor.Should().Raise(nameof(sut.UserJoined))
 						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083, a => a.UserName == "SomeNewUser", a => a.ServiceName == "Mixer")
-						.WithSender(sim);
+						.WithSender(sut);
 				}
 			}
 		}
@@ -126,15 +126,15 @@ namespace Test.Services.Mixer
 		{
 			var PACKET = "{'type':'event','event':'UserLeave','data':{'originatingChannel':1234,'username':'TheWhisperUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
 			var ws = Sim.ChatWebSocket;
-			using (var sim = new MixerService(_config, _loggerFactory, Sim))
+			using (var sut = new MixerService(_config, _loggerFactory, Sim))
 			{
-				await sim.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
-				using (var monitor = sim.Monitor())
+				await sut.StartAsync(Sim.Cancel.Token).OrTimeout(Sim.START_TIMEOUT);
+				using (var monitor = sut.Monitor())
 				{
 					await ws.InjectPacket(PACKET);
-					monitor.Should().Raise(nameof(sim.UserLeft))
+					monitor.Should().Raise(nameof(sut.UserLeft))
 						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083, a => a.UserName == "TheWhisperUser", a => a.ServiceName == "Mixer")
-						.WithSender(sim);
+						.WithSender(sut);
 				}
 			}
 		}

@@ -68,7 +68,7 @@ namespace Test.Services.Mixer
 		public void RaiseEventWhenFollowersChanges()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"live\",\"data\":{\"channel\":\"channel:1234:update\",\"payload\":{\"numFollowers\":66}}}";
+			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
 			var channel = _fakeFactory.LiveChannel;
 
 			// Act
@@ -86,7 +86,7 @@ namespace Test.Services.Mixer
 		public void RaiseEventWhenViewersChanges()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"live\",\"data\":{\"channel\":\"channel:1234:update\",\"payload\":{\"viewersCurrent\":35}}}";
+			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
 			var channel = _fakeFactory.LiveChannel;
 
 			// Act
@@ -104,7 +104,7 @@ namespace Test.Services.Mixer
 		public void NotRaiseEventWhenViewersIsSameAsBefore()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"live\",\"data\":{\"channel\":\"channel:1234:update\",\"payload\":{\"viewersCurrent\":35}}}";
+			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
 			var channel = _fakeFactory.LiveChannel;
 			var eventRaised = false;
 
@@ -123,7 +123,7 @@ namespace Test.Services.Mixer
 		public void CombineLiveEventToSingleRaisedEvent()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"live\",\"data\":{\"channel\":\"channel:1234:update\",\"payload\":{\"viewersCurrent\":43,\"numFollowers\":22,\"online\":true}}}";
+			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':43,'numFollowers':22,'online':true}}}".Replace("'", "\"");
 			var channel = _fakeFactory.LiveChannel;
 
 			// Act
@@ -141,7 +141,7 @@ namespace Test.Services.Mixer
 		public void RaiseEventOnNewChatMessages()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"ChatMessage\",\"data\":{\"channel\":1234,\"id\":\"6351f9e0-3bf2-11e6-a3b3-bdc62094c158\",\"user_name\":\"connor\",\"user_id\":56789,\"user_roles\":[\"Owner\"],\"message\":{\"message\":[{\"type\":\"text\",\"data\":\"Hello world \",\"text\":\"Hello world!\"}]}}}";
+			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act
@@ -162,7 +162,7 @@ namespace Test.Services.Mixer
 		public void RaiseEventOnWhisperMessages()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"ChatMessage\",\"data\":{\"channel\":1234,\"id\":\"6351f9e0-3bf2-11e6-a3b3-bdc62094c158\",\"user_name\":\"connor\",\"user_id\":56789,\"user_roles\":[\"Owner\"],\"message\":{\"message\":[{\"type\":\"text\",\"data\":\"Hello world \",\"text\":\"Hello world!\"}],\"meta\":{\"whisper\":true}}}}";
+			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}],'meta':{'whisper':true}}}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act
@@ -183,7 +183,7 @@ namespace Test.Services.Mixer
 		public void DetectsUserRolesFromChatMessages()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"ChatMessage\",\"data\":{\"channel\":1234,\"id\":\"6351f9e0-3bf2-11e6-a3b3-bdc62094c158\",\"user_name\":\"connor\",\"user_id\":56789,\"user_roles\":[\"Owner\",\"Mod\"],\"message\":{\"message\":[{\"type\":\"text\",\"data\":\"Hello world \",\"text\":\"Hello world!\"}]}}}";
+			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner','Mod'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act
@@ -204,7 +204,7 @@ namespace Test.Services.Mixer
 		public void RaiseEventWhenUserJoinsChat()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"UserJoin\",\"data\":{\"originatingChannel\":1234,\"username\":\"SomeNewUser\",\"roles\":[\"User\"],\"id\":34103083}}";
+			var PACKET = "{'type':'event','event':'UserJoin','data':{'originatingChannel':1234,'username':'SomeNewUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act
@@ -221,7 +221,7 @@ namespace Test.Services.Mixer
 		public void RaiseEventWhenUserLeavesChat()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"UserLeave\",\"data\":{\"originatingChannel\":1234,\"username\":\"TheWhisperUser\",\"roles\":[\"User\"],\"id\":34103083}}";
+			var PACKET = "{'type':'event','event':'UserLeave','data':{'originatingChannel':1234,'username':'TheWhisperUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act
@@ -238,7 +238,7 @@ namespace Test.Services.Mixer
 		public void ImplementCorrectInterfacesOnChatEvents()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"ChatMessage\",\"data\":{\"channel\":1234,\"id\":\"6351f9e0-3bf2-11e6-a3b3-bdc62094c158\",\"user_name\":\"connor\",\"user_id\":56789,\"user_roles\":[\"Owner\"],\"message\":{\"message\":[{\"type\":\"text\",\"data\":\"Hello world \",\"text\":\"Hello world!\"}]}}}";
+			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_roles':['Owner'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act
@@ -254,7 +254,7 @@ namespace Test.Services.Mixer
 		public void ImplementCorrectInterfacesOnLiveEvents()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"live\",\"data\":{\"channel\":\"channel:1234:update\",\"payload\":{\"numFollowers\":66}}}";
+			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
 			var channel = _fakeFactory.LiveChannel;
 
 			// Act
@@ -270,7 +270,7 @@ namespace Test.Services.Mixer
 		public void HandleNullAvatarInChatMessage()
 		{
 			// Arrange
-			const string PACKET = "{\"type\":\"event\",\"event\":\"ChatMessage\",\"data\":{\"channel\":1234,\"id\":\"6351f9e0-3bf2-11e6-a3b3-bdc62094c158\",\"user_name\":\"connor\",\"user_id\":56789,\"user_avatar\":null,\"user_roles\":[\"Owner\",\"Mod\"],\"message\":{\"message\":[{\"type\":\"text\",\"data\":\"Hello world \",\"text\":\"Hello world!\"}]}}}";
+			var PACKET = "{'type':'event','event':'ChatMessage','data':{'channel':1234,'id':'6351f9e0-3bf2-11e6-a3b3-bdc62094c158','user_name':'connor','user_id':56789,'user_avatar':null,'user_roles':['Owner','Mod'],'message':{'message':[{'type':'text','data':'Hello world ','text':'Hello world!'}]}}}".Replace("'", "\"");
 			var channel = _fakeFactory.ChatChannel;
 
 			// Act

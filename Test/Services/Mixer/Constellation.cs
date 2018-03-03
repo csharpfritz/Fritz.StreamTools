@@ -143,11 +143,12 @@ namespace Test.Services.Mixer
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
 
+				// Prepare new ClientWebSocket for consumption by client code, and dispose the old one
 				sim.ConstallationWebSocket = new SimulatedClientWebSocket(false, false, Simulator.CONSTALLATION_WELCOME) { Output = Output };
 				ws.Dispose();
 				ws = sim.ConstallationWebSocket;
-
 				var connectedAndJoined = ws.JoinedConstallation.Wait(Simulator.TIMEOUT);
+
 				connectedAndJoined.Should().BeTrue();
 			}
 		}

@@ -47,17 +47,12 @@ namespace Test.Services.Mixer
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
 
+				// Prepare new ClientWebSocket for consumption by client code, and dispose the old one
 				sim.ChatWebSocket = new SimulatedClientWebSocket(true, false, Simulator.CHAT_WELCOME) { Output = Output };
 				ws.Dispose();
 				ws = sim.ChatWebSocket;
+				bool reconnectSucceeded = ws.JoinedChat.Wait(Simulator.TIMEOUT);
 
-				bool reconnectSucceeded = false;
-				try
-				{
-					await ws.JoinedChat.WaitAsync();//.OrTimeout(Simulator.TIMEOUT);
-					reconnectSucceeded = true;
-				}
-				catch (Exception) { }
 				reconnectSucceeded.Should().BeTrue();
 			}
 		}

@@ -16,13 +16,13 @@ namespace Test.Services.Mixer
 	{
 		public WebSocketCloseStatus? CloseStatus { get; internal set; }
 		public bool IsChat { get; }
-		public SemaphoreSlim JoinedChat { get; } = new SemaphoreSlim(0, 1);
-		public SemaphoreSlim JoinedConstallation { get; } = new SemaphoreSlim(0, 1);
+		public ManualResetEventSlim JoinedChat { get; } = new ManualResetEventSlim();
+		public ManualResetEventSlim JoinedConstallation { get; } = new ManualResetEventSlim();
 		public JToken LastPacket { get; private set; }
 		public int? LastId { get; private set; }
 		public ITestOutputHelper Output { get; set; }
 
-		readonly AsyncManualResetEvent _signal = new AsyncManualResetEvent();
+		readonly ManualResetEventSlim _signal = new ManualResetEventSlim();
 		readonly ManualResetEventSlim _readEntered = new ManualResetEventSlim();
 		readonly ConcurrentQueue<string> _data = new ConcurrentQueue<string>();
 		readonly string _welcomeMessage;
@@ -63,7 +63,7 @@ namespace Test.Services.Mixer
 			}
 		}
 
-		virtual public async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+		virtual public Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
 		{
 			if (CloseStatus.HasValue)
 			{
@@ -79,16 +79,17 @@ namespace Test.Services.Mixer
 				{
 					if (!_data.TryDequeue(out json))
 					{
+						_signal.Reset();
 						if (CloseStatus.HasValue)
 						{
 							throw new WebSocketException("Simulated WebSocket closed");
 						}
-						_signal.Reset();
 					}
 					else
 						break;
 				}
-				await _signal.WaitAsync();
+				var timeout = ( Debugger.IsAttached ) ? Timeout.Infinite : Simulator.TIMEOUT;
+				_signal.Wait(timeout);
 				if (CloseStatus.HasValue)
 				{
 					throw new WebSocketException("Simulated WebSocket closed");
@@ -97,7 +98,7 @@ namespace Test.Services.Mixer
 
 			var bytes = Encoding.UTF8.GetBytes(json);
 			bytes.CopyTo(buffer.Array, buffer.Offset);
-			return new WebSocketReceiveResult(bytes.Length, WebSocketMessageType.Text, true);
+			return Task.FromResult(new WebSocketReceiveResult(bytes.Length, WebSocketMessageType.Text, true));
 		}
 
 		virtual public Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken)
@@ -111,7 +112,7 @@ namespace Test.Services.Mixer
 				_isFirstSend = false;
 				if (IsChat)
 				{
-					JoinedChat.Release();
+					JoinedChat.Set();
 					if(_isAuthenticated)
 					{
 						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':[]}}"
@@ -129,7 +130,7 @@ namespace Test.Services.Mixer
 				}
 				else
 				{
-					JoinedConstallation.Release();
+					JoinedConstallation.Set();
 					if (_isAuthenticated)
 						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':['Owner','User']}}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString()));
 					else

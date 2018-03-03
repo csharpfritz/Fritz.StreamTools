@@ -88,13 +88,12 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				while (true)
 				{
-					await connect();
-					if (_ws != null) return;
+					// Connection lost, wait a little and try again
+					await Task.Delay(GetReconnectDelay(), _cancellationToken.Token);
 
-					// Connect failed, wait a little and try again
-					var t = _config["StreamServices:Mixer:ReconnectDelay"];
-					var delay = ( t != null ) ? TimeSpan.Parse(t) : TimeSpan.FromSeconds(5);
-					await Task.Delay(delay, _cancellationToken.Token);
+					await connect();
+					if (_ws != null)
+						return;
 				}
 			}
 
@@ -132,6 +131,15 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Do the first time connect
 			await connect();
 			return _ws != null;
+		}
+
+		private TimeSpan GetReconnectDelay()
+		{
+			var t = _config["StreamServices:Mixer:ReconnectDelay"];
+			var delay = ( t != null ) ? TimeSpan.Parse(t) : TimeSpan.FromSeconds(5);
+			if (delay < TimeSpan.FromMilliseconds(10))
+				delay = TimeSpan.FromMilliseconds(10);
+			return delay;
 		}
 
 		private IClientWebSocketProxy CreateWebSocket(string accessToken)

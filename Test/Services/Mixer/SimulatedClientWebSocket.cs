@@ -5,7 +5,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services.Mixer;
 using Newtonsoft.Json.Linq;
 using Xunit.Abstractions;

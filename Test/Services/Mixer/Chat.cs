@@ -39,7 +39,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task WillReconnect()
+		public async Task WillReconnectOnNextServer()
 		{
 			var sim = SimAnon.Value;
 			var ws = sim.ChatWebSocket;
@@ -47,13 +47,20 @@ namespace Test.Services.Mixer
 			{
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
 
+				var url1 = ws.ConnectUrl;
+
 				// Prepare new ClientWebSocket for consumption by client code, and dispose the old one
 				sim.ChatWebSocket = new SimulatedClientWebSocket(true, false, Simulator.CHAT_WELCOME) { Output = Output };
 				ws.Dispose();
 				ws = sim.ChatWebSocket;
 				bool reconnectSucceeded = ws.JoinedChat.Wait(Simulator.TIMEOUT);
 
+				var url2 = ws.ConnectUrl;
+
 				reconnectSucceeded.Should().BeTrue();
+				url1.Should().NotBeNull();
+				url2.Should().NotBeNull();
+				url1.Should().NotBe(url2);
 			}
 		}
 
@@ -188,6 +195,19 @@ namespace Test.Services.Mixer
 				var result = Assert.Raises<ChatMessageEventArgs>(x => sut.ChatMessage += x, x => sut.ChatMessage -= x, () => ws.InjectPacket(packet));
 				Assert.IsAssignableFrom<IChatService>(result.Sender);
 				Assert.IsAssignableFrom<IStreamService>(result.Sender);
+			}
+		}
+
+		[Fact]
+		public async Task AddCorrectHeaders()
+		{
+			var sim = SimAuth.Value;
+			var ws = sim.ChatWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+
+				ws.Headers.Should().Contain("x-is-bot", "true");
 			}
 		}
 

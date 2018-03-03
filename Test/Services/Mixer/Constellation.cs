@@ -152,5 +152,20 @@ namespace Test.Services.Mixer
 				connectedAndJoined.Should().BeTrue();
 			}
 		}
+
+		[Fact]
+		public async Task AddCorrectHeaders()
+		{
+			var sim = SimAuth.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+
+				ws.Headers.Should().Contain("Authorization", $"Bearer {Token}");
+				ws.Headers.Should().Contain("x-is-bot", "true");
+			}
+		}
+
 	}
 }

@@ -16,6 +16,7 @@ namespace Test.Services.Mixer
 		protected Lazy<Simulator> SimAuth { get; }
 		protected Lazy<Simulator> SimAnon { get; }
 		protected ITestOutputHelper Output { get; }
+		public string Token { get; } = "abcd1234";
 
 		public Base(ITestOutputHelper output)
 		{
@@ -26,7 +27,7 @@ namespace Test.Services.Mixer
 			var configAuth = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>() {
 				{ "StreamServices:Mixer:ReconnectDelay", "00:00:00" },
 				{ "StreamServices:Mixer:Channel", "MyChannel" },
-				{ "StreamServices:Mixer:Token", "abcd1234" }
+				{ "StreamServices:Mixer:Token", Token }
 			}).Build();
 			var configAnon = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>() {
 				{ "StreamServices:Mixer:ReconnectDelay", "00:00:00" },

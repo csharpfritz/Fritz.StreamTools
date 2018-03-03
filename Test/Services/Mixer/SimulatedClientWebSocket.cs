@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Pipes;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -19,85 +20,62 @@ namespace Test.Services.Mixer
 		public ManualResetEventSlim JoinedConstallation { get; } = new ManualResetEventSlim();
 		public JToken LastPacket { get; private set; }
 		public int? LastId { get; private set; }
-		public ITestOutputHelper Output { get; set; }
 
-		readonly ManualResetEventSlim _signal = new ManualResetEventSlim();
+		public ITestOutputHelper Output { get; set; }
+		public string ConnectUrl { get; set; }
+		public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
+
 		readonly ManualResetEventSlim _readEntered = new ManualResetEventSlim();
-		readonly ConcurrentQueue<string> _data = new ConcurrentQueue<string>();
 		readonly string _welcomeMessage;
 		bool _isFirstSend = true;
 		private readonly bool _isAuthenticated;
-		object _syncObject = new object();
+		NamedPipeServerStream _serverPipe;
+		NamedPipeClientStream _injectPipe;
 
 		public SimulatedClientWebSocket(bool isChat, bool isAuthenticated, string welcomeMessage = null)
 		{
 			IsChat = isChat;
 			_welcomeMessage = welcomeMessage;
 			_isAuthenticated = isAuthenticated;
+
+			string pipeName = "FritzTestPipe_" + GetHashCode().ToString();
+			_serverPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
+			var t = _serverPipe.WaitForConnectionAsync();
+			_injectPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+			_injectPipe.Connect();
+			t.Wait();
 		}
 
 		virtual public Task ConnectAsync(Uri uri, CancellationToken cancellationToken)
 		{
 			CloseStatus = null;
+			ConnectUrl = uri.ToString();
 
 			// Enqueue welcome messages
 			if (!string.IsNullOrEmpty(_welcomeMessage))
 			{
-				_data.Enqueue(_welcomeMessage);
-				_signal.Set();
+				var bytes = Encoding.UTF8.GetBytes(_welcomeMessage);
+				_injectPipe.WriteAsync(bytes, 0, bytes.Length);
 			}
 
-			Output.WriteLine($"{GetHashCode():X8} CONNECT {uri}");
+			Output.WriteLine($"{GetHashCode():X8} SimWebSocket CONNECTED {uri}");
 			return Task.CompletedTask;
 		}
 
-		public void Dispose()
-		{
-			Output.WriteLine($"{GetHashCode()} Disposing!");
-			lock (_syncObject)
-			{
-				CloseStatus = WebSocketCloseStatus.NormalClosure;
-				_data.Clear();
-				_signal.Set();
-			}
-		}
-
-		virtual public Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+		virtual public async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
 		{
 			if (CloseStatus.HasValue)
-			{
-				throw new WebSocketException("Simulated WebSocket closed");
-			}
+				throw new WebSocketException("WebSocket is closed");
 
 			_readEntered.Set();
 
-			string json = null;
-			while(true)
-			{
-				lock (_syncObject)
-				{
-					if (!_data.TryDequeue(out json))
-					{
-						_signal.Reset();
-						if (CloseStatus.HasValue)
-						{
-							throw new WebSocketException("Simulated WebSocket closed");
-						}
-					}
-					else
-						break;
-				}
-				var timeout = ( Debugger.IsAttached ) ? Timeout.Infinite : Simulator.TIMEOUT;
-				_signal.Wait(timeout);
-				if (CloseStatus.HasValue)
-				{
-					throw new WebSocketException("Simulated WebSocket closed");
-				}
-			}
+			int n = await _serverPipe.ReadAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
+			if (cancellationToken.IsCancellationRequested)
+				return null;
+			if(n == 0)
+				throw new WebSocketException("WebSocket closed");
 
-			var bytes = Encoding.UTF8.GetBytes(json);
-			bytes.CopyTo(buffer.Array, buffer.Offset);
-			return Task.FromResult(new WebSocketReceiveResult(bytes.Length, WebSocketMessageType.Text, true));
+			return new WebSocketReceiveResult(n, WebSocketMessageType.Text, true);
 		}
 
 		virtual public Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken)
@@ -140,22 +118,32 @@ namespace Test.Services.Mixer
 			return Task.CompletedTask;
 		}
 
-		virtual public void SetRequestHeader(string name, string value) { }
+		virtual public void SetRequestHeader(string name, string value)
+		{
+			Headers.Add(name, value);
+		}
 
 		public void InjectPacket(string json)
 		{
-			var timeout = Debugger.IsAttached ? Timeout.Infinite : Simulator.TIMEOUT;
-			lock (_syncObject)
-			{
-				_readEntered.Reset();
+			if (!_injectPipe.IsConnected)
+				return;
 
-				// Enqueue data for the receiver
-				_data.Enqueue(json);
-				_signal.Set();
-			}
+			_readEntered.Reset();
+
+			var bytes = Encoding.UTF8.GetBytes(json);
+			_injectPipe.Write(bytes, 0, bytes.Length);
 
 			// Wait until client code has processed the message (its back waiting for more)
+			var timeout = Debugger.IsAttached ? Timeout.Infinite : Simulator.TIMEOUT;
 			_readEntered.Wait(timeout);
+		}
+
+		public void Dispose()
+		{
+			Output.WriteLine($"{GetHashCode():X8} SimWebSocket Disposing!");
+			CloseStatus = WebSocketCloseStatus.NormalClosure;
+			_injectPipe.Dispose();
+			_serverPipe.Dispose();
 		}
 	}
 }

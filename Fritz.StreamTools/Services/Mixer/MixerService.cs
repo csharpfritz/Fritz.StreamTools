@@ -69,11 +69,11 @@ namespace Fritz.StreamTools.Services
 			_logger.LogInformation("JOINING CHANNEL '{0}' as {0}", _restClient.ChannelName, _restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)");
 
 			// Connect to live events (viewer/follower count)
-			await _live.ConnectAndJoinAsync(_restClient.ChannelId);
+			await _live.ConnectAndJoinAsync(_restClient.ChannelId.Value);
 			_live.ConstallationEvent += _live_LiveEvent;
 
 			// Connect to chat server
-			await _chat.ConnectAndJoinAsync(_restClient.UserId.GetValueOrDefault(), _restClient.ChannelId);
+			await _chat.ConnectAndJoinAsync(_restClient.UserId.GetValueOrDefault(), _restClient.ChannelId.Value);
 			_chat.ChatMessage += _chat_ChatMessage;
 			_chat.UserJoined += _chat_UserJoined;
 			_chat.UserLeft += _chat_UserLeft;

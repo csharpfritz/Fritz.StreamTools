@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Fritz.StreamTools.Helpers;
 
 namespace Test.Services.Mixer
 {
@@ -29,6 +27,7 @@ namespace Test.Services.Mixer
 
 			public RequestContext FindRequest(string path, HttpMethod method) =>  RequestHistory.FirstOrDefault(x => x.Path == _prefix + path && x.Method == method);
 			public RequestContext FindRequest(string path) => RequestHistory.FirstOrDefault(x => x.Path == _prefix + path && x.Method == HttpMethod.Get);
+			public RequestContext[] FindRequests(string path) => RequestHistory.Where(x => x.Path == _prefix + path && x.Method == HttpMethod.Get).ToArray();
 
 			public SimulatedHttpMessageHandler(string prefix = null)
 			{
@@ -76,6 +75,5 @@ namespace Test.Services.Mixer
 			public string Path { get; set; }
 			public Func<RequestContext, HttpContent> Callback { get; set; }
 		}
-
 	}
 }

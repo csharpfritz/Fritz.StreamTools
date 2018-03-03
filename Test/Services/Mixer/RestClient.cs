@@ -51,11 +51,14 @@ namespace Test.Services.Mixer
 			});
 			Handler.On($"users/current", _ => new JsonContent(new { id = UserId, username = UserName }));
 			Handler.On(new HttpMethod("PATCH"), $"channels/{ChannelId}/users/{OtherUserId}", ctx => {
-				if(string.IsNullOrEmpty(ctx.Content)) throw new HttpRequestException("Empty content");
+				if (string.IsNullOrEmpty(ctx.Content))
+					throw new HttpRequestException("Empty content");
 				var doc = JToken.Parse(ctx.Content);
-				if(doc["add"] == null && doc["remove"] == null)	throw new HttpRequestException("need add or remove in content");
+				if (doc["add"] == null && doc["remove"] == null)
+					throw new HttpRequestException("need add or remove in content");
 				var e = doc["add"] ?? doc["remove"];
-				if(!e.Values<string>().Contains("Banned")) throw new HttpRequestException("[Banned] as arg to add/remove");
+				if (!e.Values<string>().Contains("Banned"))
+					throw new HttpRequestException("[Banned] as arg to add/remove");
 				return new JsonContent(new { });
 			});
 			Handler.On($"chats/{ChannelId}", _ => {
@@ -169,6 +172,14 @@ namespace Test.Services.Mixer
 
 			// Assert
 			r.Should().Be(OtherUserId);
+		}
+
+		[Fact]
+		public void CanCallInitMultipleTimes()
+		{
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
+			sut.InitAsync(ChannelName, null).Wait();
 		}
 	}
 }

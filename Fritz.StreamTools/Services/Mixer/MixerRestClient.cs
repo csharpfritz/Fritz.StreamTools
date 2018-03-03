@@ -15,7 +15,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	{
 		bool HasToken { get; }
 		string ChannelName { get; }
-		int ChannelId { get; }
+		int? ChannelId { get; }
 
 		/// <summary>My user name or null if anonymously connected</summary>
 		string UserName { get; }
@@ -43,7 +43,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public bool HasToken { get; private set; }
 		public string ChannelName { get; private set; }
-		public int ChannelId { get; private set; }
+		public int? ChannelId { get; private set; }
 		public string UserName { get; private set; }
 		public int? UserId { get; private set; }
 
@@ -72,10 +72,17 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns></returns>
 		public async Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken)
 		{
+			_initDone = false;
+			UserId = null;
+			ChannelId = 0;
+			UserName = null;
+
 			ChannelName = channelName;
 			HasToken = !string.IsNullOrEmpty(oauthToken);
 			if (HasToken)
 				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oauthToken);
+			else
+				_client.DefaultRequestHeaders.Authorization = null;
 
 			int tryCounter = 0;
 			while (true)

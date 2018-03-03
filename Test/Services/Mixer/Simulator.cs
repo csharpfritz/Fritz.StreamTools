@@ -36,7 +36,8 @@ namespace Test.Services.Mixer
 			_loggerFactory = loggerFactory ?? throw new System.ArgumentNullException(nameof(loggerFactory));
 
 			var channelName = Config["StreamServices:Mixer:Channel"];
-			HasToken = !string.IsNullOrEmpty(Config["StreamServices:Mixer:Token"]);
+			var token = Config["StreamServices:Mixer:Token"];
+			HasToken = !string.IsNullOrEmpty(token);
 			ChatAuthKey = HasToken ? "zxc1234" : null;
 			UserName = HasToken ? "TestUser" : null;
 
@@ -44,11 +45,11 @@ namespace Test.Services.Mixer
 			ConstallationWebSocket = new SimulatedClientWebSocket(false, HasToken, CONSTALLATION_WELCOME);
 
 			_restClientMock = new Mock<IMixerRestClient>();
-			_restClientMock.Setup(x => x.GetChannelIdAsync()).Returns(Task.FromResult(ChannelInfo.Id));
-			_restClientMock.Setup(x => x.GetChannelInfoAsync()).Returns(Task.FromResult(ChannelInfo));
+			_restClientMock.Setup(x => x.InitAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult( (0, 0) ));
 			_restClientMock.Setup(x => x.GetChatAuthKeyAndEndpointsAsync())
 				.Returns(Task.FromResult(new ChatAuthKeyAndEndpoints { AuthKey = ChatAuthKey, Endpoints = Endpoints }));
 			_restClientMock.Setup(x => x.ChannelName).Returns(channelName);
+			_restClientMock.Setup(x => x.ChannelId).Returns(ChannelInfo.Id);
 			_restClientMock.Setup(x => x.UserName).Returns(UserName);
 			_restClientMock.Setup(x => x.UserId).Returns(ChannelInfo.UserId);
 			_restClientMock.Setup(x => x.HasToken).Returns(HasToken);
@@ -60,6 +61,6 @@ namespace Test.Services.Mixer
 		public IMixerChat CreateChat(IMixerRestClient client, CancellationToken shutdownRequest) =>
 			new MixerChat(Config, _loggerFactory, this, _restClientMock.Object, Cancel.Token);
 		public IMixerConstallation CreateConstallation(CancellationToken shutdownRequest) => new MixerConstallation(Config, _loggerFactory, this, Cancel.Token);
-		public IMixerRestClient CreateRestClient(string channelName, string token = null) => _restClientMock.Object;
+		public IMixerRestClient CreateRestClient() => _restClientMock.Object;
 	}
 }

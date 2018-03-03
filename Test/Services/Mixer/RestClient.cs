@@ -73,8 +73,8 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void CheckAuthorizationHeader()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait();
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
 
 			// Assert
 			var req = Handler.FindRequest($"channels/{WebUtility.UrlEncode(ChannelName)}");
@@ -86,8 +86,8 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void CheckAcceptsHeader()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait();
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
 
 			// Assert
 			var req = Handler.FindRequest($"channels/{WebUtility.UrlEncode(ChannelName)}");
@@ -99,8 +99,8 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void ChannelInfoRequest()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait();
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
 
 			// Assert
 			Handler.RequestHistory.Count.Should().Be(2);
@@ -111,8 +111,9 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void CanBanUser()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait(); // We need this first
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
+
 			var result = sut.BanUserAsync(OtherUserName).Result;
 
 			// Assert
@@ -122,8 +123,9 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void CanUnbanUser()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait(); // We need this first
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
+
 			var result = sut.UnbanUserAsync(OtherUserName).Result;
 
 			// Assert
@@ -133,8 +135,9 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void ChatAuthRequest()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait(); // We need this first
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
+
 			var result = sut.GetChatAuthKeyAndEndpointsAsync().Result;
 
 			// Assert
@@ -144,23 +147,11 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public void CachesChannelId()
-		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			var id1 = sut.GetChannelIdAsync().Result;
-			var id2 = sut.GetChannelIdAsync().Result;
-
-			// Assert
-			Handler.RequestHistory.Count.Should().Be(1);
-			id1.Should().Be(ChannelId);
-			id2.Should().Be(ChannelId);
-		}
-
-		[Fact]
 		public void ParsesStreamStartAndRoundsCorrectly()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait(); // We need this first
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
+
 			var r = sut.GetStreamStartedAtAsync().Result;
 
 			// Assert
@@ -169,10 +160,11 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public void CanLookupUserIdAsync()
+		public void CanLookupUserId()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			sut.GetChannelInfoAsync().Wait(); // We need this first
+			var sut = new MixerRestClient(LoggerFactory, Client);
+			sut.InitAsync(ChannelName, Token).Wait();
+
 			var r = sut.LookupUserIdAsync(OtherUserName).Result;
 
 			// Assert

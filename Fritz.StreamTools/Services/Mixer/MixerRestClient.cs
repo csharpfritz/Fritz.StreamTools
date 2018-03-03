@@ -15,15 +15,17 @@ namespace Fritz.StreamTools.Services.Mixer
 	{
 		bool HasToken { get; }
 		string ChannelName { get; }
+		int ChannelId { get; }
 
 		/// <summary>My user name or null if anonymously connected</summary>
 		string UserName { get; }
-		int UserId { get; }
+		int? UserId { get; }
 
-		/// <summary> Get channel/user info and initializes UserName & UserId properties. Call this first!</summary>
-		Task<ChannelInfo> GetChannelInfoAsync();
+		/// <summary>Initialize the rest client with needed values from the API.
+		/// IMPORTANT: Call this first!
+		/// </summary>
+		Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken);
 
-		Task<int> GetChannelIdAsync();
 		Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync();
 		Task<int?> LookupUserIdAsync(string userName);
 		Task<bool> BanUserAsync(string userName);
@@ -37,84 +39,71 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		readonly ILogger _logger;
 		readonly HttpClient _client;
-		int? _channelId;
+		private bool _initDone;
 
-		public bool HasToken { get; }
-		public string ChannelName { get; }
+		public bool HasToken { get; private set; }
+		public string ChannelName { get; private set; }
+		public int ChannelId { get; private set; }
 		public string UserName { get; private set; }
-		public int UserId { get; private set; }
+		public int? UserId { get; private set; }
 
 		/// <summary>
 		/// Construct new MixerRestClient
 		/// </summary>
-		public MixerRestClient(ILoggerFactory loggerFactory, HttpClient client, string channelName, string token)
+		public MixerRestClient(ILoggerFactory loggerFactory, HttpClient client)
 		{
 			if (loggerFactory == null)
 				throw new ArgumentNullException(nameof(loggerFactory));
 			if (client == null)
 				throw new ArgumentNullException(nameof(client));
-			if (string.IsNullOrWhiteSpace(channelName))
-				throw new ArgumentException("message", nameof(channelName));
 
 			_logger = loggerFactory.CreateLogger(nameof(MixerRestClient));
-
-			HasToken = !string.IsNullOrEmpty(token);
 
 			_client = client;
 			_client.BaseAddress = new Uri(API_URL);
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
 			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
-			if (HasToken)
-				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+		}
 
+		/// <summary>
+		/// Get initial needed info from the mixer API
+		/// </summary>
+		/// <param name="channelName">Name of the channel</param>
+		/// <returns></returns>
+		public async Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken)
+		{
 			ChannelName = channelName;
-		}
+			HasToken = !string.IsNullOrEmpty(oauthToken);
+			if (HasToken)
+				_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oauthToken);
 
-		/// <summary>
-		/// Get the channel id number from channel name.
-		/// The value is cached after first lookup
-		/// </summary>
-		public async Task<int> GetChannelIdAsync()
-		{
-			if (_channelId.HasValue) return _channelId.Value;
-
-			try
+			int tryCounter = 0;
+			while (true)
 			{
-				var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id";
-				var doc = await GetJTokenAsync(req);
-				_channelId = (int)doc["id"];
-				return _channelId.Value;
-			}
-			catch (HttpRequestException ex)
-			{
-				throw new UnknownChannelException(ChannelName, ex);
-			}
-		}
-
-		/// <summary>
-		/// Get basic channel information, including current follower and viewer count
-		/// </summary>
-		public async Task<ChannelInfo> GetChannelInfoAsync()
-		{
-			try
-			{
-				var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent";
-				var result = await GetAsync<ChannelInfo>(req);
-				_channelId = result.Id;
-
-				if (HasToken)
+				tryCounter++;
+				try
 				{
-					// User might not be joining own channel
-					var me = await GetJTokenAsync("users/current");
-					result.UserId = UserId = (int)me["id"];
-					UserName = (string)me["username"];
-				}
+					var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent";
+					var channelInfo = await GetAsync<ChannelInfo>(req);
+					ChannelId = channelInfo.Id;
 
-				return result;
-			}
-			catch (HttpRequestException ex)
-			{
-				throw new UnknownChannelException(ChannelName, ex);
+					if (HasToken)
+					{
+						// User might not be joining own channel
+						var me = await GetJTokenAsync("users/current");
+
+						UserId = (int)me["id"];
+						UserName = (string)me["username"];
+					}
+					_initDone = true;
+					return (channelInfo.NumberOfViewers, channelInfo.NumberOfFollowers);
+				}
+				catch (HttpRequestException ex)
+				{
+					if(tryCounter == 3)
+						throw new UnknownChannelException(ChannelName, ex);
+					await Task.Delay(2000);
+				}
 			}
 		}
 
@@ -125,6 +114,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>Id of the user</returns>
 		public async Task<int?> LookupUserIdAsync(string userName)
 		{
+			if(!_initDone) throw new Exception("Call InitAsync() first!");
+
 			try
 			{
 				var req = $"channels/{WebUtility.UrlEncode(userName)}?noCount=1";
@@ -145,6 +136,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
+			if(!_initDone) throw new Exception("Call InitAsync() first!");
 
 			if (!HasToken)
 				return false;
@@ -157,7 +149,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				var userId = await LookupUserIdAsync(userName);
 
 				// Add user as banned from our channel
-				var req = $"channels/{_channelId}/users/{userId}";
+				var req = $"channels/{ChannelId}/users/{userId}";
 				await PatchAsync(req, new { add = new[] { "Banned" } });
 				return true;
 			}
@@ -175,6 +167,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
+			if(!_initDone) throw new Exception("Call InitAsync() first!");
 
 			if (!HasToken)
 				return false;
@@ -184,7 +177,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				var userId = await LookupUserIdAsync(userName);
 
 				// Add user as banned from our channel
-				var req = $"channels/{_channelId}/users/{userId}";
+				var req = $"channels/{ChannelId}/users/{userId}";
 				await PatchAsync(req, new { remove = new[] { "Banned" } });
 				return true;
 			}
@@ -201,9 +194,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>Start time of stream, or null if stream is offline</returns>
 		public async Task<DateTimeOffset?> GetStreamStartedAtAsync()
 		{
-			if (_channelId == null) throw new Exception("ChannelId now known! Call GetChannelInfoAsync() first");
+			if(!_initDone) throw new Exception("Call InitAsync() first!");
 
-			var req = $"channels/{_channelId}/manifest.light2";
+			var req = $"channels/{ChannelId}/manifest.light2";
 			_logger.LogTrace("GET {0}{1}", API_URL, req);
 			var response = await _client.GetAsync(req);
 			if (response.StatusCode != HttpStatusCode.OK) return null;
@@ -225,9 +218,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		public async Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync()
 		{
+			if(!_initDone) throw new Exception("Call InitAsync() first!");
+
 			// Get chat authkey and chat endpoints
-			var id = await GetChannelIdAsync();
-			var req = $"chats/{id}";
+			var req = $"chats/{ChannelId}";
 			return await GetAsync<ChatAuthKeyAndEndpoints>(req);
 		}
 

@@ -17,8 +17,6 @@ namespace Fritz.StreamTools.Services
 		readonly CancellationTokenSource _shutdownRequested;
 		readonly IMixerRestClient _restClient;
 
-		int _channelId;
-		int _userId;
 		int _numberOfFollowers;
 		int _numberOfViewers;
 
@@ -46,7 +44,7 @@ namespace Fritz.StreamTools.Services
 
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
-			_restClient = factory.CreateRestClient(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
+			_restClient = factory.CreateRestClient();
 			_live = factory.CreateConstallation(_shutdownRequested.Token);
 			_chat = factory.CreateChat(_restClient, _shutdownRequested.Token);
 		}
@@ -55,21 +53,27 @@ namespace Fritz.StreamTools.Services
 
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
+			var channelName = _config["StreamServices:Mixer:Channel"];
+			if (string.IsNullOrWhiteSpace(channelName))
+			{
+				// Bail out early if no channel are given in configuration
+				_logger.LogWarning("No mixer channel set in configuration (StreamServices:Mixer:Channel)");
+				return;
+			}
+
 			// Get our current channel information
-			var info = await _restClient.GetChannelInfoAsync();
-			_channelId = info.Id;
-			_userId = info.UserId;
-			_numberOfFollowers = info.NumberOfFollowers;
-			_numberOfViewers = info.NumberOfViewers;
+			var (viewers, followers) = await _restClient.InitAsync(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
+			_numberOfFollowers = followers;
+			_numberOfViewers = viewers;
 
 			_logger.LogInformation("JOINING CHANNEL '{0}' as {0}", _restClient.ChannelName, _restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)");
 
 			// Connect to live events (viewer/follower count)
-			await _live.ConnectAndJoinAsync(_channelId);
+			await _live.ConnectAndJoinAsync(_restClient.ChannelId);
 			_live.ConstallationEvent += _live_LiveEvent;
 
 			// Connect to chat server
-			await _chat.ConnectAndJoinAsync(_userId, _channelId);
+			await _chat.ConnectAndJoinAsync(_restClient.UserId.GetValueOrDefault(), _restClient.ChannelId);
 			_chat.ChatMessage += _chat_ChatMessage;
 			_chat.UserJoined += _chat_UserJoined;
 			_chat.UserLeft += _chat_UserLeft;

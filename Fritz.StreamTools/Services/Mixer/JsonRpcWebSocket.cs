@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -48,6 +49,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ConcurrentQueue<string> _myLatestMessages = new ConcurrentQueue<string>();
 		Task _receiverTask;
 		int? _receiverThreadId;
+		private readonly IConfiguration _config;
 
 		public bool IsAuthenticated { get; private set; }
 		public TimeSpan SendTimeout { get; set; }
@@ -60,13 +62,14 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Construct a new JsonRpcWebSocket object
 		/// </summary>
-		public JsonRpcWebSocket(ILogger logger, IMixerFactory factory, bool isChat)
+		public JsonRpcWebSocket(ILogger logger, IMixerFactory factory, IConfiguration config, bool isChat)
 		{
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_isChat = isChat;
 			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
 			SendTimeout = TimeSpan.FromSeconds(10);
+			_config = config ?? throw new ArgumentNullException(nameof(config));
 		}
 
 		/// <summary>
@@ -89,7 +92,9 @@ namespace Fritz.StreamTools.Services.Mixer
 					if (_ws != null) return;
 
 					// Connect failed, wait a little and try again
-					await Task.Delay(5000, _cancellationToken.Token);
+					var t = _config["StreamServices:Mixer:ReconnectDelay"];
+					var delay = ( t != null ) ? TimeSpan.Parse(t) : TimeSpan.FromSeconds(5);
+					await Task.Delay(delay, _cancellationToken.Token);
 				}
 			}
 

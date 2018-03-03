@@ -29,7 +29,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		public IClientWebSocketProxy CreateClientWebSocket(bool isChat) => new ClientWebSocketProxy(isChat);
 		public IMixerConstallation CreateConstallation(CancellationToken shutdownRequest) => new MixerConstallation(_config, _loggerFactory, this, shutdownRequest);
 		public IMixerChat CreateChat(IMixerRestClient client, CancellationToken shutdownRequest) => new MixerChat(_config, _loggerFactory, this, client, shutdownRequest);
-		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, bool isChat) => new JsonRpcWebSocket(logger, this, isChat);
+		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, bool isChat) => new JsonRpcWebSocket(logger, this, _config, isChat);
 		public IMixerRestClient CreateRestClient(string channelName, string token) => new MixerRestClient(_loggerFactory, new HttpClient(), channelName, token);
 	}
 }

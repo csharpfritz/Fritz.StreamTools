@@ -24,10 +24,12 @@ namespace Test.Services.Mixer
 			LoggerFactory.AddDebug(LogLevel.Trace);
 
 			var configAuth = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>() {
+				{ "StreamServices:Mixer:ReconnectDelay", "00:00:00" },
 				{ "StreamServices:Mixer:Channel", "MyChannel" },
 				{ "StreamServices:Mixer:Token", "abcd1234" }
 			}).Build();
 			var configAnon = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>() {
+				{ "StreamServices:Mixer:ReconnectDelay", "00:00:00" },
 				{ "StreamServices:Mixer:Channel", "MyChannel" }
 			}).Build();
 

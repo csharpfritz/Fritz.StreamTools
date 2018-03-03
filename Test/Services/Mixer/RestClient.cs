@@ -1,18 +1,18 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using FluentAssertions;
 using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services.Mixer;
+using Newtonsoft.Json.Linq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
 	public partial class RestClient : Base
 	{
-
 		private const int ChannelId = 3466523;
 		private const string ChannelName = "Test1";
 		private const int UserId = 43564326;
@@ -22,11 +22,10 @@ namespace Test.Services.Mixer
 		private const string OtherUserName = "OtherUser";
 		private readonly string[] Endpoints;
 
-
 		public SimulatedHttpMessageHandler Handler { get; }
 		public HttpClient Client { get; }
 
-		public RestClient()
+		public RestClient(ITestOutputHelper output) : base(output)
 		{
 			Endpoints = new string[] { "a", "b", "c", "d" };
 
@@ -45,7 +44,12 @@ namespace Test.Services.Mixer
 				return new JsonContent(new { id = OtherUserId });
 			});
 			Handler.AddTrigger(HttpMethod.Get, $"/api/v1/users/current", _ => new JsonContent(new { id = UserId, username = UserName }));
-			Handler.AddTrigger(new HttpMethod("PATCH"), $"/api/v1/channels/{ChannelId}/users/{OtherUserId}", _ => {
+			Handler.AddTrigger(new HttpMethod("PATCH"), $"/api/v1/channels/{ChannelId}/users/{OtherUserId}", ctx => {
+				if(string.IsNullOrEmpty(ctx.Content)) throw new HttpRequestException("Empty content");
+				var doc = JToken.Parse(ctx.Content);
+				if(doc["add"] == null && doc["remove"] == null)	throw new HttpRequestException("need add or remove in content");
+				var e = doc["add"] ?? doc["remove"];
+				if(!e.Values<string>().Contains("Banned")) throw new HttpRequestException("[Banned] as arg to add/remove");
 				return new JsonContent(new { });
 			});
 			Handler.AddTrigger(HttpMethod.Get, $"/api/v1/chats/{ChannelId}", _ => {
@@ -130,12 +134,13 @@ namespace Test.Services.Mixer
 		public void CachesChannelId()
 		{
 			var sut = new MixerRestClient(LoggerFactory, Client, ChannelName, Token);
-			var id = sut.GetChannelIdAsync().Result;
-			id = sut.GetChannelIdAsync().Result;
+			var id1 = sut.GetChannelIdAsync().Result;
+			var id2 = sut.GetChannelIdAsync().Result;
 
 			// Assert
-			id.Should().Be(ChannelId);
 			Handler.RequestHistory.Count.Should().Be(1);
+			id1.Should().Be(ChannelId);
+			id2.Should().Be(ChannelId);
 		}
 	}
 }

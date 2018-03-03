@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services.Mixer;
 using Newtonsoft.Json.Linq;
+using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
@@ -15,17 +16,19 @@ namespace Test.Services.Mixer
 	{
 		public WebSocketCloseStatus? CloseStatus { get; internal set; }
 		public bool IsChat { get; }
-		public bool JoinedChat { get; internal set; }
-		public bool JoinedConstallation { get; internal set; }
+		public SemaphoreSlim JoinedChat { get; } = new SemaphoreSlim(0, 1);
+		public SemaphoreSlim JoinedConstallation { get; } = new SemaphoreSlim(0, 1);
 		public JToken LastPacket { get; private set; }
 		public int? LastId { get; private set; }
+		public ITestOutputHelper Output { get; set; }
 
 		readonly AsyncManualResetEvent _signal = new AsyncManualResetEvent();
-		readonly AsyncManualResetEvent _readEntered = new AsyncManualResetEvent();
+		readonly ManualResetEventSlim _readEntered = new ManualResetEventSlim();
 		readonly ConcurrentQueue<string> _data = new ConcurrentQueue<string>();
 		readonly string _welcomeMessage;
 		bool _isFirstSend = true;
 		private readonly bool _isAuthenticated;
+		object _syncObject = new object();
 
 		public SimulatedClientWebSocket(bool isChat, bool isAuthenticated, string welcomeMessage = null)
 		{
@@ -36,7 +39,7 @@ namespace Test.Services.Mixer
 
 		virtual public Task ConnectAsync(Uri uri, CancellationToken cancellationToken)
 		{
-			CloseStatus = WebSocketCloseStatus.Empty;
+			CloseStatus = null;
 
 			// Enqueue welcome messages
 			if (!string.IsNullOrEmpty(_welcomeMessage))
@@ -45,33 +48,56 @@ namespace Test.Services.Mixer
 				_signal.Set();
 			}
 
+			Output.WriteLine($"{GetHashCode():X8} CONNECT {uri}");
 			return Task.CompletedTask;
 		}
 
 		public void Dispose()
 		{
-			SimulateDisconnect();
+			Output.WriteLine($"{GetHashCode()} Disposing!");
+			lock (_syncObject)
+			{
+				CloseStatus = WebSocketCloseStatus.NormalClosure;
+				_data.Clear();
+				_signal.Set();
+			}
 		}
 
 		virtual public async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
 		{
+			if (CloseStatus.HasValue)
+			{
+				throw new WebSocketException("Simulated WebSocket closed");
+			}
+
 			_readEntered.Set();
 
-			var tcs = new TaskCompletionSource<int>();
-
-			if (_data.IsEmpty) _signal.Reset();
-			await _signal.WaitAsync();
-
-			if(_data.TryDequeue(out var json))
+			string json = null;
+			while(true)
 			{
-				var bytes = Encoding.UTF8.GetBytes(json);
-				bytes.CopyTo(buffer.Array, buffer.Offset);
-				return new WebSocketReceiveResult(bytes.Length, WebSocketMessageType.Text, true);
+				lock (_syncObject)
+				{
+					if (!_data.TryDequeue(out json))
+					{
+						if (CloseStatus.HasValue)
+						{
+							throw new WebSocketException("Simulated WebSocket closed");
+						}
+						_signal.Reset();
+					}
+					else
+						break;
+				}
+				await _signal.WaitAsync();
+				if (CloseStatus.HasValue)
+				{
+					throw new WebSocketException("Simulated WebSocket closed");
+				}
 			}
-			else
-			{
-				throw new Exception("Simulated disconnect");
-			}
+
+			var bytes = Encoding.UTF8.GetBytes(json);
+			bytes.CopyTo(buffer.Array, buffer.Offset);
+			return new WebSocketReceiveResult(bytes.Length, WebSocketMessageType.Text, true);
 		}
 
 		virtual public Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken)
@@ -85,20 +111,29 @@ namespace Test.Services.Mixer
 				_isFirstSend = false;
 				if (IsChat)
 				{
-					JoinedChat = true;
-					InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':<ISAUTH>,'roles':[]}}"
-						.Replace("'", "\"")
-						.Replace("<MSGID>", LastId.ToString())
-						.Replace("<ISAUTH>", _isAuthenticated ? "true" : "false")
-					).Forget();
+					JoinedChat.Release();
+					if(_isAuthenticated)
+					{
+						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':[]}}"
+							.Replace("'", "\"")
+							.Replace("<MSGID>", LastId.ToString())
+						);
+					}
+					else
+					{
+						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':null}"
+							.Replace("'", "\"")
+							.Replace("<MSGID>", LastId.ToString())
+						);
+					}
 				}
 				else
 				{
-					JoinedConstallation = true;
+					JoinedConstallation.Release();
 					if (_isAuthenticated)
-						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':['Owner','User']}}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString())).Forget();
+						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':['Owner','User']}}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString()));
 					else
-						InjectPacket("{'id':<MSGID>,'type':'reply','result':null,'error':null}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString())).Forget();
+						InjectPacket("{'id':<MSGID>,'type':'reply','result':null,'error':null}".Replace("'", "\"").Replace("<MSGID>", LastId.ToString()));
 				}
 			}
 
@@ -107,29 +142,20 @@ namespace Test.Services.Mixer
 
 		virtual public void SetRequestHeader(string name, string value) { }
 
-		public async Task InjectPacket(string json)
+		public void InjectPacket(string json)
 		{
-			// 1. Make sure user task is waiting i ReceiveAsync()
-			// 2. Enqueue data to be sent
-			// 3. Wait for user task to re-enter ReceiveAsync() (its done precessing the message)
+			var timeout = Debugger.IsAttached ? Timeout.Infinite : Simulator.TIMEOUT;
+			lock (_syncObject)
+			{
+				_readEntered.Reset();
 
-			var timeout = 1000;
-			if (Debugger.IsAttached) timeout = Timeout.Infinite;
+				// Enqueue data for the receiver
+				_data.Enqueue(json);
+				_signal.Set();
+			}
 
-			await _readEntered.WaitAsync().OrTimeout(timeout);
-			_readEntered.Reset();
-
-			_data.Enqueue(json);
-			_signal.Set();
-
-			await _readEntered.WaitAsync().OrTimeout(timeout);
-		}
-
-		public void SimulateDisconnect()
-		{
-			CloseStatus = WebSocketCloseStatus.NormalClosure;
-			_data.Clear();
-			_signal.Set();
+			// Wait until client code has processed the message (its back waiting for more)
+			_readEntered.Wait(timeout);
 		}
 	}
 }

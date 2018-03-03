@@ -33,25 +33,22 @@ namespace Test.Services.Mixer
 					Method = request.Method,
 					Path = request.RequestUri.AbsolutePath,
 					Headers = request.Headers.ToDictionary(a => a.Key, a => a.Value.First()),
-					Query = HttpUtility.ParseQueryString(request.RequestUri.Query).ToDictionary()
+					Query = HttpUtility.ParseQueryString(request.RequestUri.Query).ToDictionary(),
+					Content = request.Content?.ReadAsStringAsync().Result
 				};
 				RequestHistory.Add(ctx);
 
 				var response = new HttpResponseMessage(HttpStatusCode.NotFound);
-
-				foreach(var t in Triggers)
+				var found = Triggers.Where(t => t.Method == request.Method && request.RequestUri.AbsolutePath == t.Path);
+				foreach(var t in found)
 				{
-					if (request.Method == t.Method && request.RequestUri.AbsolutePath.Equals(t.Path, StringComparison.InvariantCultureIgnoreCase))
+					var content = t.Callback(ctx);
+					if (content != null)
 					{
-						var content = t.Callback(ctx);
-						if (content != null)
-						{
-							response.Content = content;
-							response.StatusCode = HttpStatusCode.OK;
-						}
+						response.Content = content;
+						response.StatusCode = HttpStatusCode.OK;
 					}
 				}
-
 				return Task.FromResult(response);
 			}
 		}
@@ -60,6 +57,7 @@ namespace Test.Services.Mixer
 		{
 			public HttpMethod Method { get; set; }
 			public string Path { get; set; }
+			public string Content { get; set; }
 			public IDictionary<string, string> Headers { get; set; }
 			public IDictionary<string, string> Query { get; set; }
 		}

@@ -6,14 +6,15 @@ using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
 	public class Simulator : IMixerFactory
 	{
-		public int START_TIMEOUT = 2000;
-		static readonly string CHAT_WELCOME = "{'type':'event','event':'WelcomeEvent','data':{'server':'fac96c06-8314-41dd-9092-7e717ec2ee52'}}".Replace("'", "\"");
-		static readonly string LIVE_WELCOME = "{'type':'event','event':'hello','data':{'authenticated':false}}".Replace("'", "\"");
+		public const int TIMEOUT = 1000;
+		public static readonly string CHAT_WELCOME = "{'type':'event','event':'WelcomeEvent','data':{'server':'fac96c06-8314-41dd-9092-7e717ec2ee52'}}".Replace("'", "\"");
+		public static readonly string CONSTALLATION_WELCOME = "{'type':'event','event':'hello','data':{'authenticated':false}}".Replace("'", "\"");
 
 		private readonly Mock<IMixerRestClient> _restClientMock;
 		private readonly ILoggerFactory _loggerFactory;
@@ -24,13 +25,15 @@ namespace Test.Services.Mixer
 		public bool HasToken { get; }
 		public string ChatAuthKey { get; }
 		public string UserName { get; }
+		public ITestOutputHelper Output { get; set; }
 
 		public CancellationTokenSource Cancel { get; } = new CancellationTokenSource();
 		public SimulatedClientWebSocket ChatWebSocket { get; set; }
 		public SimulatedClientWebSocket ConstallationWebSocket { get; set; }
 
-		public Simulator(IConfiguration config, ILoggerFactory loggerFactory)
+		public Simulator(IConfiguration config, ILoggerFactory loggerFactory, ITestOutputHelper output)
 		{
+			Output = output ?? throw new ArgumentNullException(nameof(output));
 			Config = config ?? throw new System.ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new System.ArgumentNullException(nameof(loggerFactory));
 
@@ -39,8 +42,8 @@ namespace Test.Services.Mixer
 			ChatAuthKey = HasToken ? "zxc1234" : null;
 			UserName = HasToken ? "TestUser" : null;
 
-		ChatWebSocket = new SimulatedClientWebSocket(true, HasToken, CHAT_WELCOME);
-		ConstallationWebSocket = new SimulatedClientWebSocket(false, HasToken, LIVE_WELCOME);
+		ChatWebSocket = new SimulatedClientWebSocket(true, HasToken, CHAT_WELCOME) { Output = Output };
+		ConstallationWebSocket = new SimulatedClientWebSocket(false, HasToken, CONSTALLATION_WELCOME) { Output = Output };
 
 		_restClientMock = new Mock<IMixerRestClient>();
 			_restClientMock.Setup(x => x.GetChannelIdAsync()).Returns(Task.FromResult(ChannelInfo.Id));

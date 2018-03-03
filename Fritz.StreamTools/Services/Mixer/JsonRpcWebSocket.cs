@@ -145,6 +145,12 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			// Wait for next message
 			var json = await ReceiveNextMessageAsync(_ws);
+			if (string.IsNullOrEmpty(json))
+			{
+				_logger.LogWarning("Received null message EatWelcomeMessageAsync()");
+				return;
+			}
+
 			_logger.LogTrace("<< " + json);
 			var doc = JToken.Parse(json);
 			if(doc["event"]?.Value<string>() == "hello")
@@ -180,8 +186,8 @@ namespace Fritz.StreamTools.Services.Mixer
 					_logger.LogWarning("Error in ReceiverTask() {0}. Will reconnect", e.Message);
 					if (_cancellationToken.IsCancellationRequested) return;
 
-					await reconnect();  // Will spawn a new receiver task
-					return;
+					reconnect().Forget();  // Will spawn a new receiver task
+					break;
 				}
 			}
 		}
@@ -364,6 +370,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				{
 					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token);
 					if (result == null || result.Count == 0 || result.MessageType == WebSocketMessageType.Close) return null;
+					if (ws.CloseStatus.HasValue) return null;
 					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
 					ms.Write(buffer.Array, buffer.Offset, result.Count);
 				}

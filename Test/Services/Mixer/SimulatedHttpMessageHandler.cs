@@ -16,12 +16,14 @@ namespace Test.Services.Mixer
 		public class SimulatedHttpMessageHandler : HttpMessageHandler
 		{
 			public List<RequestContext> RequestHistory { get; } = new List<RequestContext>();
-			List<RequestTrigger> Triggers = new List<RequestTrigger>();
+			List<RequestTrigger> _triggers = new List<RequestTrigger>();
 
-			public void AddTrigger(HttpMethod method, string path, Func<RequestContext, HttpContent> callback)
+			public void On(string path, Func<RequestContext, HttpContent> callback) => On(HttpMethod.Get, path, callback);
+
+			public void On(HttpMethod method, string path, Func<RequestContext, HttpContent> callback)
 			{
 				var trigger = new RequestTrigger { Method = method, Path = path, Callback = callback };
-				Triggers.Add(trigger);
+				_triggers.Add(trigger);
 			}
 
 			public RequestContext FindRequest(string path, HttpMethod method) =>  RequestHistory.FirstOrDefault(x => x.Path == path && x.Method == method);
@@ -39,7 +41,7 @@ namespace Test.Services.Mixer
 				RequestHistory.Add(ctx);
 
 				var response = new HttpResponseMessage(HttpStatusCode.NotFound);
-				var found = Triggers.Where(t => t.Method == request.Method && request.RequestUri.AbsolutePath == t.Path);
+				var found = _triggers.OrderByDescending(x => x.Path.Length).Where(t => t.Method == request.Method && request.RequestUri.AbsolutePath == t.Path);
 				foreach(var t in found)
 				{
 					var content = t.Callback(ctx);

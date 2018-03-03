@@ -17,7 +17,6 @@ namespace Test.Services.Mixer
 		private const string ChannelName = "Test1";
 		private const int UserId = 43564326;
 		private const string UserName = "TestUserA";
-		private const string Token = "123456789abcdefg";
 		private const int OtherUserId = 2345;
 		private const string OtherUserName = "OtherUser";
 		private readonly string[] Endpoints;
@@ -37,14 +36,14 @@ namespace Test.Services.Mixer
 
 		private void AddDefaultTriggers()
 		{
-			Handler.AddTrigger(HttpMethod.Get, $"/api/v1/channels/{WebUtility.UrlEncode(ChannelName)}", _ => {
+			Handler.On($"/api/v1/channels/{WebUtility.UrlEncode(ChannelName)}", _ => {
 				return new JsonContent(new ChannelInfo { Id = ChannelId, UserId = 0 /* not our channel */, NumberOfFollowers = 543, NumberOfViewers = 32 });
 			});
-			Handler.AddTrigger(HttpMethod.Get, $"/api/v1/channels/{WebUtility.UrlEncode(OtherUserName)}", _ => {
+			Handler.On($"/api/v1/channels/{WebUtility.UrlEncode(OtherUserName)}", _ => {
 				return new JsonContent(new { id = OtherUserId });
 			});
-			Handler.AddTrigger(HttpMethod.Get, $"/api/v1/users/current", _ => new JsonContent(new { id = UserId, username = UserName }));
-			Handler.AddTrigger(new HttpMethod("PATCH"), $"/api/v1/channels/{ChannelId}/users/{OtherUserId}", ctx => {
+			Handler.On($"/api/v1/users/current", _ => new JsonContent(new { id = UserId, username = UserName }));
+			Handler.On(new HttpMethod("PATCH"), $"/api/v1/channels/{ChannelId}/users/{OtherUserId}", ctx => {
 				if(string.IsNullOrEmpty(ctx.Content)) throw new HttpRequestException("Empty content");
 				var doc = JToken.Parse(ctx.Content);
 				if(doc["add"] == null && doc["remove"] == null)	throw new HttpRequestException("need add or remove in content");
@@ -52,7 +51,7 @@ namespace Test.Services.Mixer
 				if(!e.Values<string>().Contains("Banned")) throw new HttpRequestException("[Banned] as arg to add/remove");
 				return new JsonContent(new { });
 			});
-			Handler.AddTrigger(HttpMethod.Get, $"/api/v1/chats/{ChannelId}", _ => {
+			Handler.On($"/api/v1/chats/{ChannelId}", _ => {
 				return new JsonContent(new { authkey = SimAuth.Value.ChatAuthKey, Endpoints });
 			});
 		}

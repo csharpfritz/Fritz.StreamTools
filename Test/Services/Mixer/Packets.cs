@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Test.Services.Mixer
 {
@@ -18,12 +19,14 @@ namespace Test.Services.Mixer
 
 		public class MetaWhisper : Meta
 		{
-			public bool whisper { get; set; }
+			[JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]
+			public bool? whisper { get; set; }
 		}
 
 		public class MsgReplyMessages
 		{
 			public IList<MsgReplyMessage> message { get; set; }
+			[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public Meta meta { get; set; }
 		}
 
@@ -41,6 +44,7 @@ namespace Test.Services.Mixer
 
 		public class MsgReplyDataWhisper : MsgReplyData
 		{
+			[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public string target { get; set; }
 		}
 
@@ -80,6 +84,7 @@ namespace Test.Services.Mixer
 
 		public class ChatMsgMessagesMeta : ChatMsgMessages
 		{
+			[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public Meta meta { get; set; }
 		}
 

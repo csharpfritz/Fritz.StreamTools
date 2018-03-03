@@ -275,7 +275,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (_pendingRequests.TryGetValue(id, out var task))
 			{
 				// Signal waiting task that we have received a reply
-				if (error.HasValues)
+				if (error != null && error.HasValues)
 					task.SetResult(false);
 				else
 					task.SetResult(true);

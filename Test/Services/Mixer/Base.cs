@@ -79,34 +79,18 @@ namespace Test.Services.Mixer
 
 		private static Packets.ChatMsgMessages _BuildContentMessages(string text, string link, bool isWhisper)
 		{
-			Packets.ChatMsgMessages messages;
-			if (!isWhisper)
-			{
-				messages = new Packets.ChatMsgMessages {
-					message = new Packets.ChatMsgMessage[] {
-							new Packets.ChatMsgMessageText {
-								type = "text",
-								data = text,
-								text = text
-							}
+			Packets.ChatMsgMessages messages = new Packets.ChatMsgMessagesMeta {
+				message = new Packets.ChatMsgMessage[] {
+						new Packets.ChatMsgMessageText {
+							type = "text",
+							data = text,
+							text = text
 						}
-				};
-			}
-			else
-			{
-				messages = new Packets.ChatMsgMessagesMeta {
-					message = new Packets.ChatMsgMessage[] {
-							new Packets.ChatMsgMessageText {
-								type = "text",
-								data = text,
-								text = text
-							}
-						},
-					meta = new Packets.MetaWhisper {
-						whisper = true
-					}
-				};
-			}
+					},
+				meta = new Packets.MetaWhisper {
+					whisper = ( isWhisper ) ? true : (bool?)null
+				}
+			};
 			if (link != null)
 			{
 				messages.message = messages.message.Concat(new Packets.ChatMsgMessage[] {
@@ -133,7 +117,7 @@ namespace Test.Services.Mixer
 					user_id = userId,
 					user_roles = roles ?? new string[] { "User" },
 					user_level = 54,
-					user_avatar = null,
+					user_avatar = "",
 					message = _BuildContentMessages(text, link, true)
 				}
 			};

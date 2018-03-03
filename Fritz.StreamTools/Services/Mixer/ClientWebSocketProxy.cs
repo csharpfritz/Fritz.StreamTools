@@ -11,8 +11,14 @@ namespace Fritz.StreamTools.Services.Mixer
 		WebSocketCloseStatus? CloseStatus { get; }
 		void SetRequestHeader(string name, string value);
 		Task ConnectAsync(Uri uri, CancellationToken cancellationToken);
+		/// <summary>
+		/// Reveives the next packet from the websocket. Task completes when there are data available, or the websocket was closed
+		/// IMPORTANT: Call ProcessingDone() after processing the received data
+		/// </summary>
 		Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken);
 		Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken);
+		/// <summary>Signal that client code is done processing the received packet. This is to help testing work flow!</summary>
+		void ProcessingDone();
 	}
 
 	/// <summary>
@@ -37,5 +43,6 @@ namespace Fritz.StreamTools.Services.Mixer
 		public Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken) => _ws.ReceiveAsync(buffer, cancellationToken);
 		public Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken)
 			=> _ws.SendAsync(buffer, messageType, endOfMessage, cancellationToken);
+		public void ProcessingDone() { /* nop */ }
 	}
 }

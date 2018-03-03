@@ -25,15 +25,13 @@ namespace Test.Services.Mixer
 		public bool HasToken { get; }
 		public string ChatAuthKey { get; }
 		public string UserName { get; }
-		public ITestOutputHelper Output { get; set; }
 
 		public CancellationTokenSource Cancel { get; } = new CancellationTokenSource();
 		public SimulatedClientWebSocket ChatWebSocket { get; set; }
 		public SimulatedClientWebSocket ConstallationWebSocket { get; set; }
 
-		public Simulator(IConfiguration config, ILoggerFactory loggerFactory, ITestOutputHelper output)
+		public Simulator(IConfiguration config, ILoggerFactory loggerFactory)
 		{
-			Output = output ?? throw new ArgumentNullException(nameof(output));
 			Config = config ?? throw new System.ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new System.ArgumentNullException(nameof(loggerFactory));
 
@@ -42,10 +40,10 @@ namespace Test.Services.Mixer
 			ChatAuthKey = HasToken ? "zxc1234" : null;
 			UserName = HasToken ? "TestUser" : null;
 
-		ChatWebSocket = new SimulatedClientWebSocket(true, HasToken, CHAT_WELCOME) { Output = Output };
-		ConstallationWebSocket = new SimulatedClientWebSocket(false, HasToken, CONSTALLATION_WELCOME) { Output = Output };
+			ChatWebSocket = new SimulatedClientWebSocket(true, HasToken, CHAT_WELCOME);
+			ConstallationWebSocket = new SimulatedClientWebSocket(false, HasToken, CONSTALLATION_WELCOME);
 
-		_restClientMock = new Mock<IMixerRestClient>();
+			_restClientMock = new Mock<IMixerRestClient>();
 			_restClientMock.Setup(x => x.GetChannelIdAsync()).Returns(Task.FromResult(ChannelInfo.Id));
 			_restClientMock.Setup(x => x.GetChannelInfoAsync()).Returns(Task.FromResult(ChannelInfo));
 			_restClientMock.Setup(x => x.GetChatAuthKeyAndEndpointsAsync())
@@ -56,7 +54,7 @@ namespace Test.Services.Mixer
 			_restClientMock.Setup(x => x.HasToken).Returns(HasToken);
 		}
 
-		public IClientWebSocketProxy CreateClientWebSocket(bool isChat) => (isChat) ? ChatWebSocket : ConstallationWebSocket;
+		public IClientWebSocketProxy CreateClientWebSocket(bool isChat) => ( isChat ) ? ChatWebSocket : ConstallationWebSocket;
 		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, bool isChat) =>
 			new JsonRpcWebSocket(new Mock<ILogger>().Object, this, Config, isChat) { SendTimeout = TimeSpan.FromMilliseconds(500) };
 		public IMixerChat CreateChat(IMixerRestClient client, CancellationToken shutdownRequest) =>

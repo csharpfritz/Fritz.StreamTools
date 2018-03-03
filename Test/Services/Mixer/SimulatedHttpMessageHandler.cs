@@ -17,17 +17,23 @@ namespace Test.Services.Mixer
 		{
 			public List<RequestContext> RequestHistory { get; } = new List<RequestContext>();
 			List<RequestTrigger> _triggers = new List<RequestTrigger>();
+			private readonly string _prefix;
 
 			public void On(string path, Func<RequestContext, HttpContent> callback) => On(HttpMethod.Get, path, callback);
 
 			public void On(HttpMethod method, string path, Func<RequestContext, HttpContent> callback)
 			{
-				var trigger = new RequestTrigger { Method = method, Path = path, Callback = callback };
+				var trigger = new RequestTrigger { Method = method, Path = _prefix + path, Callback = callback };
 				_triggers.Add(trigger);
 			}
 
-			public RequestContext FindRequest(string path, HttpMethod method) =>  RequestHistory.FirstOrDefault(x => x.Path == path && x.Method == method);
-			public RequestContext FindRequest(string path) => RequestHistory.FirstOrDefault(x => x.Path == path && x.Method == HttpMethod.Get);
+			public RequestContext FindRequest(string path, HttpMethod method) =>  RequestHistory.FirstOrDefault(x => x.Path == _prefix + path && x.Method == method);
+			public RequestContext FindRequest(string path) => RequestHistory.FirstOrDefault(x => x.Path == _prefix + path && x.Method == HttpMethod.Get);
+
+			public SimulatedHttpMessageHandler(string prefix = null)
+			{
+				_prefix = prefix ?? "";
+			}
 
 			protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
 			{

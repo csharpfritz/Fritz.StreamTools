@@ -14,6 +14,8 @@ namespace Test.Services.Mixer
 {
 	public class SimulatedClientWebSocket : IClientWebSocketProxy
 	{
+		static int _connectionId = 0;
+
 		public WebSocketCloseStatus? CloseStatus { get; internal set; }
 		public bool IsChat { get; }
 		public ManualResetEventSlim JoinedChat { get; } = new ManualResetEventSlim();
@@ -21,22 +23,24 @@ namespace Test.Services.Mixer
 		public JToken LastPacket { get; private set; }
 		public int? LastId { get; private set; }
 
-		public ITestOutputHelper Output { get; set; }
 		public string ConnectUrl { get; set; }
 		public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
-		readonly ManualResetEventSlim _readEntered = new ManualResetEventSlim();
+		readonly ManualResetEventSlim _clientDoneProcessing = new ManualResetEventSlim();
 		readonly string _welcomeMessage;
 		bool _isFirstSend = true;
 		private readonly bool _isAuthenticated;
 		NamedPipeServerStream _serverPipe;
 		NamedPipeClientStream _injectPipe;
+		int _myId;
 
 		public SimulatedClientWebSocket(bool isChat, bool isAuthenticated, string welcomeMessage = null)
 		{
 			IsChat = isChat;
 			_welcomeMessage = welcomeMessage;
 			_isAuthenticated = isAuthenticated;
+
+			_myId = Interlocked.Increment(ref _connectionId);
 
 			string pipeName = "FritzTestPipe_" + GetHashCode().ToString();
 			_serverPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
@@ -58,7 +62,7 @@ namespace Test.Services.Mixer
 				_injectPipe.WriteAsync(bytes, 0, bytes.Length);
 			}
 
-			Output.WriteLine($"{GetHashCode():X8} SimWebSocket CONNECTED {uri}");
+			Log($"SimWebSocket CONNECTED {uri}");
 			return Task.CompletedTask;
 		}
 
@@ -66,8 +70,6 @@ namespace Test.Services.Mixer
 		{
 			if (CloseStatus.HasValue)
 				throw new WebSocketException("WebSocket is closed");
-
-			_readEntered.Set();
 
 			int n = await _serverPipe.ReadAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 			if (cancellationToken.IsCancellationRequested)
@@ -126,21 +128,32 @@ namespace Test.Services.Mixer
 		public void InjectPacket(string json)
 		{
 			if (!_injectPipe.IsConnected)
+			{
+				Log("Cant inject packet, not connected!");
 				return;
+			}
 
-			_readEntered.Reset();
+			_clientDoneProcessing.Reset();
 
 			var bytes = Encoding.UTF8.GetBytes(json);
 			_injectPipe.Write(bytes, 0, bytes.Length);
+			_injectPipe.WaitForPipeDrain();
 
 			// Wait until client code has processed the message (its back waiting for more)
 			var timeout = Debugger.IsAttached ? Timeout.Infinite : Simulator.TIMEOUT;
-			_readEntered.Wait(timeout);
+			_clientDoneProcessing.Wait(timeout);
 		}
+
+		private void Log(string format, params object[] args)
+		{
+			// Output?.WriteLine($"{DateTime.Now.ToString("HH:mm:ss.ffff")} - {string.Format(format, args)}");
+		}
+
+		public void ProcessingDone() => _clientDoneProcessing.Set();
 
 		public void Dispose()
 		{
-			Output.WriteLine($"{GetHashCode():X8} SimWebSocket Disposing!");
+			Log("SimWebSocket Disposing!");
 			CloseStatus = WebSocketCloseStatus.NormalClosure;
 			_injectPipe.Dispose();
 			_serverPipe.Dispose();

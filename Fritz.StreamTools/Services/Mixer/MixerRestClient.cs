@@ -201,6 +201,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>Start time of stream, or null if stream is offline</returns>
 		public async Task<DateTimeOffset?> GetStreamStartedAtAsync()
 		{
+			if (_channelId == null) throw new Exception("ChannelId now known! Call GetChannelInfoAsync() first");
+
 			var req = $"channels/{_channelId}/manifest.light2";
 			_logger.LogTrace("GET {0}{1}", API_URL, req);
 			var response = await _client.GetAsync(req);
@@ -210,7 +212,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			if (doc["startedAt"] != null)
 			{
-				if (DateTimeOffset.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
+				if (DateTime.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
 				{
 					return startedAt;
 				}

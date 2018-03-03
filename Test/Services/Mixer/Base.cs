@@ -15,12 +15,10 @@ namespace Test.Services.Mixer
 		protected LoggerFactory LoggerFactory { get; }
 		protected Lazy<Simulator> SimAuth { get; }
 		protected Lazy<Simulator> SimAnon { get; }
-		protected ITestOutputHelper Output { get; }
 		public string Token { get; } = "abcd1234";
 
-		public Base(ITestOutputHelper output)
+		public Base()
 		{
-			Output = output ?? throw new ArgumentNullException(nameof(output));
 			LoggerFactory = new LoggerFactory();
 			LoggerFactory.AddDebug(LogLevel.Trace);
 
@@ -34,8 +32,8 @@ namespace Test.Services.Mixer
 				{ "StreamServices:Mixer:Channel", "MyChannel" }
 			}).Build();
 
-			SimAuth = new Lazy<Simulator>(() => new Simulator(configAuth, LoggerFactory, Output));
-			SimAnon = new Lazy<Simulator>(() => new Simulator(configAnon, LoggerFactory, Output));
+			SimAuth = new Lazy<Simulator>(() => new Simulator(configAuth, LoggerFactory));
+			SimAnon = new Lazy<Simulator>(() => new Simulator(configAnon, LoggerFactory));
 		}
 
 		protected static string BuildChatMessage(Simulator sim, int userId, string userName, string text, string link = null, string[] roles = null, string avatar = null)

@@ -193,6 +193,8 @@ namespace Fritz.StreamTools.Services.Mixer
 					_logger.LogTrace("<< " + json);
 
 					ProcessReceivedMessage(json);
+
+					ws.ProcessingDone(); // Dont remove! Will break tests
 				}
 				catch (Exception e)
 				{

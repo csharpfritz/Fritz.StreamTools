@@ -12,10 +12,6 @@ namespace Test.Services.Mixer
 {
 	public class Constellation : Base
 	{
-		public Constellation(ITestOutputHelper output) : base(output)
-		{
-		}
-
 		[Fact]
 		public async Task WillConnectAndJoin()
 		{
@@ -26,7 +22,7 @@ namespace Test.Services.Mixer
 				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
 
 				var connectedAndJoined = ws.JoinedConstallation.Wait(Simulator.TIMEOUT);
-				;
+
 				connectedAndJoined.Should().BeTrue();
 				// {{"id": 1,"type": "method","method": "livesubscribe","params": {"events": ["channel:1234:update" ]}}}
 				ws.LastPacket["method"].Should().NotBeNull();
@@ -135,16 +131,16 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task WillReconnect()
+		public void WillReconnect()
 		{
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				// Prepare new ClientWebSocket for consumption by client code, and dispose the old one
-				sim.ConstallationWebSocket = new SimulatedClientWebSocket(false, false, Simulator.CONSTALLATION_WELCOME) { Output = Output };
+				sim.ConstallationWebSocket = new SimulatedClientWebSocket(false, false, Simulator.CONSTALLATION_WELCOME);
 				ws.Dispose();
 				ws = sim.ConstallationWebSocket;
 				var connectedAndJoined = ws.JoinedConstallation.Wait(Simulator.TIMEOUT);
@@ -166,6 +162,5 @@ namespace Test.Services.Mixer
 				ws.Headers.Should().Contain("x-is-bot", "true");
 			}
 		}
-
 	}
 }

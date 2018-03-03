@@ -13,18 +13,14 @@ namespace Test.Services.Mixer
 {
 	public class Chat : Base
 	{
-		public Chat(ITestOutputHelper output) : base(output)
-		{
-		}
-
 		[Fact]
-		public async Task WillConnectAndJoin()
+		public void WillConnectAndJoin()
 		{
 			var sim = SimAuth.Value;
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var connectedAndJoined = ws.JoinedChat.Wait(Simulator.TIMEOUT);
 				connectedAndJoined.Should().BeTrue();
@@ -39,18 +35,18 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task WillReconnectOnNextServer()
+		public void WillReconnectOnNextServer()
 		{
 			var sim = SimAnon.Value;
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var url1 = ws.ConnectUrl;
 
 				// Prepare new ClientWebSocket for consumption by client code, and dispose the old one
-				sim.ChatWebSocket = new SimulatedClientWebSocket(true, false, Simulator.CHAT_WELCOME) { Output = Output };
+				sim.ChatWebSocket = new SimulatedClientWebSocket(true, false, Simulator.CHAT_WELCOME);
 				ws.Dispose();
 				ws = sim.ChatWebSocket;
 				bool reconnectSucceeded = ws.JoinedChat.Wait(Simulator.TIMEOUT);
@@ -65,14 +61,14 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task WillConnectAndJoinAnonymously()
+		public void WillConnectAndJoinAnonymously()
 		{
 			var sim = SimAnon.Value;
 
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var connectedAndJoined = ws.JoinedChat.Wait(Simulator.TIMEOUT);
 				connectedAndJoined.Should().BeTrue();
@@ -86,14 +82,14 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task RaisesEventOnMessage()
+		public void RaisesEventOnMessage()
 		{
 			var sim = SimAnon.Value;
 			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner" });
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(packet);
@@ -105,14 +101,14 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task RaisesEventOnWhisper()
+		public void RaisesEventOnWhisper()
 		{
 			var sim = SimAnon.Value;
 			var packet = BuildChatWhisper(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner" });
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(packet);
@@ -124,7 +120,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task DetectsUserRoles()
+		public void DetectsUserRoles()
 		{
 			var sim = SimAnon.Value;
 			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner", "Mod" });
@@ -132,7 +128,7 @@ namespace Test.Services.Mixer
 
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(packet);
@@ -144,7 +140,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task RaisesUserJoinsEvent()
+		public void RaisesUserJoinsEvent()
 		{
 			var PACKET = "{'type':'event','event':'UserJoin','data':{'originatingChannel':1234,'username':'SomeNewUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
 
@@ -152,7 +148,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(PACKET);
@@ -164,7 +160,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task RaisesUserLeftEvent()
+		public void RaisesUserLeftEvent()
 		{
 			var PACKET = "{'type':'event','event':'UserLeave','data':{'originatingChannel':1234,'username':'TheWhisperUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
 
@@ -172,7 +168,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(PACKET);
@@ -184,14 +180,14 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task ImplementsCorrectInterfaces()
+		public void ImplementsCorrectInterfaces()
 		{
 			var sim = SimAnon.Value;
 			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!");
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				var result = Assert.Raises<ChatMessageEventArgs>(x => sut.ChatMessage += x, x => sut.ChatMessage -= x, () => ws.InjectPacket(packet));
 				Assert.IsAssignableFrom<IChatService>(result.Sender);
 				Assert.IsAssignableFrom<IStreamService>(result.Sender);
@@ -199,27 +195,27 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task AddCorrectHeaders()
+		public void AddCorrectHeaders()
 		{
 			var sim = SimAuth.Value;
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				ws.Headers.Should().Contain("x-is-bot", "true");
 			}
 		}
 
 		[Fact]
-		public async Task HandlesNullAvatar()
+		public void HandlesNullAvatar()
 		{
 			var sim = SimAnon.Value;
 			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner","Mod" }, avatar: null);
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(packet);
@@ -231,7 +227,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task CanSendMessage()
+		public void CanSendMessage()
 		{
 			var sim = SimAuth.Value;
 			var ws = sim.ChatWebSocket;
@@ -240,7 +236,7 @@ namespace Test.Services.Mixer
 
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var chat = sut as IChatService;
 				var id = ws.LastId.GetValueOrDefault() + 1;
@@ -249,13 +245,13 @@ namespace Test.Services.Mixer
 				var task = chat.SendMessageAsync(text);
 				ws.InjectPacket(replyJson);
 
-				await task; // Wait for SendMessageAsync to complete
+				task.Wait(Simulator.TIMEOUT); // Wait for SendMessageAsync to complete
 				task.Result.Should().BeTrue();
 			}
 		}
 
 		[Fact]
-		public async Task CanSendWhisper()
+		public void CanSendWhisper()
 		{
 			var sim = SimAuth.Value;
 			var ws = sim.ChatWebSocket;
@@ -265,7 +261,7 @@ namespace Test.Services.Mixer
 
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var chat = sut as IChatService;
 				var id = ws.LastId.GetValueOrDefault() + 1;
@@ -274,13 +270,13 @@ namespace Test.Services.Mixer
 				var task = chat.SendWhisperAsync(target, text);
 				ws.InjectPacket(replyJson);
 
-				await task;	// Wait for SendWhisperAsync to complete
+				task.Wait(Simulator.TIMEOUT);	// Wait for SendWhisperAsync to complete
 				task.Result.Should().BeTrue();
 			}
 		}
 
 		[Fact]
-		public async Task CantSendAnononymously()
+		public void CantSendAnononymously()
 		{
 			var sim = SimAnon.Value;
 			var ws = sim.ChatWebSocket;
@@ -289,7 +285,7 @@ namespace Test.Services.Mixer
 
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var chat = sut as IChatService;
 				var id = ws.LastId.GetValueOrDefault() + 1;
@@ -298,7 +294,7 @@ namespace Test.Services.Mixer
 				var task = chat.SendMessageAsync(text);
 				ws.InjectPacket(replyJson);
 
-				await task; // Wait for SendMessageAsync to complete
+				task.Wait(Simulator.TIMEOUT); // Wait for SendMessageAsync to complete
 				task.Result.Should().BeFalse();
 			}
 		}

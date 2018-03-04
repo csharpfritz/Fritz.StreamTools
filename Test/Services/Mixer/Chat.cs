@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -296,6 +297,40 @@ namespace Test.Services.Mixer
 
 				task.Wait(Simulator.TIMEOUT); // Wait for SendMessageAsync to complete
 				task.Result.Should().BeFalse();
+			}
+		}
+
+		[Fact]
+		public void TimeoutUserSendsCorrectPackets()
+		{
+			var sim = SimAuth.Value;
+			var ws = sim.ChatWebSocket;
+
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
+
+				var chat = sut as IChatService;
+				var id = ws.LastId.GetValueOrDefault() + 1;
+				var replyJson = BuildTimeoutReply(id);
+
+				var task = chat.TimeoutUserAsync("SomeTestUser", TimeSpan.FromMinutes(5));
+				ws.InjectPacket(replyJson);
+
+				task.Wait(Simulator.TIMEOUT); // Wait for TimeoutUserAsync to complete
+
+				// Validate packet sent
+				ws.LastPacket["type"].Should().NotBeNull();
+				ws.LastPacket["type"].Value<string>().Should().Be("method");
+				ws.LastPacket["method"].Should().NotBeNull();
+				ws.LastPacket["method"].Value<string>().Should().Be("timeout");
+				ws.LastPacket["arguments"].Should().NotBeNull();
+				var args = ws.LastPacket["arguments"].Values<string>().ToArray();
+				args.Should().HaveCount(2);
+				args[0].Should().Be("SomeTestUser");
+				args[1].Should().Be("5m0s");
+
+				task.Result.Should().BeTrue();
 			}
 		}
 	}

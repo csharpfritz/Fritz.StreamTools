@@ -235,6 +235,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			var data = doc["data"];
 			if (data.IsNullOrEmpty()) return;
+			if (data.Type != JTokenType.Object) return;
 
 			if (!data["id"].IsNullOrEmpty())
 			{
@@ -261,6 +262,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 
 			var data = doc["data"];
+			if (data?.Type != JTokenType.Object) data = null;		// Ignore data which is not an object
 			if (!data.IsNullOrEmpty() && !data["id"].IsNullOrEmpty())
 			{
 				// Remember last 5 messages I have send

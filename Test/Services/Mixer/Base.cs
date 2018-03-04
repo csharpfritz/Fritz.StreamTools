@@ -123,6 +123,12 @@ namespace Test.Services.Mixer
 			return JsonConvert.SerializeObject(data, Formatting.None);
 		}
 
+		protected static string BuildTimeoutReply(int id)
+		{
+			var o = new { type = "reply", error = (object)null, id, data = "username has been timed out for some time." };
+			return JsonConvert.SerializeObject(o, Formatting.None);
+		}
+
 		protected static string BuildMsgReply(Simulator sim, int id, string text)
 		{
 			var data = new Packets.MsgReply {

@@ -34,7 +34,7 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaisesFollowerEvent()
 		{
-			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
+			var packet = BuildLiveEvent("channel:1234:update", followers: 66);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
@@ -43,7 +43,7 @@ namespace Test.Services.Mixer
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					ws.InjectPacket(PACKET);
+					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
 						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 66 && a.NewViewers == null && a.IsOnline == null && a.ServiceName == "Mixer")
 						.WithSender(sut);
@@ -54,7 +54,7 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaiseViewersEvent()
 		{
-			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
+			var packet = BuildLiveEvent("channel:1234:update", viewers: 35);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
@@ -63,7 +63,7 @@ namespace Test.Services.Mixer
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					ws.InjectPacket(PACKET);
+					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
 						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null && a.NewViewers == 35 && a.IsOnline == null && a.ServiceName == "Mixer")
 						.WithSender(sut);
@@ -74,17 +74,17 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void DontRaiseEventWhenViewersIsSameAsBefore()
 		{
-			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
+			var packet = BuildLiveEvent("channel:1234:update", viewers: 35);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
-				ws.InjectPacket(PACKET);		// 1st
+				ws.InjectPacket(packet);    // 1st
 				using (var monitor = sut.Monitor())
 				{
-					ws.InjectPacket(PACKET);	// 2nd
+					ws.InjectPacket(packet);  // 2nd
 					monitor.Should().NotRaise(nameof(sut.Updated));
 				}
 			}
@@ -93,7 +93,7 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void CanCombineEvent()
 		{
-			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':43,'numFollowers':22,'online':true}}}".Replace("'", "\"");
+			var packet = BuildLiveEvent("channel:1234:update", followers: 22, viewers: 43, online: true);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
@@ -102,7 +102,7 @@ namespace Test.Services.Mixer
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					ws.InjectPacket(PACKET);
+					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
 						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 22 && a.NewViewers == 43 && a.IsOnline == true && a.ServiceName == "Mixer")
 						.WithSender(sut);
@@ -113,14 +113,14 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void ImplementCorrectInterfaces()
 		{
-			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
+			var packet = BuildLiveEvent("channel:1234:update", followers: 66);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
-				var result = Assert.Raises<ServiceUpdatedEventArgs>(x => sut.Updated += x, x => sut.Updated -= x, () => ws.InjectPacket(PACKET) );
+				var result = Assert.Raises<ServiceUpdatedEventArgs>(x => sut.Updated += x, x => sut.Updated -= x, () => ws.InjectPacket(packet));
 				Assert.IsAssignableFrom<IChatService>(result.Sender);
 				Assert.IsAssignableFrom<IStreamService>(result.Sender);
 			}

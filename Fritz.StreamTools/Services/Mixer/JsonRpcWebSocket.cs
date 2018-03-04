@@ -46,7 +46,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		bool _disposed;
 		int _nextPacketId = 0;
 		readonly ConcurrentDictionary<int, TaskCompletionSource<bool>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
-		readonly ConcurrentQueue<string> _myLatestMessages = new ConcurrentQueue<string>();
+		readonly ConcurrentQueue<Guid> _myLatestMessages = new ConcurrentQueue<Guid>();
 		Task _receiverTask;
 		int? _receiverThreadId;
 		private readonly IConfiguration _config;
@@ -168,8 +168,8 @@ namespace Fritz.StreamTools.Services.Mixer
 			var doc = JToken.Parse(json);
 			if(doc["event"]?.Value<string>() == "hello")
 			{
-				var b = doc["data"]?["authenticated"]?.Value<bool>();
-				IsAuthenticated = b.GetValueOrDefault();
+				var hello = doc["data"]?.GetObject<WS.HelloData>();
+				if (hello != null) IsAuthenticated = hello.Authenticated;
 			}
 		}
 
@@ -229,6 +229,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Handle an event message from the websocket
 		/// </summary>
+		/// NOITE: CHANGE TO USE STRING INSTEAD OF JToken
 		private void HandleEvent(JToken doc)
 		{
 			if (doc.IsNullOrEmpty()) return;
@@ -237,11 +238,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (data.IsNullOrEmpty()) return;
 			if (data.Type != JTokenType.Object) return;
 
-			if (!data["id"].IsNullOrEmpty())
+			// Ignore messages I have send
+			if (!data["id"].IsNullOrEmpty() && Guid.TryParse((string)data["id"], out var guid))
 			{
-				// Ignore messages I have send
-				var msgId = (string)data["id"];
-				if (_myLatestMessages.Contains(msgId)) return;
+				if (_myLatestMessages.Contains(guid))
+					return;
 			}
 
 			// Some event received, chat message maybe ?
@@ -266,7 +267,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!data.IsNullOrEmpty() && !data["id"].IsNullOrEmpty())
 			{
 				// Remember last 5 messages I have send
-				_myLatestMessages.Enqueue((string)data["id"]);
+				_myLatestMessages.Enqueue(Guid.Parse((string)data["id"]));
 				while (_myLatestMessages.Count > 5) _myLatestMessages.TryDequeue(out var _);
 			}
 
@@ -279,7 +280,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (_pendingRequests.TryGetValue(id, out var task))
 			{
 				// Signal waiting task that we have received a reply
-				if (error != null && error.HasValues)
+				if (error?.HasValues == true)
 					task.SetResult(false);
 				else
 					task.SetResult(true);
@@ -338,25 +339,29 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>Json string</returns>
 		private string BuildRequestString(string method, object[] args, int id)
 		{
-			var doc = new JObject
-			{
-				{ "id", id },
-				{ "type", "method" },
-				{ "method", method }
+			var req = new WS.Request {
+				Id = id,
+				Type = "method",
+				Method = method
 			};
 
 			if (_isChat)
 			{
 				if (args != null && args.Length != 0)
-					doc.Add(new JProperty("arguments", args));
+					req.Arguments = args;
 			}
 			else
 			{
-				doc.Add("params", JObject.FromObject(new { events = args }));
+				req.Params = new { events = args };
 			}
 
-			var json = doc.ToString(Newtonsoft.Json.Formatting.None);
+			var json = MixerSerializer.Serialize(req);
+			LogRequest(method, args, json);
+			return json;
+		}
 
+		private void LogRequest(string method, object[] args, string json)
+		{
 			if (_logger.IsEnabled(LogLevel.Trace))
 			{
 				if (method == "auth" && args.Length >= 3)
@@ -369,8 +374,6 @@ namespace Fritz.StreamTools.Services.Mixer
 					_logger.LogTrace(">> " + json);
 				}
 			}
-
-			return json;
 		}
 
 		/// <summary>

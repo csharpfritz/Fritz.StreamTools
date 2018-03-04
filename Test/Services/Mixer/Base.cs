@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Linq;
-using Fritz.StreamTools.Helpers;
-using System.Diagnostics;
-using Xunit.Abstractions;
+using Fritz.StreamTools.Services.Mixer;
+using Newtonsoft.Json.Serialization;
 
 namespace Test.Services.Mixer
 {
@@ -16,6 +14,7 @@ namespace Test.Services.Mixer
 		protected Lazy<Simulator> SimAuth { get; }
 		protected Lazy<Simulator> SimAnon { get; }
 		public string Token { get; } = "abcd1234";
+		static public JsonSerializerSettings JsonSettings { get; } = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 
 		public Base()
 		{
@@ -36,154 +35,100 @@ namespace Test.Services.Mixer
 			SimAnon = new Lazy<Simulator>(() => new Simulator(configAnon, LoggerFactory));
 		}
 
-		protected static string BuildChatMessage(Simulator sim, int userId, string userName, string text, string link = null, string[] roles = null, string avatar = null)
+		private static WS.Messages _BuildContentMessages(string text, string link, bool isWhisper)
 		{
-			var data = new Packets.ChatMsg {
-				type = "event",
-				@event = "ChatMessage",
-				data = new Packets.ChatMsgData {
-					channel = sim.ChannelInfo.Id,
-					id = Guid.NewGuid(),
-					user_name = userName,
-					user_id = userId,
-					user_roles = roles ?? new string[] { "User" },
-					user_level = 54,
-					user_avatar = avatar,
-					message = new Packets.ChatMsgMessages {
-						message = new Packets.ChatMsgMessage[] {
-							new Packets.ChatMsgMessageText {
-								type = "text",
-								data = text,
-								text = text
-							}
-						}
-					}
-
-				}
-			};
-
-			if (link != null)
-			{
-				data.data.message.message = data.data.message.message.Concat(new Packets.ChatMsgMessage[] {
-					new Packets.ChatMsgMessageLink {
-						type = "link",
-						text = link,
-						url = link
-					}
-				}).ToArray();
-			}
-
-			return JsonConvert.SerializeObject(data, Formatting.None);
-		}
-
-		private static Packets.ChatMsgMessages _BuildContentMessages(string text, string link, bool isWhisper)
-		{
-			Packets.ChatMsgMessages messages = new Packets.ChatMsgMessagesMeta {
-				message = new Packets.ChatMsgMessage[] {
-						new Packets.ChatMsgMessageText {
-							type = "text",
-							data = text,
-							text = text
-						}
-					},
-				meta = new Packets.MetaWhisper {
-					whisper = ( isWhisper ) ? true : (bool?)null
-				}
+			var content = new List<WS.Message> {
+				new WS.Message { Type = "text", Data = text, Text = text }
 			};
 			if (link != null)
-			{
-				messages.message = messages.message.Concat(new Packets.ChatMsgMessage[] {
-					new Packets.ChatMsgMessageLink {
-						type = "link",
-						text = link,
-						url = link
-					}
-				}).ToArray();
-			}
-
+				content.Add(new WS.Message { Type = "link", Data = link, Text = link });
+			var messages = new WS.Messages {
+				Message = content
+			};
+			if (isWhisper)
+				messages.Meta = new WS.Meta { Whisper = true };
 			return messages;
 		}
 
-		protected static string BuildChatWhisper(Simulator sim, int userId, string userName, string text, string link = null, string[] roles = null)
+		protected static string BuildChatMessage(Simulator sim, int userId, string userName, string text, bool isWhisper = false, string link = null, string[] roles = null, string avatar = null)
 		{
-			var data = new Packets.ChatMsg {
-				type = "event",
-				@event = "ChatMessage",
-				data = new Packets.ChatMsgData {
-					channel = sim.ChannelInfo.Id,
-					id = Guid.NewGuid(),
-					user_name = userName,
-					user_id = userId,
-					user_roles = roles ?? new string[] { "User" },
-					user_level = 54,
-					user_avatar = "",
-					message = _BuildContentMessages(text, link, true)
+			var root = new WS.ChatEvent<WS.ChatData>() {
+				Type = "event",
+				Event = "ChatMessage",
+				Data = new WS.ChatData {
+					Channel = sim.ChannelInfo.Id,
+					Id = Guid.NewGuid(),
+					UserName = userName,
+					UserId = userId,
+					UserRoles = roles ?? new string[] { "User" },
+					UserLevel = 54,
+					UserAvatar = avatar,
+					Messages = _BuildContentMessages(text, link, isWhisper)
 				}
 			};
-			return JsonConvert.SerializeObject(data, Formatting.None);
+			return JsonConvert.SerializeObject(root, JsonSettings);
 		}
 
 		protected static string BuildTimeoutReply(int id)
 		{
-			var o = new { type = "reply", error = (object)null, id, data = "username has been timed out for some time." };
-			return JsonConvert.SerializeObject(o, Formatting.None);
+			var root = new WS.ChatEvent<string>() {
+				Type = "reply",
+				Id = id,
+				Data = "username has been timed out for some time."
+			};
+			return JsonConvert.SerializeObject(root, JsonSettings);
 		}
 
-		protected static string BuildMsgReply(Simulator sim, int id, string text)
+		protected static string BuildMsgReply(Simulator sim, int id, string text, string target = null)
 		{
-			var data = new Packets.MsgReply {
-				type = "reply",
-				id = id,
-				error = null,
-				data = new Packets.MsgReplyData {
-					channel = sim.ChannelInfo.Id,
-					id = Guid.NewGuid(),
-					user_name = sim.UserName,
-					user_id = sim.ChannelInfo.UserId,
-					user_level = 22,
-					user_avatar = "https://uploads.mixer.com/avatar/ed47s4h5-696.jpg",
-					user_roles = new string[] { "User" },
-					message = new Packets.MsgReplyMessages {
-						message = new Packets.MsgReplyMessage[] {
-							new Packets.MsgReplyMessage { type = "text", data = text, text = text }
-						},
-						meta = new Packets.Meta {
-							// empty
-						}
+			var root = new WS.ChatEvent<WS.ChatData>() {
+				Type = "reply",
+				Id = id,
+				Data = new WS.ChatData {
+					Channel = sim.ChannelInfo.Id,
+					Id = Guid.NewGuid(),
+					UserName = sim.UserName,
+					UserId = sim.ChannelInfo.UserId,
+					UserRoles = new string[] { "User" },
+					UserLevel = 22,
+					UserAvatar = "https://uploads.mixer.com/avatar/ed47s4h5-696.jpg",
+					Messages = _BuildContentMessages(text, null, false),
+					Target = target
+				}
+			};
+			return JsonConvert.SerializeObject(root, JsonSettings);
+		}
+
+		protected static string BuildUserJoinOrLeave(string userName, int userId, bool isJoin)
+		{
+			var root = new WS.ChatEvent<WS.User>() {
+				Type = "event",
+				Event = isJoin ? "UserJoin" : "UserLeave",
+				Data = new WS.User {
+					OriginatingChannel = 234234,
+					UserId = userId,
+					Username = userName,
+					Roles = new string[] { "User" }
+				}
+			};
+			return JsonConvert.SerializeObject(root, JsonSettings);
+		}
+
+		protected static string BuildLiveEvent(string channel, int? followers = null, int? viewers = null, bool? online = null)
+		{
+			var root = new WS.LiveEvent<WS.LivePayload> {
+				Type = "event",
+				Event = "live",
+				Data = new WS.LiveData<WS.LivePayload> {
+					Channel = channel,
+					Payload = new WS.LivePayload {
+						NumFollowers = followers,
+						ViewersCurrent = viewers,
+						Online = online
 					}
 				}
 			};
-
-			return JsonConvert.SerializeObject(data, Formatting.None);
-		}
-
-		protected static string BuildWhisperReply(Simulator sim, int id, string target, string text)
-		{
-			var data = new Packets.MsgReply {
-				type = "reply",
-				id = id,
-				error = null,
-				data = new Packets.MsgReplyDataWhisper {
-					channel = sim.ChannelInfo.Id,
-					id = Guid.NewGuid(),
-					user_name = sim.UserName,
-					user_id = sim.ChannelInfo.UserId,
-					user_level = 22,
-					user_avatar = "https://uploads.mixer.com/avatar/ed47s4h5-696.jpg",
-					user_roles = new string[] { "User" },
-					message = new Packets.MsgReplyMessages {
-						message = new Packets.MsgReplyMessage[] {
-							new Packets.MsgReplyMessage { type = "text", data = text, text = text }
-						},
-						meta = new Packets.MetaWhisper {
-							whisper = true
-						}
-					},
-					target = target
-				}
-			};
-
-			return JsonConvert.SerializeObject(data, Formatting.None);
+			return JsonConvert.SerializeObject(root, JsonSettings);
 		}
 	}
 }

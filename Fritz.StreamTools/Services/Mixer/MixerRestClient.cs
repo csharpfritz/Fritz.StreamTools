@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
@@ -55,12 +56,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (loggerFactory == null)
 				throw new ArgumentNullException(nameof(loggerFactory));
-			if (client == null)
-				throw new ArgumentNullException(nameof(client));
 
 			_logger = loggerFactory.CreateLogger(nameof(MixerRestClient));
 
-			_client = client;
+			_client = client ?? throw new ArgumentNullException(nameof(client));
 			_client.BaseAddress = new Uri(API_URL);
 			_client.DefaultRequestHeaders.Add("Accept", "application/json");
 			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
@@ -208,21 +207,21 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (response.StatusCode != HttpStatusCode.OK)
 				return null;
 			var json = await response.Content.ReadAsStringAsync();
-			var manifest = JsonConvert.DeserializeObject<API.ChannelManifest2>(json);
+			var manifest = MixerSerializer.Deserialize<API.ChannelManifest2>(json);
 			return manifest.StartedAt.ToUniversalTime();
 		}
 
 		/// <summary>
 		/// Get auth key and endpoints for connecting websocket to chat
 		/// </summary>
-		public async Task<API.Chats> GetChatAuthKeyAndEndpointsAsync()
+		public Task<API.Chats> GetChatAuthKeyAndEndpointsAsync()
 		{
 			if (!_initDone)
 				throw new Exception("Call InitAsync() first!");
 
 			// Get chat authkey and chat endpoints
 			var req = $"chats/{ChannelId}";
-			return await GetAsync<API.Chats>(req);
+			return GetAsync<API.Chats>(req);
 		}
 
 		#region HttpClient helpers
@@ -232,7 +231,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_logger.LogTrace("GET {0}{1}", API_URL, requestUri);
 
 			var json = await _client.GetStringAsync(requestUri);
-			return JsonConvert.DeserializeObject<T>(json);
+			return MixerSerializer.Deserialize<T>(json);
 		}
 
 		async Task PatchAsync<T>(string requestUri, T data)

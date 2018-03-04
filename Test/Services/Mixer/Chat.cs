@@ -101,7 +101,7 @@ namespace Test.Services.Mixer
 		public void RaisesEventOnWhisper()
 		{
 			var sim = SimAnon.Value;
-			var packet = BuildChatWhisper(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner" });
+			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner" }, isWhisper: true);
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
@@ -139,7 +139,7 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaisesUserJoinsEvent()
 		{
-			var PACKET = "{'type':'event','event':'UserJoin','data':{'originatingChannel':1234,'username':'SomeNewUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
+			var packet = BuildUserJoinOrLeave("SomeNewUser", 34103083, isJoin: true);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ChatWebSocket;
@@ -148,7 +148,7 @@ namespace Test.Services.Mixer
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					ws.InjectPacket(PACKET);
+					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.UserJoined))
 						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "SomeNewUser" && a.ServiceName == "Mixer")
 						.WithSender(sut);
@@ -159,7 +159,7 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaisesUserLeftEvent()
 		{
-			var PACKET = "{'type':'event','event':'UserLeave','data':{'originatingChannel':1234,'username':'TheWhisperUser','roles':['User'],'id':34103083}}".Replace("'", "\"");
+			var packet = BuildUserJoinOrLeave("SomeNewUser", 34103083, isJoin: false);
 
 			var sim = SimAnon.Value;
 			var ws = sim.ChatWebSocket;
@@ -168,9 +168,9 @@ namespace Test.Services.Mixer
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
-					ws.InjectPacket(PACKET);
+					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.UserLeft))
-						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "TheWhisperUser" && a.ServiceName == "Mixer")
+						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "SomeNewUser" && a.ServiceName == "Mixer")
 						.WithSender(sut);
 				}
 			}
@@ -262,7 +262,7 @@ namespace Test.Services.Mixer
 
 				var chat = sut as IChatService;
 				var id = ws.LastId.GetValueOrDefault() + 1;
-				var replyJson = BuildWhisperReply(sim, id, target, text);
+				var replyJson = BuildMsgReply(sim, id, text, target);
 
 				var task = chat.SendWhisperAsync(target, text);
 				ws.InjectPacket(replyJson);

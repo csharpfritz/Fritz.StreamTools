@@ -2,10 +2,8 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 // https://dev.mixer.com/reference/chat/index.html
 
@@ -191,59 +189,51 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		private void ParseUserLeave(EventEventArgs e)
 		{
-			var roles = e.Data["roles"]?.Values<string>().ToArray();
-
+			var user = e.Data.GetObject<WS.User>();
 			UserLeft?.Invoke(this, new ChatUserInfoEventArgs {
-				UserId = (int)e.Data["id"],
-				UserName = (string)e.Data["username"],
+				UserId = user.UserId,
+				UserName = user.Username,
 				Properties = {
-					{ "MixerRoles", roles }
+					{ "MixerRoles", user.Roles }
 				}
 			});
 		}
 
 		private void ParseUserJoin(EventEventArgs e)
 		{
-			var roles = e.Data["roles"]?.Values<string>().ToArray();
-
+			var user = e.Data.GetObject<WS.User>();
 			UserJoined?.Invoke(this, new ChatUserInfoEventArgs {
-				UserId = (int)e.Data["id"],
-				UserName = (string)e.Data["username"],
+				UserId = user.UserId,
+				UserName = user.Username,
 				Properties = {
-					{ "MixerRoles", roles }
+					{ "MixerRoles", user.Roles }
 				}
 			});
 		}
 
 		private void ParseChatMessage(EventEventArgs e)
 		{
-			var userId = e.Data["user_id"].Value<int>();
-			var roles = e.Data["user_roles"].Values<string>().ToArray();
-			var avatar = e.Data["user_avatar"]?.Value<string>();
+			var data = e.Data.GetObject<WS.ChatData>();
 
-			// Combine text from all elements
-			var segments = e.Data["message"]["message"];
-			var combinedText = string.Concat(segments.Where(x => x["text"] != null).Select(x => (string)x["text"]));
+			var combinedText = string.Concat(data.Messages.Message.Select(x => x.Text));
 
 			var isWhisper = false;
-			var meta = e.Data["message"]["meta"];
-			if (!meta.IsNullOrEmpty() && !meta["whisper"].IsNullOrEmpty())
+			if (data.Messages?.Meta != null)
 			{
-				// "meta":{"whisper":true}},"target":"jobun44"}
-				isWhisper = (bool)meta["whisper"];
+				isWhisper = data.Messages.Meta.Whisper.GetValueOrDefault();
 			}
 
 			ChatMessage?.Invoke(this, new ChatMessageEventArgs {
-				UserId = userId,
-				UserName = e.Data["user_name"].Value<string>(),
+				UserId = data.UserId,
+				UserName = data.UserName,
 				IsWhisper = isWhisper,
-				IsModerator = roles.Contains("Mod"),
-				IsOwner = roles.Contains("Owner"),
+				IsModerator = data.UserRoles.Contains("Mod"),
+				IsOwner = data.UserRoles.Contains("Owner"),
 				Message = combinedText,
 				Properties = {
-					{ "AvatarUrl", avatar ?? string.Empty },
-					{ "MixerUserLevel", e.Data["user_level"]?.Value<int>() },
-					{ "MixerRoles", roles }
+					{ "AvatarUrl", data.UserAvatar ?? string.Empty },
+					{ "MixerUserLevel", data.UserLevel },
+					{ "MixerRoles", data.UserRoles.ToArray() }
 				}
 			});
 		}

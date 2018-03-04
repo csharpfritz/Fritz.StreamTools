@@ -44,10 +44,10 @@ namespace Test.Services.Mixer
 		private void AddDefaultTriggers()
 		{
 			Handler.On($"channels/{WebUtility.UrlEncode(ChannelName)}", _ => {
-				return new JsonContent(new ChannelInfo { Id = ChannelId, UserId = 0 /* not our channel */, NumberOfFollowers = 543, NumberOfViewers = 32 });
+				return new JsonContent(new API.Channel { Id = ChannelId, UserId = 0 /* not our channel */, NumFollowers = 543, ViewersCurrent = 32 });
 			});
 			Handler.On($"channels/{WebUtility.UrlEncode(OtherUserName)}", _ => {
-				return new JsonContent(new { id = OtherUserId });
+				return new JsonContent(new { userId = OtherUserId }); // ??? Do I need to return anything else ?
 			});
 			Handler.On($"users/current", _ => new JsonContent(new { id = UserId, username = UserName }));
 			Handler.On(new HttpMethod("PATCH"), $"channels/{ChannelId}/users/{OtherUserId}", ctx => {
@@ -66,7 +66,7 @@ namespace Test.Services.Mixer
 			});
 			Handler.On($"channels/{ChannelId}/manifest.light2", _ => {
 				return new JsonContent(new {
-					// SO 8601 date time format
+					// ISO 8601 date time format
 					now = NowTestValue.ToString("o"),
 					startedAt = StartedAtTestValue.ToString("o")
 				});
@@ -100,7 +100,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public void ChannelInfoRequest()
+		public void CanInit()
 		{
 			var sut = new MixerRestClient(LoggerFactory, Client);
 			sut.InitAsync(ChannelName, Token).Wait();
@@ -145,7 +145,7 @@ namespace Test.Services.Mixer
 
 			// Assert
 			result.Should().NotBeNull();
-			result.AuthKey.Should().Be(SimAuth.Value.ChatAuthKey);
+			result.Authkey.Should().Be(SimAuth.Value.ChatAuthKey);
 			result.Endpoints.Should().BeEquivalentTo(Endpoints);
 		}
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -7,7 +6,6 @@ using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
@@ -21,12 +19,15 @@ namespace Fritz.StreamTools.Services.Mixer
 		string UserName { get; }
 		int? UserId { get; }
 
-		/// <summary>Initialize the rest client with needed values from the API.
-		/// IMPORTANT: Call this first!
+		/// <summary>
+		/// Get initial needed info from the mixer API
 		/// </summary>
+		/// <param name="channelName">Name of the channel</param>
+		/// <param name="oauthToken">The users oauth token or null</param>
+		/// <returns>Current number of viewers and followers as a tuple</returns>
 		Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken);
 
-		Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync();
+		Task<API.Chats> GetChatAuthKeyAndEndpointsAsync();
 		Task<int?> LookupUserIdAsync(string userName);
 		Task<bool> BanUserAsync(string userName);
 		Task<bool> UnbanUserAsync(string userName);
@@ -65,11 +66,6 @@ namespace Fritz.StreamTools.Services.Mixer
 			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
 		}
 
-		/// <summary>
-		/// Get initial needed info from the mixer API
-		/// </summary>
-		/// <param name="channelName">Name of the channel</param>
-		/// <returns></returns>
 		public async Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken)
 		{
 			_initDone = false;
@@ -91,23 +87,22 @@ namespace Fritz.StreamTools.Services.Mixer
 				try
 				{
 					var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent";
-					var channelInfo = await GetAsync<ChannelInfo>(req);
+					var channelInfo = await GetAsync<API.Channel>(req);
 					ChannelId = channelInfo.Id;
 
 					if (HasToken)
 					{
 						// User might not be joining own channel
-						var me = await GetJTokenAsync("users/current");
-
-						UserId = (int)me["id"];
-						UserName = (string)me["username"];
+						var me = await GetAsync<API.User>("users/current");
+						UserId = me.Id;
+						UserName = me.Username;
 					}
 					_initDone = true;
-					return (channelInfo.NumberOfViewers, channelInfo.NumberOfFollowers);
+					return (channelInfo.ViewersCurrent, channelInfo.NumFollowers);
 				}
 				catch (HttpRequestException ex)
 				{
-					if(tryCounter == 3)
+					if (tryCounter == 3)
 						throw new UnknownChannelException(ChannelName, ex);
 					await Task.Delay(2000);
 				}
@@ -121,13 +116,14 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>Id of the user</returns>
 		public async Task<int?> LookupUserIdAsync(string userName)
 		{
-			if(!_initDone) throw new Exception("Call InitAsync() first!");
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
 
 			try
 			{
 				var req = $"channels/{WebUtility.UrlEncode(userName)}?noCount=1";
-				var doc = await GetJTokenAsync(req);
-				return (int)doc["id"];
+				var channel = await GetAsync<API.Channel>(req);
+				return channel.UserId;
 			}
 			catch (HttpRequestException)
 			{
@@ -143,7 +139,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
-			if(!_initDone) throw new Exception("Call InitAsync() first!");
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
 
 			if (!HasToken)
 				return false;
@@ -174,7 +171,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (string.IsNullOrWhiteSpace(userName))
 				throw new ArgumentException("Must not be null or empty", nameof(userName));
-			if(!_initDone) throw new Exception("Call InitAsync() first!");
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
 
 			if (!HasToken)
 				return false;
@@ -201,35 +199,30 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>Start time of stream, or null if stream is offline</returns>
 		public async Task<DateTimeOffset?> GetStreamStartedAtAsync()
 		{
-			if(!_initDone) throw new Exception("Call InitAsync() first!");
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
 
 			var req = $"channels/{ChannelId}/manifest.light2";
 			_logger.LogTrace("GET {0}{1}", API_URL, req);
 			var response = await _client.GetAsync(req);
-			if (response.StatusCode != HttpStatusCode.OK) return null;
+			if (response.StatusCode != HttpStatusCode.OK)
+				return null;
 			var json = await response.Content.ReadAsStringAsync();
-			var doc = JToken.Parse(json);
-
-			if (doc["startedAt"] != null)
-			{
-				if (DateTime.TryParse((string)doc["startedAt"], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var startedAt))
-				{
-					return startedAt;
-				}
-			}
-			return null;
+			var manifest = JsonConvert.DeserializeObject<API.ChannelManifest2>(json);
+			return manifest.StartedAt.ToUniversalTime();
 		}
 
 		/// <summary>
 		/// Get auth key and endpoints for connecting websocket to chat
 		/// </summary>
-		public async Task<ChatAuthKeyAndEndpoints> GetChatAuthKeyAndEndpointsAsync()
+		public async Task<API.Chats> GetChatAuthKeyAndEndpointsAsync()
 		{
-			if(!_initDone) throw new Exception("Call InitAsync() first!");
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
 
 			// Get chat authkey and chat endpoints
 			var req = $"chats/{ChannelId}";
-			return await GetAsync<ChatAuthKeyAndEndpoints>(req);
+			return await GetAsync<API.Chats>(req);
 		}
 
 		#region HttpClient helpers
@@ -242,20 +235,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			return JsonConvert.DeserializeObject<T>(json);
 		}
 
-		async Task<JToken> GetJTokenAsync(string requestUri)
-		{
-			_logger.LogTrace("GET {0}{1}", API_URL, requestUri);
-
-			var json = await _client.GetStringAsync(requestUri);
-			return JToken.Parse(json);
-		}
-
 		async Task PatchAsync<T>(string requestUri, T data)
 		{
 			_logger.LogTrace("PATCH {0}{1}", API_URL, requestUri);
 
-			var message = new HttpRequestMessage(new HttpMethod("PATCH"), requestUri)
-			{
+			var message = new HttpRequestMessage(new HttpMethod("PATCH"), requestUri) {
 				Content = new JsonContent(data)
 			};
 			var response = await _client.SendAsync(message);
@@ -270,29 +254,5 @@ namespace Fritz.StreamTools.Services.Mixer
 			_client?.Dispose();
 			GC.SuppressFinalize(this);
 		}
-	}
-
-	public class ChatAuthKeyAndEndpoints
-	{
-		[JsonProperty("authkey")]
-		public string AuthKey { get; set; }
-
-		[JsonProperty("endpoints")]
-		public string[] Endpoints { get; set; }
-	}
-
-	public class ChannelInfo
-	{
-		[JsonProperty("id")]
-		public int Id { get; set; }
-
-		[JsonProperty("userId")]
-		public int UserId { get; set; }
-
-		[JsonProperty("numFollowers")]
-		public int NumberOfFollowers { get; set; }
-
-		[JsonProperty("viewersCurrent")]
-		public int NumberOfViewers { get; set; }
 	}
 }

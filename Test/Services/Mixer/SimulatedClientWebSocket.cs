@@ -122,7 +122,8 @@ namespace Test.Services.Mixer
 
 		virtual public void SetRequestHeader(string name, string value)
 		{
-			Headers.TryAdd(name, value);
+			Headers.Remove(name);	// Remove if its already there
+			Headers.Add(name, value);
 		}
 
 		public void InjectPacket(string json)

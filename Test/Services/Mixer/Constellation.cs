@@ -1,25 +1,21 @@
-﻿using System;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Fritz.StreamTools.Helpers;
+﻿using FluentAssertions;
 using Fritz.StreamTools.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
 	public class Constellation : Base
 	{
 		[Fact]
-		public async Task WillConnectAndJoin()
+		public void WillConnectAndJoin()
 		{
 			var sim = SimAnon.Value;
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				var connectedAndJoined = ws.JoinedConstallation.Wait(Simulator.TIMEOUT);
 
@@ -36,7 +32,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task RaisesFollowerEvent()
+		public void RaisesFollowerEvent()
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
 
@@ -44,7 +40,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(PACKET);
@@ -56,7 +52,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task RaiseViewersEvent()
+		public void RaiseViewersEvent()
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
 
@@ -64,7 +60,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(PACKET);
@@ -76,7 +72,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task DontRaiseEventWhenViewersIsSameAsBefore()
+		public void DontRaiseEventWhenViewersIsSameAsBefore()
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':35}}}".Replace("'", "\"");
 
@@ -84,7 +80,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				ws.InjectPacket(PACKET);		// 1st
 				using (var monitor = sut.Monitor())
 				{
@@ -95,7 +91,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task CanCombineEvent()
+		public void CanCombineEvent()
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'viewersCurrent':43,'numFollowers':22,'online':true}}}".Replace("'", "\"");
 
@@ -103,7 +99,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				using (var monitor = sut.Monitor())
 				{
 					ws.InjectPacket(PACKET);
@@ -115,7 +111,7 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task ImplementCorrectInterfaces()
+		public void ImplementCorrectInterfaces()
 		{
 			var PACKET = "{'type':'event','event':'live','data':{'channel':'channel:1234:update','payload':{'numFollowers':66}}}".Replace("'", "\"");
 
@@ -123,7 +119,7 @@ namespace Test.Services.Mixer
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 				var result = Assert.Raises<ServiceUpdatedEventArgs>(x => sut.Updated += x, x => sut.Updated -= x, () => ws.InjectPacket(PACKET) );
 				Assert.IsAssignableFrom<IChatService>(result.Sender);
 				Assert.IsAssignableFrom<IStreamService>(result.Sender);
@@ -150,13 +146,13 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public async Task AddCorrectHeaders()
+		public void AddCorrectHeaders()
 		{
 			var sim = SimAuth.Value;
 			var ws = sim.ConstallationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
-				await sut.StartAsync(sim.Cancel.Token).OrTimeout(Simulator.TIMEOUT);
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				ws.Headers.Should().Contain("Authorization", $"Bearer {Token}");
 				ws.Headers.Should().Contain("x-is-bot", "true");

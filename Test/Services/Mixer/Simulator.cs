@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace Test.Services.Mixer
 {
 	public class Simulator : IMixerFactory
 	{
-		public const int TIMEOUT = 1000;
+		public static int TIMEOUT { get => ( Debugger.IsAttached ) ? Timeout.Infinite : 1000; }
 		public static readonly string CHAT_WELCOME = "{'type':'event','event':'WelcomeEvent','data':{'server':'fac96c06-8314-41dd-9092-7e717ec2ee52'}}".Replace("'", "\"");
 		public static readonly string CONSTALLATION_WELCOME = "{'type':'event','event':'hello','data':{'authenticated':false}}".Replace("'", "\"");
 
@@ -20,7 +21,7 @@ namespace Test.Services.Mixer
 		private readonly ILoggerFactory _loggerFactory;
 		public IConfiguration Config { get; }
 
-		public ChannelInfo ChannelInfo { get; } = new ChannelInfo { Id = 1234, UserId = 56789, NumberOfFollowers = -1, NumberOfViewers = -1 };
+		public API.Channel ChannelInfo { get; } = new API.Channel { Id = 1234, UserId = 56789, NumFollowers = -1, ViewersCurrent = -1 };
 		public string[] Endpoints { get; } = new string[] { "wss://first.test.com", "wss://second.test.com" };
 		public bool HasToken { get; }
 		public string ChatAuthKey { get; }
@@ -47,7 +48,7 @@ namespace Test.Services.Mixer
 			_restClientMock = new Mock<IMixerRestClient>();
 			_restClientMock.Setup(x => x.InitAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult( (0, 0) ));
 			_restClientMock.Setup(x => x.GetChatAuthKeyAndEndpointsAsync())
-				.Returns(Task.FromResult(new ChatAuthKeyAndEndpoints { AuthKey = ChatAuthKey, Endpoints = Endpoints }));
+				.Returns(Task.FromResult(new API.Chats{ Authkey = ChatAuthKey, Endpoints = Endpoints }));
 			_restClientMock.Setup(x => x.ChannelName).Returns(channelName);
 			_restClientMock.Setup(x => x.ChannelId).Returns(ChannelInfo.Id);
 			_restClientMock.Setup(x => x.UserName).Returns(UserName);

@@ -67,13 +67,13 @@ namespace Fritz.StreamTools.Services.Mixer
 			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
-			var endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1); // Skip 1st one, seems to fail often
+			var endpointIndex = Math.Min(1, chatData.Endpoints.Count - 1); // Skip 1st one, seems to fail often
 
 			// Local function to choose the next endpoint to try
 			string getNextEnpoint()
 			{
 				var endpoint = chatData.Endpoints[endpointIndex];
-				endpointIndex = (endpointIndex + 1) % chatData.Endpoints.Length;
+				endpointIndex = ( endpointIndex + 1 ) % chatData.Endpoints.Count;
 				return chatData.Endpoints[endpointIndex];
 			}
 
@@ -82,10 +82,10 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Local function to join chat channel 
 			async Task joinAndAuth()
 			{
-				if (string.IsNullOrEmpty(chatData.AuthKey))
+				if (string.IsNullOrEmpty(chatData.Authkey))
 					continueTrying = await _channel.SendAsync("auth", channelId);  // Authenticating anonymously
 				else
-					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.AuthKey);
+					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.Authkey);
 		  }
 
 			// Local function to join chat channel
@@ -94,11 +94,11 @@ namespace Fritz.StreamTools.Services.Mixer
 				// Join the channel and send authkey
 				await joinAndAuth();
 
-				if (!continueTrying && !string.IsNullOrEmpty(chatData.AuthKey))
+				if (!continueTrying && !string.IsNullOrEmpty(chatData.Authkey))
 				{
 					// Try again with a new chatAuthKey
 					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
-					endpointIndex = Math.Min(1, chatData.Endpoints.Length - 1);
+					endpointIndex = Math.Min(1, chatData.Endpoints.Count - 1);
 
 					await joinAndAuth(); // If this fail give up !
 				}

@@ -94,7 +94,7 @@ namespace Fritz.StreamTools.Services
 		}
 
 		/// <summary>
-		/// Closes 
+		/// Closes
 		/// </summary>
 		public Task StopAsync(CancellationToken cancellationToken)
 		{

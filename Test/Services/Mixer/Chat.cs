@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
-using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
@@ -36,7 +32,28 @@ namespace Test.Services.Mixer
 		}
 
 		[Fact]
-		public void WillReconnectOnNextServer()
+		public void WillConnectAndJoinAnonymously()
+		{
+			var sim = SimAnon.Value;
+
+			var ws = sim.ChatWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
+
+				var connectedAndJoined = ws.JoinedChat.Wait(Simulator.TIMEOUT);
+				connectedAndJoined.Should().BeTrue();
+
+				ws.LastPacket["method"].Should().NotBeNull();
+				ws.LastPacket["method"].Value<string>().Should().Be("auth");
+				ws.LastPacket["arguments"].Should().NotBeNull();
+				var args = ws.LastPacket["arguments"].ToString(Formatting.None);
+				args.Should().Be($"[{sim.ChannelInfo.Id}]");
+			}
+		}
+
+		[Fact]
+		public void WillReconnectToNextServer()
 		{
 			var sim = SimAnon.Value;
 			var ws = sim.ChatWebSocket;
@@ -58,27 +75,6 @@ namespace Test.Services.Mixer
 				url1.Should().NotBeNull();
 				url2.Should().NotBeNull();
 				url1.Should().NotBe(url2);
-			}
-		}
-
-		[Fact]
-		public void WillConnectAndJoinAnonymously()
-		{
-			var sim = SimAnon.Value;
-
-			var ws = sim.ChatWebSocket;
-			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
-			{
-				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
-
-				var connectedAndJoined = ws.JoinedChat.Wait(Simulator.TIMEOUT);
-				connectedAndJoined.Should().BeTrue();
-
-				ws.LastPacket["method"].Should().NotBeNull();
-				ws.LastPacket["method"].Value<string>().Should().Be("auth");
-				ws.LastPacket["arguments"].Should().NotBeNull();
-				var args = ws.LastPacket["arguments"].ToString(Formatting.None);
-				args.Should().Be($"[{sim.ChannelInfo.Id}]");
 			}
 		}
 

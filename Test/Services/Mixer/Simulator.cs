@@ -21,7 +21,7 @@ namespace Test.Services.Mixer
 		private readonly ILoggerFactory _loggerFactory;
 		public IConfiguration Config { get; }
 
-		public API.Channel ChannelInfo { get; } = new API.Channel { Id = 1234, UserId = 56789, NumFollowers = -1, ViewersCurrent = -1 };
+		public API.Channel ChannelInfo { get; } = new API.Channel { Id = 1234, UserId = 56789, NumFollowers = 0, ViewersCurrent = 0 };
 		public string[] Endpoints { get; } = new string[] { "wss://first.test.com", "wss://second.test.com" };
 		public bool HasToken { get; }
 		public string ChatAuthKey { get; }
@@ -61,7 +61,7 @@ namespace Test.Services.Mixer
 			new JsonRpcWebSocket(new Mock<ILogger>().Object, this, Config, isChat) { SendTimeout = TimeSpan.FromMilliseconds(500) };
 		public IMixerChat CreateChat(IMixerRestClient client, CancellationToken shutdownRequest) =>
 			new MixerChat(Config, _loggerFactory, this, _restClientMock.Object, Cancel.Token);
-		public IMixerConstallation CreateConstallation(CancellationToken shutdownRequest) => new MixerConstallation(Config, _loggerFactory, this, Cancel.Token);
+		public IMixerConstellation CreateConstellation(CancellationToken shutdownRequest) => new MixerConstellation(Config, _loggerFactory, this, Cancel.Token);
 		public IMixerRestClient CreateRestClient() => _restClientMock.Object;
 	}
 }

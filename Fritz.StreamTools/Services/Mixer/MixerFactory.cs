@@ -9,7 +9,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	public interface IMixerFactory
 	{
 		IClientWebSocketProxy CreateClientWebSocket(bool isChat);
-		IMixerConstallation CreateConstallation(CancellationToken shutdownRequest);
+		IMixerConstellation CreateConstellation(CancellationToken shutdownRequest);
 		IMixerChat CreateChat(IMixerRestClient client, CancellationToken shutdownRequest);
 		IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, bool isChat);
 		IMixerRestClient CreateRestClient();
@@ -27,7 +27,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		}
 
 		public IClientWebSocketProxy CreateClientWebSocket(bool isChat) => new ClientWebSocketProxy(isChat);
-		public IMixerConstallation CreateConstallation(CancellationToken shutdownRequest) => new MixerConstallation(_config, _loggerFactory, this, shutdownRequest);
+		public IMixerConstellation CreateConstellation(CancellationToken shutdownRequest) => new MixerConstellation(_config, _loggerFactory, this, shutdownRequest);
 		public IMixerChat CreateChat(IMixerRestClient client, CancellationToken shutdownRequest) => new MixerChat(_config, _loggerFactory, this, client, shutdownRequest);
 		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, bool isChat) => new JsonRpcWebSocket(logger, this, _config, isChat);
 		public IMixerRestClient CreateRestClient() => new MixerRestClient(_loggerFactory, new HttpClient());

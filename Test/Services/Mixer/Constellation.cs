@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.IO;
+using FluentAssertions;
 using Fritz.StreamTools.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -156,6 +157,24 @@ namespace Test.Services.Mixer
 
 				ws.Headers.Should().Contain("Authorization", $"Bearer {Token}");
 				ws.Headers.Should().Contain("x-is-bot", "true");
+			}
+		}
+
+		[Fact]
+		public void CanHandleRealDataDump()
+		{
+			var sim = SimAuth.Value;
+			var ws = sim.ConstallationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
+
+				foreach(var line in File.ReadAllLines("Services/Mixer/Data/ConstelletionDump.json"))
+				{
+					ws.InjectPacket(line);
+				}
+
+				sut.StopAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 			}
 		}
 	}

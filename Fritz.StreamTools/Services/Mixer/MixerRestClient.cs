@@ -12,11 +12,11 @@ namespace Fritz.StreamTools.Services.Mixer
 	{
 		bool HasToken { get; }
 		string ChannelName { get; }
-		int? ChannelId { get; }
+		uint? ChannelId { get; }
 
 		/// <summary>My user name or null if anonymously connected</summary>
 		string UserName { get; }
-		int? UserId { get; }
+		uint? UserId { get; }
 
 		/// <summary>
 		/// Get initial needed info from the mixer API
@@ -27,7 +27,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken);
 
 		Task<API.Chats> GetChatAuthKeyAndEndpointsAsync();
-		Task<int?> LookupUserIdAsync(string userName);
+		Task<uint?> LookupUserIdAsync(string userName);
 		Task<bool> BanUserAsync(string userName);
 		Task<bool> UnbanUserAsync(string userName);
 		Task<DateTime?> GetStreamStartedAtAsync();
@@ -44,9 +44,9 @@ namespace Fritz.StreamTools.Services.Mixer
 		public int MaxTries { get; set; } = 3;
 		public bool HasToken { get; private set; }
 		public string ChannelName { get; private set; }
-		public int? ChannelId { get; private set; }
+		public uint? ChannelId { get; private set; }
 		public string UserName { get; private set; }
-		public int? UserId { get; private set; }
+		public uint? UserId { get; private set; }
 
 		/// <summary>
 		/// Construct new MixerRestClient
@@ -95,7 +95,7 @@ namespace Fritz.StreamTools.Services.Mixer
 						UserName = me.Username;
 					}
 					_initDone = true;
-					return (channelInfo.ViewersCurrent, channelInfo.NumFollowers);
+					return ((int)channelInfo.ViewersCurrent, (int)channelInfo.NumFollowers);
 				}
 				catch (HttpRequestException ex)
 				{
@@ -111,7 +111,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		/// <param name="userName">Name of the user</param>
 		/// <returns>Id of the user</returns>
-		public async Task<int?> LookupUserIdAsync(string userName)
+		public async Task<uint?> LookupUserIdAsync(string userName)
 		{
 			if (!_initDone)
 				throw new Exception("Call InitAsync() first!");
@@ -124,7 +124,6 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 			catch (HttpRequestException)
 			{
-
 				_logger.LogError("Unknown user '{0}'", userName);
 				return null;
 			}

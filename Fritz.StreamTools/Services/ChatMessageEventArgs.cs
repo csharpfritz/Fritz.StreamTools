@@ -11,7 +11,7 @@ namespace Fritz.StreamTools.Services
 		/// <summary>Service specific properties (like AvatarUrl)</summary>
 		public Dictionary<string, object> Properties { get; } = new Dictionary<string, object>();
 
-		public int UserId { get; set; }
+		public uint UserId { get; set; }
 		public string UserName { get; set; }
 		public bool IsWhisper { get; set; }
 		public bool IsOwner { get; set; }

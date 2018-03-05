@@ -5,8 +5,6 @@ using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Fritz.StreamTools.Services
 {
@@ -15,7 +13,7 @@ namespace Fritz.StreamTools.Services
 		readonly IConfiguration _config;
 		readonly ILogger _logger;
 		readonly IMixerChat _chat;
-		readonly IMixerConstallation _live;
+		readonly IMixerConstellation _live;
 		readonly CancellationTokenSource _shutdownRequested;
 		readonly IMixerRestClient _restClient;
 
@@ -47,7 +45,7 @@ namespace Fritz.StreamTools.Services
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
 			_restClient = factory.CreateRestClient();
-			_live = factory.CreateConstallation(_shutdownRequested.Token);
+			_live = factory.CreateConstellation(_shutdownRequested.Token);
 			_chat = factory.CreateChat(_restClient, _shutdownRequested.Token);
 		}
 
@@ -72,7 +70,7 @@ namespace Fritz.StreamTools.Services
 
 			// Connect to live events (viewer/follower count)
 			await _live.ConnectAndJoinAsync(_restClient.ChannelId.Value);
-			_live.ConstallationEvent += _live_LiveEvent;
+			_live.ConstellationEvent += _live_LiveEvent;
 
 			// Connect to chat server
 			await _chat.ConnectAndJoinAsync(_restClient.UserId.GetValueOrDefault(), _restClient.ChannelId.Value);
@@ -118,43 +116,98 @@ namespace Fritz.StreamTools.Services
 		/// <summary>
 		/// Viewers/followers/IsOnline event handler
 		/// </summary>
-		private void _live_LiveEvent(object sender, ConstallationEventArgs e)
+		private void _live_LiveEvent(object sender, ConstellationEventArgs e)
+		{
+			// Maybe check e.ChannelId == our channelId ???
+
+			switch (e.Event)
+			{
+				case "update":
+					HandleUpdate(e.Payload.GetObject< WS.LivePayload>());
+					break;
+				case "followed":
+					HandleFollowed(e.Payload.GetObject<WS.FollowedPayload>());
+					break;
+				case "subscribed":
+					HandleSubscribed(e.Payload.GetObject<WS.SubscribedPayload>());
+					break;
+				case "resubscribed":
+				case "resubShared":
+					HandleResubscribed(e.Payload.GetObject<WS.ResubscribedPayload>());
+					break;
+				case "hosted":
+					HandleHosted(e.Payload.GetObject<WS.HostedPayload>());
+					break;
+				case "unhosted":
+					HandleUnhosted(e.Payload.GetObject<WS.HostedPayload>());
+					break;
+			}
+		}
+
+		private ServiceUpdatedEventArgs HandleUpdate(WS.LivePayload data)
 		{
 			ServiceUpdatedEventArgs update = null;
 
-			if (e.FollowerCount.HasValue && e.FollowerCount != _numberOfFollowers)
+			if (data.NumFollowers.HasValue && data.NumFollowers != _numberOfFollowers)
 			{
-				var count = e.FollowerCount.Value;
-				Interlocked.Exchange(ref _numberOfFollowers, count);
+				_numberOfFollowers = (int)data.NumFollowers.Value;
 				update = update ?? new ServiceUpdatedEventArgs();
-				update.NewFollowers = count;
-				_logger.LogTrace($"New Followers on Mixer, new total: {count}");
+				update.NewFollowers = _numberOfFollowers;
+				_logger.LogTrace($"New Followers on Mixer, new total: {_numberOfFollowers}");
 			}
 
-			if (e.ViewerCount.HasValue)
+			if (data.ViewersCurrent.HasValue)
 			{
-				var count = e.ViewerCount.Value;
-				if (count != Interlocked.Exchange(ref _numberOfViewers, count))
+				var count = (int)data.ViewersCurrent.Value;
+				if (count != _numberOfViewers)
 				{
+					_numberOfViewers = count;
 					update = update ?? new ServiceUpdatedEventArgs();
 					update.NewViewers = count;
 					_logger.LogTrace($"Viewers on Mixer changed, new total: {count}");
 				}
 			}
 
-			if(e.IsOnline.HasValue)
+			if (data.Online.HasValue)
 			{
 				update = update ?? new ServiceUpdatedEventArgs();
-				update.IsOnline = _isOnline = e.IsOnline.Value;
-				_streamStartedAt = null;	// Clear cached stream start time
+				update.IsOnline = _isOnline = data.Online.Value;
+				_streamStartedAt = null;  // Clear cached stream start time
 				_logger.LogTrace($"Online status changed to  {update.IsOnline}");
 			}
 
-			if(update != null)
+			if (update != null)
 			{
 				update.ServiceName = Name;
 				Updated?.Invoke(this, update);
 			}
+
+			return update;
+		}
+
+		void HandleFollowed(WS.FollowedPayload payload)
+		{
+			_logger.LogInformation("{0} {1}", payload.User.Username, payload.Following ? "followed" : "unfollowed");
+		}
+
+		void HandleHosted(WS.HostedPayload payload)
+		{
+			_logger.LogInformation("{0} started hosting for {1} viewers", payload.Hoster.Name, payload.Hoster.ViewersCurrent);
+		}
+
+		void HandleUnhosted(WS.HostedPayload payload)
+		{
+			_logger.LogInformation("{0} stopped hosting", payload.Hoster.Name);
+		}
+
+		void HandleSubscribed(WS.SubscribedPayload payload)
+		{
+			_logger.LogInformation("{0} subscribed", payload.User.Username);
+		}
+
+		void HandleResubscribed(WS.ResubscribedPayload payload)
+		{
+			_logger.LogInformation("{0} re-subscribed since {1} for {1} month", payload.User.Username, payload.Since, payload.TotalMonths);
 		}
 
 		public Task<bool> BanUserAsync(string userName) => _restClient.BanUserAsync(userName);

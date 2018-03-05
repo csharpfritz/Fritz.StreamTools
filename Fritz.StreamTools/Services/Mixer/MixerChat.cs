@@ -16,7 +16,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
-		Task ConnectAndJoinAsync(int userId, int channelId);
+		Task ConnectAndJoinAsync(uint userId, uint channelId);
 		Task<bool> SendWhisperAsync(string userName, string message);
 		Task<bool> SendMessageAsync(string message);
 		Task<bool> TimeoutUserAsync(string userName, TimeSpan time);
@@ -30,7 +30,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly IMixerRestClient _client;
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
-		int _myUserId;
+		uint _myUserId;
 		IJsonRpcWebSocket _channel;
 
 		public bool IsAuthenticated => _channel.IsAuthenticated;
@@ -55,7 +55,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <param name="userId">Our userId</param>
 		/// <param name="channelId">Out channelId</param>
 		/// <returns></returns>
-		public async Task ConnectAndJoinAsync(int userId, int channelId)
+		public async Task ConnectAndJoinAsync(uint userId, uint channelId)
 		{
 			var token = _config["StreamServices:Mixer:Token"];
 
@@ -191,7 +191,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			var user = e.Data.GetObject<WS.User>();
 			UserLeft?.Invoke(this, new ChatUserInfoEventArgs {
-				UserId = user.UserId,
+				UserId = user.Id,
 				UserName = user.Username,
 				Properties = {
 					{ "MixerRoles", user.Roles }
@@ -203,7 +203,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			var user = e.Data.GetObject<WS.User>();
 			UserJoined?.Invoke(this, new ChatUserInfoEventArgs {
-				UserId = user.UserId,
+				UserId = user.Id,
 				UserName = user.Username,
 				Properties = {
 					{ "MixerRoles", user.Roles }

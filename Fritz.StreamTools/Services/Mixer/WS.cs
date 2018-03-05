@@ -34,21 +34,21 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public class User
 		{
-			[J("id")]		public int UserId { get; set; }
+			public uint Id { get; set; }
 			public string Username { get; set; }
-			public int OriginatingChannel { get; set; }
+			public uint OriginatingChannel { get; set; }
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public IList<string> Roles { get; set; }
 		}
 
 		public class ChatData
 		{
-			public int Channel { get; set; }
+			public uint Channel { get; set; }
 			public Guid Id { get; set; }
 			[J("user_name")]		public string UserName { get; set; }
-			[J("user_id")]			public int UserId { get; set; }
+			[J("user_id")]			public uint UserId { get; set; }
 			[J("user_roles")]		public IList<string> UserRoles { get; set; }
-			[J("user_level")]		public int UserLevel { get; set; }
+			[J("user_level")]		public uint UserLevel { get; set; }
 			[J("user_avatar")]	public string UserAvatar { get; set; }
 			[J("message")]			public Messages Messages { get; set; }
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
@@ -64,12 +64,38 @@ namespace Fritz.StreamTools.Services.Mixer
 		public class LivePayload
 		{
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
-			public int? NumFollowers { get; set; }
+			public uint? NumFollowers { get; set; }
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
-			public int? ViewersCurrent { get; set; }
+			public uint? ViewersCurrent { get; set; }
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public bool? Online { get; set; }
 			// ... ?
+		}
+
+		public class FollowedPayload
+		{
+			public API.User User { get; set; }
+			public bool Following { get; set; }
+		}
+
+
+		public class HostedPayload
+		{
+			public uint HosterId { get; set; }
+			public API.Channel Hoster { get; set; }
+		}
+
+		public class SubscribedPayload
+		{
+			public API.User User { get; set; }
+		}
+
+		public class ResubscribedPayload
+		{
+			public User User { get; set; }
+			public DateTime Since { get; set; }
+			public DateTime Until { get; set; }
+			public uint TotalMonths { get; set; }
 		}
 
 		public class LiveEvent

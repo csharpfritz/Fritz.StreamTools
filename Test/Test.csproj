@@ -24,4 +24,10 @@
     <ProjectReference Include="..\Fritz.StreamTools\Fritz.StreamTools.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Services\Mixer\Data\ConstelletionDump.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -1,20 +1,22 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 // https://dev.mixer.com/reference/constellation/index.html
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public interface IMixerConstallation : IDisposable
+	public interface IMixerConstellation : IDisposable
 	{
-		event EventHandler<ConstallationEventArgs> ConstallationEvent;
-		Task ConnectAndJoinAsync(int channelId);
+		event EventHandler<ConstellationEventArgs> ConstellationEvent;
+		Task ConnectAndJoinAsync(uint channelId);
 	}
 
-	internal class MixerConstallation : IMixerConstallation
+	internal class MixerConstellation : IMixerConstellation
 	{
 		const string WS_URL = "wss://constellation.mixer.com";
 
@@ -25,39 +27,49 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ILogger _logger;
 		IJsonRpcWebSocket _channel;
 
-		public MixerConstallation(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, CancellationToken shutdown)
+		public MixerConstellation(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, CancellationToken shutdown)
 		{
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_shutdown = shutdown;
-			_logger = loggerFactory.CreateLogger(nameof(MixerConstallation));
+			_logger = loggerFactory.CreateLogger(nameof(MixerConstellation));
 		}
 
 		/// <summary>
 		/// Raised each time a chat message is received
 		/// </summary>
-		public event EventHandler<ConstallationEventArgs> ConstallationEvent;
+		public event EventHandler<ConstellationEventArgs> ConstellationEvent;
 
 		/// <summary>
 		/// Connect to the live event server, and join our channel
 		/// </summary>
 		/// <param name="channelId">Out channelId</param>
 		/// <returns></returns>
-		public async Task ConnectAndJoinAsync(int channelId)
+		public async Task ConnectAndJoinAsync(uint channelId)
 		{
 			// Include token on connect if available
 			var token = _config["StreamServices:Mixer:Token"];
-			if (string.IsNullOrWhiteSpace(token)) token = null;
+			if (string.IsNullOrWhiteSpace(token))
+				token = null;
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: false);
 
 			// Connect to the chat endpoint
 			var continueTrying = true;
-			while (continueTrying && !await _channel.TryConnectAsync(() => WS_URL, token, async () =>	{
-				// Join the channel and request live updates
-				continueTrying = await _channel.SendAsync("livesubscribe", $"channel:{channelId}:update");
-			}));
+			while (continueTrying && !await _channel.TryConnectAsync(() => WS_URL, token, async () => {
+				// Join the channel and subscribe to events
+				continueTrying = await _channel.SendAsync("livesubscribe",
+						$"channel:{channelId}:update",
+						$"channel:{channelId}:followed",
+						$"channel:{channelId}:hosted",
+						$"channel:{channelId}:unhosted",
+						$"channel:{channelId}:subscribed",
+						$"channel:{channelId}:resubscribed",
+						$"channel:{channelId}:resubShared"
+					);
+			}))
+				;
 
 			if (!continueTrying)
 			{
@@ -77,17 +89,17 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (e.Event == "live")
 			{
-				var payload = e.Data["payload"]?.GetObject<WS.LivePayload>();
-				if (payload == null) return;
+				var channel = e.Data["channel"]?.Value<string>().Split(':');
+				if (channel == null || channel.Length == 0)
+					return;
+				var payload = e.Data["payload"];
+				if (payload == null || payload.Type != JTokenType.Object)
+					return;
 
-				var e2 = new ConstallationEventArgs {
-					FollowerCount = payload.NumFollowers,
-					ViewerCount = payload.ViewersCurrent,
-					IsOnline = payload.Online
-				};
-				if (e2.FollowerCount.HasValue || e2.ViewerCount.HasValue || e2.IsOnline.HasValue)
+				if (channel[0] == "channel")
 				{
-					ConstallationEvent?.Invoke(this, e2);
+					var channelId = uint.Parse(channel[1]);
+					ConstellationEvent?.Invoke(this, new ConstellationEventArgs { ChannelId = channelId, Event = channel.Last(), Payload = payload });
 				}
 			}
 		}
@@ -99,10 +111,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		}
 	}
 
-	public class ConstallationEventArgs : EventArgs
+	public class ConstellationEventArgs : EventArgs
 	{
-		public int? FollowerCount { get; set; }
-		public int? ViewerCount { get; set; }
-		public bool? IsOnline { get; set; }
+		public uint ChannelId { get; set; }
+		public string Event { get; set; }
+		public JToken Payload { get; set; }
 	}
 }

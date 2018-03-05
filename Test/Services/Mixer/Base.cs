@@ -16,7 +16,7 @@ namespace Test.Services.Mixer
 		public string Token { get; } = "abcd1234";
 		static public JsonSerializerSettings JsonSettings { get; } = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 
-		public Base()
+		protected Base()
 		{
 			LoggerFactory = new LoggerFactory();
 			LoggerFactory.AddDebug(LogLevel.Trace);
@@ -50,7 +50,7 @@ namespace Test.Services.Mixer
 			return messages;
 		}
 
-		protected static string BuildChatMessage(Simulator sim, int userId, string userName, string text, bool isWhisper = false, string link = null, string[] roles = null, string avatar = null)
+		protected static string BuildChatMessage(Simulator sim, uint userId, string userName, string text, bool isWhisper = false, string link = null, string[] roles = null, string avatar = null)
 		{
 			var root = new WS.ChatEvent<WS.ChatData>() {
 				Type = "event",
@@ -99,14 +99,14 @@ namespace Test.Services.Mixer
 			return JsonConvert.SerializeObject(root, JsonSettings);
 		}
 
-		protected static string BuildUserJoinOrLeave(string userName, int userId, bool isJoin)
+		protected static string BuildUserJoinOrLeave(string userName, uint userId, bool isJoin)
 		{
 			var root = new WS.ChatEvent<WS.User>() {
 				Type = "event",
 				Event = isJoin ? "UserJoin" : "UserLeave",
 				Data = new WS.User {
 					OriginatingChannel = 234234,
-					UserId = userId,
+					Id = userId,
 					Username = userName,
 					Roles = new string[] { "User" }
 				}
@@ -114,7 +114,7 @@ namespace Test.Services.Mixer
 			return JsonConvert.SerializeObject(root, JsonSettings);
 		}
 
-		protected static string BuildLiveEvent(string channel, int? followers = null, int? viewers = null, bool? online = null)
+		protected static string BuildLiveEvent(string channel, uint? followers = null, uint? viewers = null, bool? online = null)
 		{
 			var root = new WS.LiveEvent<WS.LivePayload> {
 				Type = "event",

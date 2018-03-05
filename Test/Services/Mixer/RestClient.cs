@@ -186,7 +186,7 @@ namespace Test.Services.Mixer
 
 				// Assert
 				r.Should().NotBeNull();
-				r.Value.ToUnixTimeSeconds().Should().Be(new DateTimeOffset(StartedAtTestValue).ToUnixTimeSeconds()); // Check only seconds difference
+				r.Value.Should().Be(StartedAtTestValue);
 			}
 		}
 

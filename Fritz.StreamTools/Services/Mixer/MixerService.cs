@@ -174,15 +174,12 @@ namespace Fritz.StreamTools.Services
 			{
 				if (_isOnline == false) return null;
 				if (!_streamStartedAt.HasValue)
-				{
 					_streamStartedAt = _restClient.GetStreamStartedAtAsync().Result;
-				}
-				var startedAt = _streamStartedAt;
-				if (!startedAt.HasValue) return null;
+				if (!_streamStartedAt.HasValue) return null;
 
 				// Remove milliseconds
-				var t = DateTimeOffset.UtcNow - startedAt.Value;
-				return TimeSpan.FromSeconds(Math.Round(t.TotalSeconds));
+				var seconds = ( DateTime.UtcNow - _streamStartedAt.Value ).Ticks / TimeSpan.TicksPerSecond;
+				return TimeSpan.FromSeconds(Math.Max(0, seconds));
 			}
 		}
 

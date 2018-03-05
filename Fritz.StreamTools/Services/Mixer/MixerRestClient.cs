@@ -30,7 +30,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		Task<int?> LookupUserIdAsync(string userName);
 		Task<bool> BanUserAsync(string userName);
 		Task<bool> UnbanUserAsync(string userName);
-		Task<DateTimeOffset?> GetStreamStartedAtAsync();
+		Task<DateTime?> GetStreamStartedAtAsync();
 	}
 
 	internal class MixerRestClient : IMixerRestClient
@@ -195,7 +195,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// Get stream start time from REST API
 		/// </summary>
 		/// <returns>Start time of stream, or null if stream is offline</returns>
-		public async Task<DateTimeOffset?> GetStreamStartedAtAsync()
+		public async Task<DateTime?> GetStreamStartedAtAsync()
 		{
 			if (!_initDone)
 				throw new Exception("Call InitAsync() first!");

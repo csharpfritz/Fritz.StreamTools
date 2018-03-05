@@ -10,6 +10,8 @@ namespace Fritz.StreamTools.Services
 {
 	public class MixerService : IHostedService, IStreamService, IChatService, IDisposable
 	{
+		public static readonly string SERVICE_NAME = "Mixer";
+
 		readonly IConfiguration _config;
 		readonly ILogger _logger;
 		readonly IMixerChat _chat;
@@ -17,21 +19,18 @@ namespace Fritz.StreamTools.Services
 		readonly CancellationTokenSource _shutdownRequested;
 		readonly IMixerRestClient _restClient;
 
-		int _numberOfFollowers;
-		int _numberOfViewers;
-
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
-		public int CurrentFollowerCount { get => _numberOfFollowers; }
-		public int CurrentViewerCount { get => _numberOfViewers; }
-		public string Name { get { return "Mixer"; } }
+		public string Name { get => SERVICE_NAME; }
+		public int CurrentFollowerCount { get => _constellationEventProcessor.Followers; }
+		public int CurrentViewerCount { get => _constellationEventProcessor.Viewers; }
 		public bool IsAuthenticated => ( _chat?.IsAuthenticated ).GetValueOrDefault();
 
-		private bool? _isOnline;
-		DateTimeOffset? _streamStartedAt;
+		readonly ConstellationEventProcessor _constellationEventProcessor;
+		readonly ChatEventProcessor _chatEventProcessor;
 
 		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory = null)
 		{
@@ -44,9 +43,12 @@ namespace Fritz.StreamTools.Services
 
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
+			_constellationEventProcessor = new ConstellationEventProcessor(_logger, FireEvent);
+			_chatEventProcessor = new ChatEventProcessor(_logger, FireEvent);
+
 			_restClient = factory.CreateRestClient();
-			_live = factory.CreateConstellation(_shutdownRequested.Token);
-			_chat = factory.CreateChat(_restClient, _shutdownRequested.Token);
+			_live = factory.CreateConstellation(_constellationEventProcessor, _shutdownRequested.Token);
+			_chat = factory.CreateChat(_restClient, _chatEventProcessor, _shutdownRequested.Token);
 		}
 
 		#region IHostedService
@@ -63,34 +65,18 @@ namespace Fritz.StreamTools.Services
 
 			// Get our current channel information
 			var (viewers, followers) = await _restClient.InitAsync(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
-			_numberOfFollowers = followers;
-			_numberOfViewers = viewers;
+			_constellationEventProcessor.Followers = followers;
+			_constellationEventProcessor.Viewers = viewers;
 
 			_logger.LogInformation("JOINING CHANNEL '{0}' as {0}", _restClient.ChannelName, _restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)");
 
-			// Connect to live events (viewer/follower count)
+			// Connect to live events (viewer/follower count etc)
 			await _live.ConnectAndJoinAsync(_restClient.ChannelId.Value);
-			_live.ConstellationEvent += _live_LiveEvent;
 
 			// Connect to chat server
 			await _chat.ConnectAndJoinAsync(_restClient.UserId.GetValueOrDefault(), _restClient.ChannelId.Value);
-			_chat.ChatMessage += _chat_ChatMessage;
-			_chat.UserJoined += _chat_UserJoined;
-			_chat.UserLeft += _chat_UserLeft;
 
 			_logger.LogInformation($"Now monitoring Mixer with {CurrentFollowerCount} followers and {CurrentViewerCount} Viewers");
-		}
-
-		private void _chat_UserJoined(object sender, ChatUserInfoEventArgs e)
-		{
-			e.ServiceName = Name;
-			UserJoined?.Invoke(this, e);
-		}
-
-		private void _chat_UserLeft(object sender, ChatUserInfoEventArgs e)
-		{
-			e.ServiceName = Name;
-			UserLeft?.Invoke(this, e);
 		}
 
 		/// <summary>
@@ -105,109 +91,27 @@ namespace Fritz.StreamTools.Services
 		#endregion
 
 		/// <summary>
-		/// Chat message event handler
+		/// Called to event processors to fire events on this object
 		/// </summary>
-		private void _chat_ChatMessage(object sender, ChatMessageEventArgs e)
+		/// <param name="name">Name of the event property</param>
+		/// <param name="args">The EventArgs object</param>
+		private void FireEvent(string name, EventArgs args)
 		{
-			e.ServiceName = Name;
-			ChatMessage?.Invoke(this, e);
-		}
-
-		/// <summary>
-		/// Viewers/followers/IsOnline event handler
-		/// </summary>
-		private void _live_LiveEvent(object sender, ConstellationEventArgs e)
-		{
-			// Maybe check e.ChannelId == our channelId ???
-
-			switch (e.Event)
+			switch (name)
 			{
-				case "update":
-					HandleUpdate(e.Payload.GetObject< WS.LivePayload>());
+				case nameof(Updated):
+					Updated?.Invoke(this, (ServiceUpdatedEventArgs)args);
 					break;
-				case "followed":
-					HandleFollowed(e.Payload.GetObject<WS.FollowedPayload>());
+				case nameof(ChatMessage):
+					ChatMessage?.Invoke(this, (ChatMessageEventArgs)args);
 					break;
-				case "subscribed":
-					HandleSubscribed(e.Payload.GetObject<WS.SubscribedPayload>());
+				case nameof(UserJoined):
+					UserJoined?.Invoke(this, (ChatUserInfoEventArgs)args);
 					break;
-				case "resubscribed":
-				case "resubShared":
-					HandleResubscribed(e.Payload.GetObject<WS.ResubscribedPayload>());
-					break;
-				case "hosted":
-					HandleHosted(e.Payload.GetObject<WS.HostedPayload>());
-					break;
-				case "unhosted":
-					HandleUnhosted(e.Payload.GetObject<WS.HostedPayload>());
+				case nameof(UserLeft):
+					UserLeft?.Invoke(this, (ChatUserInfoEventArgs)args);
 					break;
 			}
-		}
-
-		private ServiceUpdatedEventArgs HandleUpdate(WS.LivePayload data)
-		{
-			ServiceUpdatedEventArgs update = null;
-
-			if (data.NumFollowers.HasValue && data.NumFollowers != _numberOfFollowers)
-			{
-				_numberOfFollowers = (int)data.NumFollowers.Value;
-				update = update ?? new ServiceUpdatedEventArgs();
-				update.NewFollowers = _numberOfFollowers;
-				_logger.LogTrace($"New Followers on Mixer, new total: {_numberOfFollowers}");
-			}
-
-			if (data.ViewersCurrent.HasValue)
-			{
-				var count = (int)data.ViewersCurrent.Value;
-				if (count != _numberOfViewers)
-				{
-					_numberOfViewers = count;
-					update = update ?? new ServiceUpdatedEventArgs();
-					update.NewViewers = count;
-					_logger.LogTrace($"Viewers on Mixer changed, new total: {count}");
-				}
-			}
-
-			if (data.Online.HasValue)
-			{
-				update = update ?? new ServiceUpdatedEventArgs();
-				update.IsOnline = _isOnline = data.Online.Value;
-				_streamStartedAt = null;  // Clear cached stream start time
-				_logger.LogTrace($"Online status changed to  {update.IsOnline}");
-			}
-
-			if (update != null)
-			{
-				update.ServiceName = Name;
-				Updated?.Invoke(this, update);
-			}
-
-			return update;
-		}
-
-		void HandleFollowed(WS.FollowedPayload payload)
-		{
-			_logger.LogInformation("{0} {1}", payload.User.Username, payload.Following ? "followed" : "unfollowed");
-		}
-
-		void HandleHosted(WS.HostedPayload payload)
-		{
-			_logger.LogInformation("{0} started hosting for {1} viewers", payload.Hoster.Name, payload.Hoster.ViewersCurrent);
-		}
-
-		void HandleUnhosted(WS.HostedPayload payload)
-		{
-			_logger.LogInformation("{0} stopped hosting", payload.Hoster.Name);
-		}
-
-		void HandleSubscribed(WS.SubscribedPayload payload)
-		{
-			_logger.LogInformation("{0} subscribed", payload.User.Username);
-		}
-
-		void HandleResubscribed(WS.ResubscribedPayload payload)
-		{
-			_logger.LogInformation("{0} re-subscribed since {1} for {1} month", payload.User.Username, payload.Since, payload.TotalMonths);
 		}
 
 		public Task<bool> BanUserAsync(string userName) => _restClient.BanUserAsync(userName);
@@ -225,13 +129,14 @@ namespace Fritz.StreamTools.Services
 		{
 			get
 			{
-				if (_isOnline == false) return null;
-				if (!_streamStartedAt.HasValue)
-					_streamStartedAt = _restClient.GetStreamStartedAtAsync().Result;
-				if (!_streamStartedAt.HasValue) return null;
+				var cep = _constellationEventProcessor;
+				if (cep.IsOnline == false) return null;
+				if (!cep.StreamStartedAt.HasValue)
+					cep.StreamStartedAt = _restClient.GetStreamStartedAtAsync().Result;
+				if (!cep.StreamStartedAt.HasValue) return null;
 
 				// Remove milliseconds
-				var seconds = ( DateTime.UtcNow - _streamStartedAt.Value ).Ticks / TimeSpan.TicksPerSecond;
+				var seconds = ( DateTime.UtcNow - cep.StreamStartedAt.Value ).Ticks / TimeSpan.TicksPerSecond;
 				return TimeSpan.FromSeconds(Math.Max(0, seconds));
 			}
 		}

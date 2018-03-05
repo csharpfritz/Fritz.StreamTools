@@ -90,7 +90,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			public API.User User { get; set; }
 		}
 
-		public class ResubscribedPayload
+		public class ResubSharedPayload
 		{
 			public User User { get; set; }
 			public DateTime Since { get; set; }

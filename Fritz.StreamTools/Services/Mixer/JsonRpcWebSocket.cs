@@ -54,6 +54,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		public bool IsAuthenticated { get; private set; }
 		public TimeSpan SendTimeout { get; set; }
 
+#if GENERATE_DUMPS
+		readonly Random _dumpRandom = new Random();
+#endif
+
 		/// <summary>
 		/// Raised each time an event is received on the websocket
 		/// </summary>
@@ -81,7 +85,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			if (resolveUrl == null)
 				throw new ArgumentNullException(nameof(resolveUrl));
-			if (_disposed) throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
+			if (_disposed)
+				throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
 
 			// Local function that will try to reconnect forever
 			async Task reconnect()
@@ -166,10 +171,11 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			_logger.LogTrace("<< " + json);
 			var doc = JToken.Parse(json);
-			if(doc["event"]?.Value<string>() == "hello")
+			if (doc["event"]?.Value<string>() == "hello")
 			{
 				var hello = doc["data"]?.GetObject<WS.HelloData>();
-				if (hello != null) IsAuthenticated = hello.Authenticated;
+				if (hello != null)
+					IsAuthenticated = hello.Authenticated;
 			}
 		}
 
@@ -199,7 +205,8 @@ namespace Fritz.StreamTools.Services.Mixer
 				catch (Exception e)
 				{
 					_logger.LogWarning("Error in ReceiverTask() {0}. Will reconnect", e.Message);
-					if (_cancellationToken.IsCancellationRequested) return;
+					if (_cancellationToken.IsCancellationRequested)
+						return;
 
 					reconnect().Forget();  // Will spawn a new receiver task
 					break;
@@ -210,10 +217,19 @@ namespace Fritz.StreamTools.Services.Mixer
 		private void ProcessReceivedMessage(string json)
 		{
 			var doc = JToken.Parse(json);
-			if (doc.IsNullOrEmpty()) return;
+			if (doc.IsNullOrEmpty())
+				return;
+
+#if GENERATE_DUMPS
+			if (_isChat)
+				File.AppendAllText("ChatDump.json", json + Environment.NewLine, Encoding.UTF8);
+			else if (json.Length > 120 || !json.Contains("payload\":{\"viewers") || _dumpRandom.Next(100) < 5)
+				File.AppendAllText("ConstellationDump.json", json + Environment.NewLine, Encoding.UTF8);
+#endif
 
 			var type = doc["type"];
-			if (type.IsNullOrEmpty()) return;
+			if (type.IsNullOrEmpty())
+				return;
 
 			switch ((string)type)
 			{
@@ -232,11 +248,14 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// NOITE: CHANGE TO USE STRING INSTEAD OF JToken
 		private void HandleEvent(JToken doc)
 		{
-			if (doc.IsNullOrEmpty()) return;
+			if (doc.IsNullOrEmpty())
+				return;
 
 			var data = doc["data"];
-			if (data.IsNullOrEmpty()) return;
-			if (data.Type != JTokenType.Object) return;
+			if (data.IsNullOrEmpty())
+				return;
+			if (data.Type != JTokenType.Object)
+				return;
 
 			// Ignore messages I have send
 			if (!data["id"].IsNullOrEmpty() && Guid.TryParse((string)data["id"], out var guid))
@@ -254,24 +273,27 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		private void HandleReply(JToken doc)
 		{
-			if (doc.IsNullOrEmpty()) return;
+			if (doc.IsNullOrEmpty())
+				return;
 
 			var error = doc["error"];
-			if(!error.IsNullOrEmpty())
+			if (!error.IsNullOrEmpty())
 			{
 				_logger.LogError($"Error from server: Code = {(int)error["code"]} Message = '{(string)error["message"]}'");
 			}
 
 			var data = doc["data"];
-			if (data?.Type != JTokenType.Object) data = null;		// Ignore data which is not an object
+			if (data?.Type != JTokenType.Object)
+				data = null;    // Ignore data which is not an object
 			if (!data.IsNullOrEmpty() && !data["id"].IsNullOrEmpty())
 			{
 				// Remember last 5 messages I have send
 				_myLatestMessages.Enqueue(Guid.Parse((string)data["id"]));
-				while (_myLatestMessages.Count > 5) _myLatestMessages.TryDequeue(out var _);
+				while (_myLatestMessages.Count > 5)
+					_myLatestMessages.TryDequeue(out var _);
 			}
 
-			if(!data.IsNullOrEmpty() && !data["authenticated"].IsNullOrEmpty())
+			if (!data.IsNullOrEmpty() && !data["authenticated"].IsNullOrEmpty())
 			{
 				IsAuthenticated = data["authenticated"].Value<bool>();
 			}
@@ -389,8 +411,10 @@ namespace Fritz.StreamTools.Services.Mixer
 				do
 				{
 					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token);
-					if (result == null || result.Count == 0 || result.MessageType == WebSocketMessageType.Close) return null;
-					if (ws.CloseStatus.HasValue) return null;
+					if (result == null || result.Count == 0 || result.MessageType == WebSocketMessageType.Close)
+						return null;
+					if (ws.CloseStatus.HasValue)
+						return null;
 					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
 					ms.Write(buffer.Array, buffer.Offset, result.Count);
 				}
@@ -407,7 +431,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// </summary>
 		public void Dispose()
 		{
-			if (_disposed) throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
+			if (_disposed)
+				throw new ObjectDisposedException(nameof(JsonRpcWebSocket));
 
 			// Stop receiver task
 			_cancellationToken.Cancel();

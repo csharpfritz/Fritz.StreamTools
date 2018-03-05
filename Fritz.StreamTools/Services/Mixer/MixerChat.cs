@@ -12,10 +12,6 @@ namespace Fritz.StreamTools.Services.Mixer
 	public interface IMixerChat : IDisposable
 	{
 		bool IsAuthenticated { get; }
-		event EventHandler<ChatMessageEventArgs> ChatMessage;
-		event EventHandler<ChatUserInfoEventArgs> UserJoined;
-		event EventHandler<ChatUserInfoEventArgs> UserLeft;
-
 		Task ConnectAndJoinAsync(uint userId, uint channelId);
 		Task<bool> SendWhisperAsync(string userName, string message);
 		Task<bool> SendMessageAsync(string message);
@@ -32,22 +28,21 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ILogger _logger;
 		uint _myUserId;
 		IJsonRpcWebSocket _channel;
+		private readonly ChatEventProcessor _eventProcessor;
 
 		public bool IsAuthenticated => _channel.IsAuthenticated;
 
-		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, IMixerRestClient client, CancellationToken shutdown)
+		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, IMixerRestClient client,
+			ChatEventProcessor eventProcessor, CancellationToken shutdown)
 		{
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_client = client ?? throw new ArgumentNullException(nameof(client));
-			_shutdown = shutdown;
 			_logger = loggerFactory.CreateLogger(nameof(MixerChat));
+			_eventProcessor = eventProcessor ?? throw new ArgumentNullException(nameof(eventProcessor));
+			_shutdown = shutdown;
 		}
-
-		public event EventHandler<ChatMessageEventArgs> ChatMessage;
-		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
-		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
 		/// <summary>
 		/// Connect to the chat server, and join our channel
@@ -65,6 +60,8 @@ namespace Fritz.StreamTools.Services.Mixer
 			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
+			_channel.EventReceived += HandleEvents;
+
 			var endpointIndex = Math.Min(1, chatData.Endpoints.Count - 1); // Skip 1st one, seems to fail often
 
 			// Local function to choose the next endpoint to try
@@ -84,7 +81,7 @@ namespace Fritz.StreamTools.Services.Mixer
 					continueTrying = await _channel.SendAsync("auth", channelId);  // Authenticating anonymously
 				else
 					continueTrying = await _channel.SendAsync("auth", channelId, userId, chatData.Authkey);
-		  }
+			}
 
 			// Local function to join chat channel
 			async Task postConnect()
@@ -109,15 +106,13 @@ namespace Fritz.StreamTools.Services.Mixer
 					break;
 			}
 
-			if(!continueTrying)
+			if (!continueTrying)
 			{
 				_logger.LogError("Failed to connect to chat endpoint, giving up! (Channel or Token wrong?)");
 				_channel.Dispose();
 				_channel = null;
 				return;
 			}
-
-			_channel.EventReceived += EventReceived;
 		}
 
 		//
@@ -133,7 +128,8 @@ namespace Fritz.StreamTools.Services.Mixer
 				return false;
 
 			var success = await _channel.SendAsync("msg", message);
-			if (success) _logger.LogTrace($"Send message '{message}'");
+			if (success)
+				_logger.LogTrace($"Send message '{message}'");
 			return success;
 		}
 
@@ -151,7 +147,8 @@ namespace Fritz.StreamTools.Services.Mixer
 				return false;
 
 			var success = await _channel.SendAsync("whisper", userName, message);
-			if(success) _logger.LogTrace($"Send whisper to {userName} '{message}'");
+			if (success)
+				_logger.LogTrace($"Send whisper to {userName} '{message}'");
 			return success;
 		}
 
@@ -164,83 +161,26 @@ namespace Fritz.StreamTools.Services.Mixer
 				return false;
 
 			var success = await _channel.SendAsync("timeout", userName, $"{time.Minutes}m{time.Seconds}s");
-			if (success) _logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");
+			if (success)
+				_logger.LogWarning($"TIMEOUT {userName} on Mixer for {time}");
 			return success;
 		}
 
 		/// <summary>
 		/// Called when we receive a new event from the chat server
 		/// </summary>
-		private void EventReceived(object sender, EventEventArgs e)
+		private void HandleEvents(object sender, EventEventArgs e)
 		{
-			switch (e.Event)
-			{
-				case "ChatMessage":
-					ParseChatMessage(e);
-					break;
-				case "UserJoin":
-					ParseUserJoin(e);
-					break;
-				case "UserLeave":
-					ParseUserLeave(e);
-					break;
-			}
-		}
-
-		private void ParseUserLeave(EventEventArgs e)
-		{
-			var user = e.Data.GetObject<WS.User>();
-			UserLeft?.Invoke(this, new ChatUserInfoEventArgs {
-				UserId = user.Id,
-				UserName = user.Username,
-				Properties = {
-					{ "MixerRoles", user.Roles }
-				}
-			});
-		}
-
-		private void ParseUserJoin(EventEventArgs e)
-		{
-			var user = e.Data.GetObject<WS.User>();
-			UserJoined?.Invoke(this, new ChatUserInfoEventArgs {
-				UserId = user.Id,
-				UserName = user.Username,
-				Properties = {
-					{ "MixerRoles", user.Roles }
-				}
-			});
-		}
-
-		private void ParseChatMessage(EventEventArgs e)
-		{
-			var data = e.Data.GetObject<WS.ChatData>();
-
-			var combinedText = string.Concat(data.Messages.Message.Select(x => x.Text));
-
-			var isWhisper = false;
-			if (data.Messages?.Meta != null)
-			{
-				isWhisper = data.Messages.Meta.Whisper.GetValueOrDefault();
-			}
-
-			ChatMessage?.Invoke(this, new ChatMessageEventArgs {
-				UserId = data.UserId,
-				UserName = data.UserName,
-				IsWhisper = isWhisper,
-				IsModerator = data.UserRoles.Contains("Mod"),
-				IsOwner = data.UserRoles.Contains("Owner"),
-				Message = combinedText,
-				Properties = {
-					{ "AvatarUrl", data.UserAvatar ?? string.Empty },
-					{ "MixerUserLevel", data.UserLevel },
-					{ "MixerRoles", data.UserRoles.ToArray() }
-				}
-			});
+			_eventProcessor.Process(e.Event, 0, e.Data);
 		}
 
 		public void Dispose()
 		{
 			// Dont dispose _client here!
+
+			if (_channel != null)
+				_channel.EventReceived -= HandleEvents;
+
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);
 		}

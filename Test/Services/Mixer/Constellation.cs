@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using FluentAssertions;
 using Fritz.StreamTools.Services;
 using Newtonsoft.Json;
@@ -13,7 +14,7 @@ namespace Test.Services.Mixer
 		public void WillConnectAndJoin()
 		{
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -38,7 +39,7 @@ namespace Test.Services.Mixer
 			var packet = BuildLiveEvent("channel:1234:update", followers: 66);
 
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -55,10 +56,10 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaiseViewersEvent()
 		{
-			var packet = BuildLiveEvent("channel:1234:update", viewers: 35);
+			var packet = BuildLiveEvent("channel:1234:update", viewers: 735);
 
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -66,7 +67,7 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null && a.NewViewers == 35 && a.IsOnline == null && a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null && a.NewViewers == 735 && a.IsOnline == null && a.ServiceName == "Mixer")
 						.WithSender(sut);
 				}
 			}
@@ -78,7 +79,7 @@ namespace Test.Services.Mixer
 			var packet = BuildLiveEvent("channel:1234:update", viewers: 35);
 
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -97,7 +98,7 @@ namespace Test.Services.Mixer
 			var packet = BuildLiveEvent("channel:1234:update", followers: 22, viewers: 43, online: true);
 
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -117,7 +118,7 @@ namespace Test.Services.Mixer
 			var packet = BuildLiveEvent("channel:1234:update", followers: 66);
 
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -131,15 +132,15 @@ namespace Test.Services.Mixer
 		public void WillReconnect()
 		{
 			var sim = SimAnon.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
 				// Prepare new ClientWebSocket for consumption by client code, and dispose the old one
-				sim.ConstallationWebSocket = new SimulatedClientWebSocket(false, false, Simulator.CONSTALLATION_WELCOME);
+				sim.ConstellationWebSocket = new SimulatedClientWebSocket(false, false, Simulator.CONSTALLATION_WELCOME);
 				ws.Dispose();
-				ws = sim.ConstallationWebSocket;
+				ws = sim.ConstellationWebSocket;
 				var connectedAndJoined = ws.JoinedConstallation.Wait(Simulator.TIMEOUT);
 
 				connectedAndJoined.Should().BeTrue();
@@ -150,7 +151,7 @@ namespace Test.Services.Mixer
 		public void AddCorrectHeaders()
 		{
 			var sim = SimAuth.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
@@ -164,13 +165,15 @@ namespace Test.Services.Mixer
 		public void CanHandleRealDataDump()
 		{
 			var sim = SimAuth.Value;
-			var ws = sim.ConstallationWebSocket;
+			var ws = sim.ConstellationWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
-				foreach(var line in File.ReadAllLines("Services/Mixer/Data/ConstelletionDump.json"))
+				foreach(var line in File.ReadAllLines("Services/Mixer/Data/ConstellationDump.json"))
 				{
+					if (string.IsNullOrWhiteSpace(line))
+						continue;
 					ws.InjectPacket(line);
 				}
 

@@ -12,7 +12,6 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IMixerConstellation : IDisposable
 	{
-		event EventHandler<ConstellationEventArgs> ConstellationEvent;
 		Task ConnectAndJoinAsync(uint channelId);
 	}
 
@@ -26,20 +25,18 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		IJsonRpcWebSocket _channel;
+		private readonly ConstellationEventProcessor _eventProcessor;
 
-		public MixerConstellation(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, CancellationToken shutdown)
+		public MixerConstellation(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory,
+			ConstellationEventProcessor eventProcessor, CancellationToken shutdown)
 		{
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
-			_shutdown = shutdown;
 			_logger = loggerFactory.CreateLogger(nameof(MixerConstellation));
+			_eventProcessor = eventProcessor ?? throw new ArgumentNullException(nameof(eventProcessor));
+			_shutdown = shutdown;
 		}
-
-		/// <summary>
-		/// Raised each time a chat message is received
-		/// </summary>
-		public event EventHandler<ConstellationEventArgs> ConstellationEvent;
 
 		/// <summary>
 		/// Connect to the live event server, and join our channel
@@ -54,6 +51,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				token = null;
 
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: false);
+			_channel.EventReceived += HandleEvents;
 
 			// Connect to the chat endpoint
 			var continueTrying = true;
@@ -78,14 +76,12 @@ namespace Fritz.StreamTools.Services.Mixer
 				_channel = null;
 				return;
 			}
-
-			_channel.EventReceived += EventReceived;
 		}
 
 		/// <summary>
 		/// Called when we receive a new live event from server
 		/// </summary>
-		private void EventReceived(object sender, EventEventArgs e)
+		private void HandleEvents(object sender, EventEventArgs e)
 		{
 			if (e.Event == "live")
 			{
@@ -99,22 +95,20 @@ namespace Fritz.StreamTools.Services.Mixer
 				if (channel[0] == "channel")
 				{
 					var channelId = uint.Parse(channel[1]);
-					ConstellationEvent?.Invoke(this, new ConstellationEventArgs { ChannelId = channelId, Event = channel.Last(), Payload = payload });
+					_eventProcessor.Process(channel.Last(), channelId, payload);
 				}
 			}
 		}
 
 		public void Dispose()
 		{
+			// Dont dispose _client here!
+
+			if (_channel != null)
+				_channel.EventReceived -= HandleEvents;
+
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);
 		}
-	}
-
-	public class ConstellationEventArgs : EventArgs
-	{
-		public uint ChannelId { get; set; }
-		public string Event { get; set; }
-		public JToken Payload { get; set; }
 	}
 }

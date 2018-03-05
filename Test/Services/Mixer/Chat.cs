@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using FluentAssertions;
 using Fritz.StreamTools.Services;
@@ -208,7 +209,7 @@ namespace Test.Services.Mixer
 		public void HandlesNullAvatar()
 		{
 			var sim = SimAnon.Value;
-			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner","Mod" }, avatar: null);
+			var packet = BuildChatMessage(sim, 56789, "connor", "Hello world!", roles: new string[] { "Owner", "Mod" }, avatar: null);
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
@@ -267,7 +268,7 @@ namespace Test.Services.Mixer
 				var task = chat.SendWhisperAsync(target, text);
 				ws.InjectPacket(replyJson);
 
-				task.Wait(Simulator.TIMEOUT);	// Wait for SendWhisperAsync to complete
+				task.Wait(Simulator.TIMEOUT); // Wait for SendWhisperAsync to complete
 				task.Result.Should().BeTrue();
 			}
 		}
@@ -327,6 +328,26 @@ namespace Test.Services.Mixer
 				args[1].Should().Be("5m0s");
 
 				task.Result.Should().BeTrue();
+			}
+		}
+
+		[Fact]
+		public void CanHandleRealDataDump()
+		{
+			var sim = SimAuth.Value;
+			var ws = sim.ConstellationWebSocket;
+			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
+			{
+				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
+
+				foreach (var line in File.ReadAllLines("Services/Mixer/Data/ChatDump.json"))
+				{
+					if (string.IsNullOrWhiteSpace(line))
+						continue;
+					ws.InjectPacket(line);
+				}
+
+				sut.StopAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 			}
 		}
 	}

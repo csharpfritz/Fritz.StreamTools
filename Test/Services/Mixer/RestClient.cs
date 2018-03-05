@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using FluentAssertions;
 using Fritz.StreamTools.Helpers;
+using Fritz.StreamTools.Services;
 using Fritz.StreamTools.Services.Mixer;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -76,110 +77,153 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void CheckAuthorizationHeader()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			// Assert
-			var req = Handler.FindRequest($"channels/{WebUtility.UrlEncode(ChannelName)}");
-			req.Should().NotBeNull();
-			req.Method.Should().Be(HttpMethod.Get);
-			req.Headers.Should().Contain(new KeyValuePair<string, string>("Authorization", $"Bearer {Token}"));
+				// Assert
+				var req = Handler.FindRequest($"channels/{WebUtility.UrlEncode(ChannelName)}");
+				req.Should().NotBeNull();
+				req.Method.Should().Be(HttpMethod.Get);
+				req.Headers.Should().Contain(new KeyValuePair<string, string>("Authorization", $"Bearer {Token}"));
+			}
 		}
 
 		[Fact]
 		public void CheckAcceptsHeader()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			// Assert
-			var req = Handler.FindRequest($"channels/{WebUtility.UrlEncode(ChannelName)}");
-			req.Should().NotBeNull();
-			req.Method.Should().Be(HttpMethod.Get);
-			req.Headers.Should().Contain(new KeyValuePair<string, string>("Accept", "application/json"));
+				// Assert
+				var req = Handler.FindRequest($"channels/{WebUtility.UrlEncode(ChannelName)}");
+				req.Should().NotBeNull();
+				req.Method.Should().Be(HttpMethod.Get);
+				req.Headers.Should().Contain(new KeyValuePair<string, string>("Accept", "application/json"));
+			}
 		}
 
 		[Fact]
 		public void CanInit()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			// Assert
-			Handler.RequestHistory.Count.Should().Be(2);
-			sut.UserId.Should().Be(UserId);
-			sut.UserName.Should().Be(UserName);
+				// Assert
+				Handler.RequestHistory.Count.Should().Be(2);
+				sut.UserId.Should().Be(UserId);
+				sut.UserName.Should().Be(UserName);
+			}
+		}
+
+		[Fact]
+		public void WillRetryInit()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client) { RetryDelay = 0, MaxTries = 5 })
+			{
+				Action call = () => sut.InitAsync("InvalidChannelName", Token).Wait(Simulator.TIMEOUT);
+
+				// Assert
+				call.Should().Throw<UnknownChannelException>();
+				Handler.RequestHistory.Count.Should().Be(5);
+			}
 		}
 
 		[Fact]
 		public void CanBanUser()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			var result = sut.BanUserAsync(OtherUserName).Result;
+				var result = sut.BanUserAsync(OtherUserName).Result;
 
-			// Assert
-			result.Should().BeTrue();
+				// Assert
+				result.Should().BeTrue();
+			}
 		}
 
 		[Fact]
 		public void CanUnbanUser()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			var result = sut.UnbanUserAsync(OtherUserName).Result;
+				var result = sut.UnbanUserAsync(OtherUserName).Result;
 
-			// Assert
-			result.Should().BeTrue();
+				// Assert
+				result.Should().BeTrue();
+			}
 		}
 
 		[Fact]
 		public void ChatAuthRequest()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			var result = sut.GetChatAuthKeyAndEndpointsAsync().Result;
+				var result = sut.GetChatAuthKeyAndEndpointsAsync().Result;
 
-			// Assert
-			result.Should().NotBeNull();
-			result.Authkey.Should().Be(SimAuth.Value.ChatAuthKey);
-			result.Endpoints.Should().BeEquivalentTo(Endpoints);
+				// Assert
+				result.Should().NotBeNull();
+				result.Authkey.Should().Be(SimAuth.Value.ChatAuthKey);
+				result.Endpoints.Should().BeEquivalentTo(Endpoints);
+			}
 		}
 
 		[Fact]
 		public void ParsesStreamStartAndRoundsCorrectly()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			var r = sut.GetStreamStartedAtAsync().Result;
+				var r = sut.GetStreamStartedAtAsync().Result;
 
-			// Assert
-			r.Should().NotBeNull();
-			r.Value.ToUnixTimeSeconds().Should().Be(new DateTimeOffset(StartedAtTestValue).ToUnixTimeSeconds()); // Check only seconds difference
+				// Assert
+				r.Should().NotBeNull();
+				r.Value.ToUnixTimeSeconds().Should().Be(new DateTimeOffset(StartedAtTestValue).ToUnixTimeSeconds()); // Check only seconds difference
+			}
 		}
 
 		[Fact]
 		public void CanLookupUserId()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
 
-			var r = sut.LookupUserIdAsync(OtherUserName).Result;
+				var r = sut.LookupUserIdAsync(OtherUserName).Result;
 
-			// Assert
-			r.Should().Be(OtherUserId);
+				// Assert
+				r.Should().Be(OtherUserId);
+			}
 		}
 
 		[Fact]
 		public void CanCallInitMultipleTimes()
 		{
-			var sut = new MixerRestClient(LoggerFactory, Client);
-			sut.InitAsync(ChannelName, Token).Wait();
-			sut.InitAsync(ChannelName, null).Wait();
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+				sut.InitAsync(ChannelName, null).Wait(Simulator.TIMEOUT);
+			}
+		}
+
+		[Fact]
+		public void LookupUserReturnNullIdUnknownUser()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+
+				var userId = sut.LookupUserIdAsync("InvalidUserNameForSure").Result;
+				userId.Should().BeNull();
+			}
 		}
 	}
 }

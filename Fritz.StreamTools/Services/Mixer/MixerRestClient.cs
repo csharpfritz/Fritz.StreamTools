@@ -5,8 +5,6 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
@@ -38,11 +36,12 @@ namespace Fritz.StreamTools.Services.Mixer
 	internal class MixerRestClient : IMixerRestClient
 	{
 		const string API_URL = "https://mixer.com/api/v1/";
-
 		readonly ILogger _logger;
 		readonly HttpClient _client;
 		private bool _initDone;
 
+		public int RetryDelay { get; set; } = 2000;
+		public int MaxTries { get; set; } = 3;
 		public bool HasToken { get; private set; }
 		public string ChannelName { get; private set; }
 		public int? ChannelId { get; private set; }
@@ -82,7 +81,6 @@ namespace Fritz.StreamTools.Services.Mixer
 			int tryCounter = 0;
 			while (true)
 			{
-				tryCounter++;
 				try
 				{
 					var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent";
@@ -101,9 +99,9 @@ namespace Fritz.StreamTools.Services.Mixer
 				}
 				catch (HttpRequestException ex)
 				{
-					if (tryCounter == 3)
+					if (++tryCounter == MaxTries)
 						throw new UnknownChannelException(ChannelName, ex);
-					await Task.Delay(2000);
+					await Task.Delay(RetryDelay);
 				}
 			}
 		}
@@ -126,6 +124,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 			catch (HttpRequestException)
 			{
+
 				_logger.LogError("Unknown user '{0}'", userName);
 				return null;
 			}

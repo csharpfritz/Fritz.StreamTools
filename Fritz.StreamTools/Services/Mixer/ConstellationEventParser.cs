@@ -25,7 +25,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Process(string eventName, JToken data)
 		{
-			if (eventName != "live")
+			if (eventName != "live" || data == null)
 				return;
 
 			var channel = data["channel"]?.Value<string>().Split(':');

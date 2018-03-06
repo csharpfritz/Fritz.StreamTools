@@ -11,6 +11,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	public interface IMixerChat : IDisposable
 	{
 		bool IsAuthenticated { get; }
+		string[] Roles { get; }
 		Task ConnectAndJoinAsync(uint userId, uint channelId);
 		Task<bool> SendWhisperAsync(string userName, string message);
 		Task<bool> SendMessageAsync(string message);
@@ -30,6 +31,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly IEventParser _parser;
 
 		public bool IsAuthenticated => _channel.IsAuthenticated;
+		public string[] Roles => _channel.Roles;
 
 		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, IMixerRestClient client,
 			IEventParser parser, CancellationToken shutdown)

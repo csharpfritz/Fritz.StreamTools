@@ -16,8 +16,11 @@ namespace Fritz.StreamTools.Services.Mixer
 {
 	public interface IJsonRpcWebSocket
 	{
+		/// <summary>Is the connected user authenticated</summary>
 		bool IsAuthenticated { get; }
-		TimeSpan SendTimeout { get; set; }
+		/// <summary>Roles of the authemticated user or null</summary>
+		string[] Roles { get; }
+		TimeSpan ReplyTimeout { get; set; }
 
 		Task<bool> SendAsync(string method, params object[] args);
 		Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> postConnectFunc);
@@ -57,7 +60,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		private readonly IConfiguration _config;
 
 		public bool IsAuthenticated { get; private set; }
-		public TimeSpan SendTimeout { get; set; }
+		public string[] Roles { get; private set; }
+		public TimeSpan ReplyTimeout { get; set; }
 
 #if GENERATE_DUMPS
 		readonly Random _dumpRandom = new Random();
@@ -72,7 +76,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_parser = parser ?? throw new ArgumentNullException(nameof(parser));
 			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
-			SendTimeout = TimeSpan.FromSeconds(10);
+			ReplyTimeout = TimeSpan.FromSeconds(10);
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 		}
 
@@ -295,6 +299,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (!data.IsNullOrEmpty() && !data["authenticated"].IsNullOrEmpty())
 			{
 				IsAuthenticated = data["authenticated"].Value<bool>();
+				Roles = data["roles"]?.Values<string>().ToArray();
 			}
 
 			var id = doc["id"].Value<int>();
@@ -341,7 +346,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				if (Debugger.IsAttached)  // no timeout while debugging
 					await tcs.Task;
 				else
-					await tcs.Task.OrTimeout(SendTimeout);
+					await tcs.Task.OrTimeout(ReplyTimeout);
 				return tcs.Task.Result;
 			}
 			finally

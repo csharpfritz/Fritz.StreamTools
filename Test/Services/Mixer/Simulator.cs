@@ -56,7 +56,7 @@ namespace Test.Services.Mixer
 
 		public IClientWebSocketProxy CreateClientWebSocket(bool isChat) => ( isChat ) ? ChatWebSocket : ConstellationWebSocket;
 		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, IEventParser parser) =>
-			new JsonRpcWebSocket(new Mock<ILogger>().Object, this, Config, parser) { SendTimeout = TimeSpan.FromMilliseconds(500) };
+			new JsonRpcWebSocket(new Mock<ILogger>().Object, this, Config, parser) { ReplyTimeout = TimeSpan.FromMilliseconds(500) };
 		public IMixerChat CreateChat(IMixerRestClient client, IEventParser parser, CancellationToken shutdownRequest) =>
 			new MixerChat(Config, _loggerFactory, this, _restClientMock.Object, parser, Cancel.Token);
 		public IMixerConstellation CreateConstellation(IEventParser parser, CancellationToken shutdownRequest) =>

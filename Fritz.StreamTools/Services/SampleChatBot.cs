@@ -40,7 +40,7 @@ namespace Fritz.StreamTools.Services
 			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
 
 			// Subscribe to specific mixer events
-			if (_streamServices.FirstOrDefault(x => x.Name == "Mixer") is IMixerService mixerService)
+			if (Array.Find(_streamServices, x => x.Name == "Mixer") is IMixerService mixerService)
 			{
 				mixerService.Followed += Mixer_Followed;
 				mixerService.Subscribed += Mixer_Subscribed;

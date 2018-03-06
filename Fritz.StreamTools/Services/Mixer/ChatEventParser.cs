@@ -20,6 +20,9 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Process(string eventName, JToken data)
 		{
+			if (data == null || string.IsNullOrEmpty(eventName))
+				return;
+
 			switch (eventName)
 			{
 				case "ChatMessage":

@@ -1,3 +1,4 @@
+@inject Microsoft.AspNetCore.Hosting.IHostingEnvironment HostingEnvironment
 @model FollowerGoalConfiguration
 <div class="py-5 text-center">
 	<h2>Configure Follower Goal</h2>
@@ -98,6 +99,13 @@
 				FillBackgroundColor: "@nameof(Model.FillBackgroundColor)",
 				FillBackgroundColorBlend: "@nameof(Model.FillBackgroundColorBlend)"
 			};
+
+			var log = function (message, params) {
+				@if (HostingEnvironment.IsDevelopment())
+					{
+						<text>console.log(message, params);</text>
+					}
+				};
 
 		</script>
 

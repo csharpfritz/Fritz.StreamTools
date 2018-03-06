@@ -1,11 +1,3 @@
-var log = function (message, params) {
-	console.log(message, params);
-
-};
-
-
-// "fontname",
-
 var isLoadingFromStorage = false;
 
 (function () {

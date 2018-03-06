@@ -11,10 +11,10 @@ namespace Fritz.StreamTools.Services
 {
 	public interface IMixerService : IChatService, IStreamService
 	{
-		event EventHandler<WS.FollowedPayload> Followed;
-		event EventHandler<WS.HostedPayload> Hosted;
-		event EventHandler<WS.SubscribedPayload> Subscribed;
-		event EventHandler<WS.ResubSharedPayload> Resubscribed;
+		event EventHandler<FollowedEventArgs> Followed;
+		event EventHandler<HostedEventArgs> Hosted;
+		event EventHandler<SubscribedEventArgs> Subscribed;
+		event EventHandler<ResubscribedEventArgs> Resubscribed;
 	}
 
 	public class MixerService : IHostedService, IMixerService, IDisposable
@@ -28,17 +28,15 @@ namespace Fritz.StreamTools.Services
 		readonly CancellationTokenSource _shutdownRequested;
 		readonly IMixerRestClient _restClient;
 
-#pragma warning disable CS0067  // I use reflection to invoke these!
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
-		public event EventHandler<WS.FollowedPayload> Followed;
-		public event EventHandler<WS.HostedPayload> Hosted;
-		public event EventHandler<WS.SubscribedPayload> Subscribed;
-		public event EventHandler<WS.ResubSharedPayload> Resubscribed;
-#pragma warning restore CS0067
+		public event EventHandler<FollowedEventArgs> Followed;
+		public event EventHandler<HostedEventArgs> Hosted;
+		public event EventHandler<SubscribedEventArgs> Subscribed;
+		public event EventHandler<ResubscribedEventArgs> Resubscribed;
 
 		public string Name { get => SERVICE_NAME; }
 		public int CurrentFollowerCount { get => _liveParser.Followers; }

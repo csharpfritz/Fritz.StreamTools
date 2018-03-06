@@ -109,27 +109,31 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		void HandleFollowed(WS.FollowedPayload payload)
 		{
-			_logger.LogInformation("{0} {1}", payload.User.Username, payload.Following ? "followed" : "unfollowed");
+			_fireEvent(nameof(MixerService.Followed),
+				new FollowedEventArgs { IsFollowing = payload.Following, UserName = payload.User.Username });
 		}
 
 		void HandleHosted(WS.HostedPayload payload)
 		{
-			_logger.LogInformation("{0} started hosting for {1} viewers", payload.Hoster.Name, payload.Hoster.ViewersCurrent);
+			_fireEvent(nameof(MixerService.Hosted),
+				new HostedEventArgs { IsHosting = true, HosterName = payload.Hoster.Name, CurrentViewers = payload.Hoster.ViewersCurrent });
 		}
 
 		void HandleUnhosted(WS.HostedPayload payload)
 		{
-			_logger.LogInformation("{0} stopped hosting", payload.Hoster.Name);
+			_fireEvent(nameof(MixerService.Hosted),
+				new HostedEventArgs { IsHosting = false, HosterName = payload.Hoster.Name, CurrentViewers = payload.Hoster.ViewersCurrent });
 		}
 
 		void HandleSubscribed(WS.SubscribedPayload payload)
 		{
-			_logger.LogInformation("{0} subscribed", payload.User.Username);
+			_fireEvent(nameof(MixerService.Subscribed), new SubscribedEventArgs { UserName = payload.User.Username });
 		}
 
 		void HandleResubscribed(WS.ResubSharedPayload payload)
 		{
-			_logger.LogInformation("{0} re-subscribed since {1} for {1} month", payload.User.Username, payload.Since, payload.TotalMonths);
+			_fireEvent(nameof(MixerService.Resubscribed),
+				new ResubscribedEventArgs { UserName = payload.User.Username, Since = payload.Since, TotalMonths = payload.TotalMonths });
 		}
 	}
 }

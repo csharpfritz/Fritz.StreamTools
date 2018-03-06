@@ -61,7 +61,7 @@ namespace Fritz.StreamTools.Services
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
-			foreach(var chat in _chatServices)
+			foreach (var chat in _chatServices)
 			{
 				chat.ChatMessage += Chat_ChatMessage;
 				chat.UserJoined += Chat_UserJoined;
@@ -85,13 +85,16 @@ namespace Fritz.StreamTools.Services
 
 		private async void Chat_ChatMessage(object sender, ChatMessageEventArgs e)
 		{
-			if (string.IsNullOrEmpty(e.Message) || e.Message[0] != COMMAND_PREFIX) return;	// e.Message.StartsWith(...) did not work for some reason ?!?
+			if (string.IsNullOrEmpty(e.Message) || e.Message[0] != COMMAND_PREFIX)
+				return; // e.Message.StartsWith(...) did not work for some reason ?!?
 			var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-			if (segments.Length == 0) return;
+			if (segments.Length == 0)
+				return;
 
 			var chatService = sender as IChatService;
 			Debug.Assert(chatService != null);
-			if (!chatService.IsAuthenticated) return;
+			if (!chatService.IsAuthenticated)
+				return;
 
 			// Ignore if the normal user is sending commands to fast
 			var userKey = $"{e.ServiceName}:{e.UserName}";
@@ -118,26 +121,29 @@ namespace Fritz.StreamTools.Services
 					await chatService.SendWhisperAsync(e.UserName, "pong");
 					break;
 				case "echo":
-					if (segments.Length < 2) return;
+					if (segments.Length < 2)
+						return;
 					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
 					break;
 				case "uptime":
-					{
-						// Get uptime from the mixer stream service
-						var mixer = Array.Find(_streamServices, x => x.Name == "Mixer");
-						if (mixer == null) break;
-						if (mixer.Uptime.HasValue)
-							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
-						else
-							await chatService.SendMessageAsync("Stream is offline");
+				{
+					// Get uptime from the mixer stream service
+					var mixer = Array.Find(_streamServices, x => x.Name == "Mixer");
+					if (mixer == null)
 						break;
-					}
+					if (mixer.Uptime.HasValue)
+						await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
+					else
+						await chatService.SendMessageAsync("Stream is offline");
+					break;
+				}
 				case "quote":
-					if (_quotes == null) break;
+					if (_quotes == null)
+						break;
 					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
 					break;
 				default:
-					return;	// Unknown command
+					return; // Unknown command
 			}
 
 			// Remember last command time
@@ -147,15 +153,14 @@ namespace Fritz.StreamTools.Services
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
 		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
-		private void Mixer_Subscribed(object sender, Mixer.WS.SubscribedPayload e) => _logger.LogInformation($"{e.User.Username} subscribed on Mixer");
-		private void Mixer_Resubscribed(object sender, Mixer.WS.ResubSharedPayload e) => _logger.LogInformation($"{e.User.Username} re-subscribed for {e.TotalMonths} month in a row");
-		private void Mixer_Followed(object sender, Mixer.WS.FollowedPayload e)
+		private void Mixer_Subscribed(object sender, Mixer.SubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} subscribed on Mixer");
+		private void Mixer_Resubscribed(object sender, Mixer.ResubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} re-subscribed for {e.TotalMonths} month in a row");
+		private void Mixer_Followed(object sender, Mixer.FollowedEventArgs e)
 		{
-			if(e.Following)
-				_logger.LogInformation($"{e.User.Username} followed on Mixer");
+			if (e.IsFollowing)
+				_logger.LogInformation($"{e.UserName} followed on Mixer");
 			else
-				_logger.LogInformation($"{e.User.Username} un-followed on Mixer");
+				_logger.LogInformation($"{e.UserName} un-followed on Mixer");
 		}
-
 	}
 }

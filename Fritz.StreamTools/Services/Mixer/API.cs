@@ -73,7 +73,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			public bool Interactive { get; set; }
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public uint? InteractiveGameId { get; set; }
-			public uint Ftl { get; set; }
+			public int Ftl { get; set; }
 			public bool HasVod { get; set; }
 			[J(DefaultValueHandling = DefaultValueHandling.Ignore)]
 			public string LanguageId { get; set; }
@@ -91,6 +91,11 @@ namespace Fritz.StreamTools.Services.Mixer
 			public DateTime CreatedAt { get; set; }
 			public DateTime UpdatedAt { get; set; }
 			public DateTime? DeletedAt { get; set; }
+		}
+
+		public class UserWithChannel : User
+		{
+			public Channel Channel { get; set; }
 		}
 
 		//

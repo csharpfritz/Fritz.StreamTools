@@ -46,7 +46,7 @@ namespace Test.Services.Mixer
 			ConstellationWebSocket = new SimulatedClientWebSocket(false, HasToken, CONSTALLATION_WELCOME);
 
 			_restClientMock = new Mock<IMixerRestClient>();
-			_restClientMock.Setup(x => x.InitAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult( (0, 0) ));
+			_restClientMock.Setup(x => x.InitAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult( (false, 0, 0) ));
 			_restClientMock.Setup(x => x.GetChatAuthKeyAndEndpointsAsync())
 				.Returns(Task.FromResult(new API.Chats{ Authkey = ChatAuthKey, Endpoints = Endpoints }));
 			_restClientMock.Setup(x => x.ChannelName).Returns(channelName);

@@ -29,7 +29,7 @@ namespace Fritz.StreamTools.Services
 		readonly IChatService[] _chatServices;
 		readonly IStreamService[] _streamServices;
 		TimeSpan _cooldownTime;
-		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();	// Could use IMemoryCache for this ???
+		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
 
 		public SampleChatBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 		{
@@ -38,6 +38,14 @@ namespace Fritz.StreamTools.Services
 			_logger = loggerFactory.CreateLogger(nameof(SampleChatBot));
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
+
+			// Subscribe to specific mixer events
+			if (_streamServices.FirstOrDefault(x => x.Name == "Mixer") is IMixerService mixerService)
+			{
+				mixerService.Followed += Mixer_Followed;
+				mixerService.Subscribed += Mixer_Subscribed;
+				mixerService.Resubscribed += Mixer_Resubscribed;
+			}
 
 			var cooldownConfig = config["SampleChatBot:CooldownTime"];
 			_cooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
@@ -137,7 +145,17 @@ namespace Fritz.StreamTools.Services
 			_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
 		}
 
-		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogInformation($"{e.UserName} joined {e.ServiceName} chat");
-		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogInformation($"{e.UserName} left {e.ServiceName} chat");
+		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
+		private void Mixer_Subscribed(object sender, Mixer.WS.SubscribedPayload e) => _logger.LogInformation($"{e.User.Username} subscribed on Mixer");
+		private void Mixer_Resubscribed(object sender, Mixer.WS.ResubSharedPayload e) => _logger.LogInformation($"{e.User.Username} re-subscribed for {e.TotalMonths} month in a row");
+		private void Mixer_Followed(object sender, Mixer.WS.FollowedPayload e)
+		{
+			if(e.Following)
+				_logger.LogInformation($"{e.User.Username} followed on Mixer");
+			else
+				_logger.LogInformation($"{e.User.Username} un-followed on Mixer");
+		}
+
 	}
 }

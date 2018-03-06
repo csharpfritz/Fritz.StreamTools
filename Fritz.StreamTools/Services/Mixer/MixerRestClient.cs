@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -24,7 +25,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <param name="channelName">Name of the channel</param>
 		/// <param name="oauthToken">The users oauth token or null</param>
 		/// <returns>Current number of viewers and followers as a tuple</returns>
-		Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken);
+		Task<(bool online, int viewers, int followers)> InitAsync(string channelName, string oauthToken);
 
 		Task<API.Chats> GetChatAuthKeyAndEndpointsAsync();
 		Task<uint?> LookupUserIdAsync(string userName);
@@ -64,7 +65,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoStore = true, NoCache = true };
 		}
 
-		public async Task<(int viewers, int followers)> InitAsync(string channelName, string oauthToken)
+		public async Task<(bool online, int viewers, int followers)> InitAsync(string channelName, string oauthToken)
 		{
 			_initDone = false;
 			UserId = null;
@@ -83,7 +84,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			{
 				try
 				{
-					var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent";
+					var req = $"channels/{WebUtility.UrlEncode(ChannelName)}?fields=id,numFollowers,viewersCurrent,online";
 					var channelInfo = await GetAsync<API.Channel>(req);
 					ChannelId = channelInfo.Id;
 
@@ -95,7 +96,7 @@ namespace Fritz.StreamTools.Services.Mixer
 						UserName = me.Username;
 					}
 					_initDone = true;
-					return ((int)channelInfo.ViewersCurrent, (int)channelInfo.NumFollowers);
+					return (channelInfo.Online, (int)channelInfo.ViewersCurrent, (int)channelInfo.NumFollowers);
 				}
 				catch (HttpRequestException ex)
 				{
@@ -251,5 +252,6 @@ namespace Fritz.StreamTools.Services.Mixer
 			_client?.Dispose();
 			GC.SuppressFinalize(this);
 		}
+
 	}
 }

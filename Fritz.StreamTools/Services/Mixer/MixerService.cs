@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Helpers;
 using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -8,7 +9,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools.Services
 {
-	public class MixerService : IHostedService, IStreamService, IChatService, IDisposable
+	public interface IMixerService : IChatService, IStreamService
+	{
+		event EventHandler<WS.FollowedPayload> Followed;
+		event EventHandler<WS.HostedPayload> Hosted;
+		event EventHandler<WS.SubscribedPayload> Subscribed;
+		event EventHandler<WS.ResubSharedPayload> Resubscribed;
+	}
+
+	public class MixerService : IHostedService, IMixerService, IDisposable
 	{
 		public static readonly string SERVICE_NAME = "Mixer";
 
@@ -19,18 +28,25 @@ namespace Fritz.StreamTools.Services
 		readonly CancellationTokenSource _shutdownRequested;
 		readonly IMixerRestClient _restClient;
 
+#pragma warning disable CS0067  // I use reflection to invoke these!
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
+		public event EventHandler<WS.FollowedPayload> Followed;
+		public event EventHandler<WS.HostedPayload> Hosted;
+		public event EventHandler<WS.SubscribedPayload> Subscribed;
+		public event EventHandler<WS.ResubSharedPayload> Resubscribed;
+#pragma warning restore CS0067
+
 		public string Name { get => SERVICE_NAME; }
-		public int CurrentFollowerCount { get => _constellationEventProcessor.Followers; }
-		public int CurrentViewerCount { get => _constellationEventProcessor.Viewers; }
+		public int CurrentFollowerCount { get => _constellationEP.Followers; }
+		public int CurrentViewerCount { get => _constellationEP.Viewers; }
 		public bool IsAuthenticated => ( _chat?.IsAuthenticated ).GetValueOrDefault();
 
-		readonly ConstellationEventProcessor _constellationEventProcessor;
-		readonly ChatEventProcessor _chatEventProcessor;
+		readonly ConstellationEventProcessor _constellationEP;
+		readonly ChatEventProcessor _chatEP;
 
 		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory = null)
 		{
@@ -43,12 +59,12 @@ namespace Fritz.StreamTools.Services
 
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
-			_constellationEventProcessor = new ConstellationEventProcessor(_logger, FireEvent);
-			_chatEventProcessor = new ChatEventProcessor(_logger, FireEvent);
+			_constellationEP = new ConstellationEventProcessor(_logger, FireEvent);
+			_chatEP = new ChatEventProcessor(_logger, FireEvent);
 
 			_restClient = factory.CreateRestClient();
-			_live = factory.CreateConstellation(_constellationEventProcessor, _shutdownRequested.Token);
-			_chat = factory.CreateChat(_restClient, _chatEventProcessor, _shutdownRequested.Token);
+			_live = factory.CreateConstellation(_constellationEP, _shutdownRequested.Token);
+			_chat = factory.CreateChat(_restClient, _chatEP, _shutdownRequested.Token);
 		}
 
 		#region IHostedService
@@ -64,11 +80,15 @@ namespace Fritz.StreamTools.Services
 			}
 
 			// Get our current channel information
-			var (viewers, followers) = await _restClient.InitAsync(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
-			_constellationEventProcessor.Followers = followers;
-			_constellationEventProcessor.Viewers = viewers;
+			var (online, viewers, followers) = await _restClient.InitAsync(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
+			_constellationEP.IsOnline = online;
+			_constellationEP.Followers = followers;
+			_constellationEP.Viewers = viewers;
 
-			_logger.LogInformation("JOINING CHANNEL '{0}' as {0}", _restClient.ChannelName, _restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)");
+			_logger.LogInformation("JOINING CHANNEL '{0}' as {1}. {2} with {3} viewers", _restClient.ChannelName,
+				_restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)",
+				_constellationEP.IsOnline == true ? "ONLINE" : "OFFLINE",
+				_constellationEP.Viewers);
 
 			// Connect to live events (viewer/follower count etc)
 			await _live.ConnectAndJoinAsync(_restClient.ChannelId.Value);
@@ -90,29 +110,7 @@ namespace Fritz.StreamTools.Services
 
 		#endregion
 
-		/// <summary>
-		/// Called to event processors to fire events on this object
-		/// </summary>
-		/// <param name="name">Name of the event property</param>
-		/// <param name="args">The EventArgs object</param>
-		private void FireEvent(string name, EventArgs args)
-		{
-			switch (name)
-			{
-				case nameof(Updated):
-					Updated?.Invoke(this, (ServiceUpdatedEventArgs)args);
-					break;
-				case nameof(ChatMessage):
-					ChatMessage?.Invoke(this, (ChatMessageEventArgs)args);
-					break;
-				case nameof(UserJoined):
-					UserJoined?.Invoke(this, (ChatUserInfoEventArgs)args);
-					break;
-				case nameof(UserLeft):
-					UserLeft?.Invoke(this, (ChatUserInfoEventArgs)args);
-					break;
-			}
-		}
+		private void FireEvent(string name, EventArgs args) => ReflectionHelper.RaiseEvent(this, name, args);
 
 		public Task<bool> BanUserAsync(string userName) => _restClient.BanUserAsync(userName);
 		public Task<bool> UnbanUserAsync(string userName) => _restClient.UnbanUserAsync(userName);
@@ -129,7 +127,7 @@ namespace Fritz.StreamTools.Services
 		{
 			get
 			{
-				var cep = _constellationEventProcessor;
+				var cep = _constellationEP;
 				if (cep.IsOnline == false) return null;
 				if (!cep.StreamStartedAt.HasValue)
 					cep.StreamStartedAt = _restClient.GetStreamStartedAtAsync().Result;

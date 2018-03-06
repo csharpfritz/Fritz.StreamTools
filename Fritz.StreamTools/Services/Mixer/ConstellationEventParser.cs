@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public class ConstellationEventProcessor
+	public class ConstellationEventParser : IEventParser
 	{
 		public int Followers { get; set; }
 		public int Viewers { get; set; }
@@ -14,13 +15,34 @@ namespace Fritz.StreamTools.Services.Mixer
 		private readonly ILogger _logger;
 		private readonly Action<string, EventArgs> _fireEvent;
 
-		public ConstellationEventProcessor(ILogger logger,  Action<string, EventArgs> fireEvent)
+		public ConstellationEventParser(ILogger logger, Action<string, EventArgs> fireEvent)
 		{
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_fireEvent = fireEvent ?? throw new ArgumentNullException(nameof(fireEvent));
 		}
 
-		public void Process(string eventName, uint channelId, JToken data)
+		public bool IsChat { get => false; }
+
+		public void Process(string eventName, JToken data)
+		{
+			if (eventName != "live")
+				return;
+
+			var channel = data["channel"]?.Value<string>().Split(':');
+			if (channel == null || channel.Length == 0)
+				return;
+			var payload = data["payload"];
+			if (payload == null || payload.Type != JTokenType.Object)
+				return;
+
+			if (channel[0] == "channel")
+			{
+				var channelId = uint.Parse(channel[1]);
+				HandleChannelEvent(channel.Last(), channelId, payload);
+			}
+		}
+
+		private void HandleChannelEvent(string eventName, uint channelId, JToken data)
 		{
 			switch (eventName)
 			{

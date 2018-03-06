@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
@@ -46,9 +44,9 @@ namespace Test.Services.Mixer
 			ConstellationWebSocket = new SimulatedClientWebSocket(false, HasToken, CONSTALLATION_WELCOME);
 
 			_restClientMock = new Mock<IMixerRestClient>();
-			_restClientMock.Setup(x => x.InitAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult( (false, 0, 0) ));
+			_restClientMock.Setup(x => x.InitAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult((false, 0, 0)));
 			_restClientMock.Setup(x => x.GetChatAuthKeyAndEndpointsAsync())
-				.Returns(Task.FromResult(new API.Chats{ Authkey = ChatAuthKey, Endpoints = Endpoints }));
+				.Returns(Task.FromResult(new API.Chats { Authkey = ChatAuthKey, Endpoints = Endpoints }));
 			_restClientMock.Setup(x => x.ChannelName).Returns(channelName);
 			_restClientMock.Setup(x => x.ChannelId).Returns(ChannelInfo.Id);
 			_restClientMock.Setup(x => x.UserName).Returns(UserName);
@@ -57,12 +55,12 @@ namespace Test.Services.Mixer
 		}
 
 		public IClientWebSocketProxy CreateClientWebSocket(bool isChat) => ( isChat ) ? ChatWebSocket : ConstellationWebSocket;
-		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, bool isChat) =>
-			new JsonRpcWebSocket(new Mock<ILogger>().Object, this, Config, isChat) { SendTimeout = TimeSpan.FromMilliseconds(500) };
-		public IMixerChat CreateChat(IMixerRestClient client, ChatEventProcessor ep, CancellationToken shutdownRequest) =>
-			new MixerChat(Config, _loggerFactory, this, _restClientMock.Object, ep, Cancel.Token);
-		public IMixerConstellation CreateConstellation(ConstellationEventProcessor ep, CancellationToken shutdownRequest) =>
-			new MixerConstellation(Config, _loggerFactory, this, ep, Cancel.Token);
+		public IJsonRpcWebSocket CreateJsonRpcWebSocket(ILogger logger, IEventParser parser) =>
+			new JsonRpcWebSocket(new Mock<ILogger>().Object, this, Config, parser) { SendTimeout = TimeSpan.FromMilliseconds(500) };
+		public IMixerChat CreateChat(IMixerRestClient client, IEventParser parser, CancellationToken shutdownRequest) =>
+			new MixerChat(Config, _loggerFactory, this, _restClientMock.Object, parser, Cancel.Token);
+		public IMixerConstellation CreateConstellation(IEventParser parser, CancellationToken shutdownRequest) =>
+			new MixerConstellation(Config, _loggerFactory, this, parser, Cancel.Token);
 		public IMixerRestClient CreateRestClient() => _restClientMock.Object;
 	}
 }

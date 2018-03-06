@@ -27,19 +27,19 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly ILogger _logger;
 		uint _myUserId;
 		IJsonRpcWebSocket _channel;
-		private readonly ChatEventProcessor _eventProcessor;
+		readonly IEventParser _parser;
 
 		public bool IsAuthenticated => _channel.IsAuthenticated;
 
 		public MixerChat(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory, IMixerRestClient client,
-			ChatEventProcessor eventProcessor, CancellationToken shutdown)
+			IEventParser parser, CancellationToken shutdown)
 		{
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_client = client ?? throw new ArgumentNullException(nameof(client));
 			_logger = loggerFactory.CreateLogger(nameof(MixerChat));
-			_eventProcessor = eventProcessor ?? throw new ArgumentNullException(nameof(eventProcessor));
+			_parser = parser ?? throw new ArgumentNullException(nameof(parser));
 			_shutdown = shutdown;
 		}
 
@@ -54,13 +54,10 @@ namespace Fritz.StreamTools.Services.Mixer
 			var token = _config["StreamServices:Mixer:Token"];
 
 			_myUserId = userId;
+			_channel = _factory.CreateJsonRpcWebSocket(_logger, _parser);
 
 			// Get chat authkey and endpoints
 			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
-
-			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: true);
-			_channel.EventReceived += HandleEvents;
-
 			var endpointIndex = Math.Min(1, chatData.Endpoints.Count - 1); // Skip 1st one, seems to fail often
 
 			// Local function to choose the next endpoint to try
@@ -165,20 +162,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			return success;
 		}
 
-		/// <summary>
-		/// Called when we receive a new event from the chat server
-		/// </summary>
-		private void HandleEvents(object sender, EventEventArgs e)
-		{
-			_eventProcessor.Process(e.Event, 0, e.Data);
-		}
-
 		public void Dispose()
 		{
 			// Dont dispose _client here!
-
-			if (_channel != null)
-				_channel.EventReceived -= HandleEvents;
 
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);

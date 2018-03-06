@@ -41,12 +41,12 @@ namespace Fritz.StreamTools.Services
 #pragma warning restore CS0067
 
 		public string Name { get => SERVICE_NAME; }
-		public int CurrentFollowerCount { get => _constellationEP.Followers; }
-		public int CurrentViewerCount { get => _constellationEP.Viewers; }
+		public int CurrentFollowerCount { get => _liveParser.Followers; }
+		public int CurrentViewerCount { get => _liveParser.Viewers; }
 		public bool IsAuthenticated => ( _chat?.IsAuthenticated ).GetValueOrDefault();
 
-		readonly ConstellationEventProcessor _constellationEP;
-		readonly ChatEventProcessor _chatEP;
+		readonly ConstellationEventParser _liveParser;
+		readonly ChatEventParser _chatParser;
 
 		public MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory = null)
 		{
@@ -59,12 +59,12 @@ namespace Fritz.StreamTools.Services
 
 			factory = factory ?? new MixerFactory(config, loggerFactory);
 
-			_constellationEP = new ConstellationEventProcessor(_logger, FireEvent);
-			_chatEP = new ChatEventProcessor(_logger, FireEvent);
+			_liveParser = new ConstellationEventParser(_logger, FireEvent);
+			_chatParser = new ChatEventParser(_logger, FireEvent);
 
 			_restClient = factory.CreateRestClient();
-			_live = factory.CreateConstellation(_constellationEP, _shutdownRequested.Token);
-			_chat = factory.CreateChat(_restClient, _chatEP, _shutdownRequested.Token);
+			_live = factory.CreateConstellation(_liveParser, _shutdownRequested.Token);
+			_chat = factory.CreateChat(_restClient, _chatParser, _shutdownRequested.Token);
 		}
 
 		#region IHostedService
@@ -81,14 +81,14 @@ namespace Fritz.StreamTools.Services
 
 			// Get our current channel information
 			var (online, viewers, followers) = await _restClient.InitAsync(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
-			_constellationEP.IsOnline = online;
-			_constellationEP.Followers = followers;
-			_constellationEP.Viewers = viewers;
+			_liveParser.IsOnline = online;
+			_liveParser.Followers = followers;
+			_liveParser.Viewers = viewers;
 
 			_logger.LogInformation("JOINING CHANNEL '{0}' as {1}. {2} with {3} viewers", _restClient.ChannelName,
 				_restClient.HasToken ? _restClient.UserName : "anonymous (monitor only)",
-				_constellationEP.IsOnline == true ? "ONLINE" : "OFFLINE",
-				_constellationEP.Viewers);
+				_liveParser.IsOnline == true ? "ONLINE" : "OFFLINE",
+				_liveParser.Viewers);
 
 			// Connect to live events (viewer/follower count etc)
 			await _live.ConnectAndJoinAsync(_restClient.ChannelId.Value);
@@ -125,16 +125,16 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		public TimeSpan? Uptime
 		{
-			get
-			{
-				var cep = _constellationEP;
-				if (cep.IsOnline == false) return null;
-				if (!cep.StreamStartedAt.HasValue)
-					cep.StreamStartedAt = _restClient.GetStreamStartedAtAsync().Result;
-				if (!cep.StreamStartedAt.HasValue) return null;
+			get {
+				if (_liveParser.IsOnline == false)
+					return null;
+				if (!_liveParser.StreamStartedAt.HasValue)
+					_liveParser.StreamStartedAt = _restClient.GetStreamStartedAtAsync().Result;
+				if (!_liveParser.StreamStartedAt.HasValue)
+					return null;
 
 				// Remove milliseconds
-				var seconds = ( DateTime.UtcNow - cep.StreamStartedAt.Value ).Ticks / TimeSpan.TicksPerSecond;
+				var seconds = ( DateTime.UtcNow - _liveParser.StreamStartedAt.Value ).Ticks / TimeSpan.TicksPerSecond;
 				return TimeSpan.FromSeconds(Math.Max(0, seconds));
 			}
 		}

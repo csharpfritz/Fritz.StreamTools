@@ -5,18 +5,20 @@ using Newtonsoft.Json.Linq;
 
 namespace Fritz.StreamTools.Services.Mixer
 {
-	public class ChatEventProcessor
+	public class ChatEventParser : IEventParser
 	{
 		private readonly ILogger _logger;
 		private readonly Action<string, EventArgs> _fireEvent;
 
-		public ChatEventProcessor(ILogger logger, Action<string, EventArgs> fireEvent)
+		public ChatEventParser(ILogger logger, Action<string, EventArgs> fireEvent)
 		{
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_fireEvent = fireEvent ?? throw new ArgumentNullException(nameof(fireEvent));
 		}
 
-		public void Process(string eventName, uint channelId, JToken data)
+		public bool IsChat { get => true; }
+
+		public void Process(string eventName, JToken data)
 		{
 			switch (eventName)
 			{

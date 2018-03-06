@@ -19,10 +19,15 @@ namespace Fritz.StreamTools.Services.Mixer
 		bool IsAuthenticated { get; }
 		TimeSpan SendTimeout { get; set; }
 
-		event EventHandler<EventEventArgs> EventReceived;
 		Task<bool> SendAsync(string method, params object[] args);
 		Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> postConnectFunc);
 		void Dispose();
+	}
+
+	public interface IEventParser
+	{
+		bool IsChat { get; }
+		void Process(string eventName, JToken data);
 	}
 
 	public class EventEventArgs : EventArgs
@@ -38,7 +43,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		readonly ILogger _logger;
 		readonly IMixerFactory _factory;
-		readonly bool _isChat;
+		readonly IEventParser _parser;
 		readonly byte[] _receiveBuffer;
 
 		IClientWebSocketProxy _ws;
@@ -59,18 +64,13 @@ namespace Fritz.StreamTools.Services.Mixer
 #endif
 
 		/// <summary>
-		/// Raised each time an event is received on the websocket
-		/// </summary>
-		public event EventHandler<EventEventArgs> EventReceived;
-
-		/// <summary>
 		/// Construct a new JsonRpcWebSocket object
 		/// </summary>
-		public JsonRpcWebSocket(ILogger logger, IMixerFactory factory, IConfiguration config, bool isChat)
+		public JsonRpcWebSocket(ILogger logger, IMixerFactory factory, IConfiguration config, IEventParser parser)
 		{
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
-			_isChat = isChat;
+			_parser = parser ?? throw new ArgumentNullException(nameof(parser));
 			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
 			SendTimeout = TimeSpan.FromSeconds(10);
 			_config = config ?? throw new ArgumentNullException(nameof(config));
@@ -149,7 +149,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		private IClientWebSocketProxy CreateWebSocket(string accessToken)
 		{
-			var ws = _factory.CreateClientWebSocket(_isChat);
+			var ws = _factory.CreateClientWebSocket(_parser.IsChat);
 			ws.SetRequestHeader("x-is-bot", "true");
 			if (!string.IsNullOrEmpty(accessToken))
 			{
@@ -264,8 +264,7 @@ namespace Fritz.StreamTools.Services.Mixer
 					return;
 			}
 
-			// Some event received, chat message maybe ?
-			EventReceived?.Invoke(this, new EventEventArgs { Event = doc["event"].Value<string>(), Data = data });
+			_parser.Process(doc["event"]?.Value<string>(), data);
 		}
 
 		/// <summary>
@@ -367,7 +366,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				Method = method
 			};
 
-			if (_isChat)
+			if (_parser.IsChat)
 			{
 				if (args != null && args.Length != 0)
 					req.Arguments = args;

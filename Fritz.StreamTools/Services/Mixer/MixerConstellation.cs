@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 // https://dev.mixer.com/reference/constellation/index.html
 
@@ -25,17 +23,17 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		IJsonRpcWebSocket _channel;
-		private readonly ConstellationEventProcessor _eventProcessor;
+		readonly IEventParser _parser;
 
 		public MixerConstellation(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory,
-			ConstellationEventProcessor eventProcessor, CancellationToken shutdown)
+			IEventParser parser, CancellationToken shutdown)
 		{
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_logger = loggerFactory.CreateLogger(nameof(MixerConstellation));
-			_eventProcessor = eventProcessor ?? throw new ArgumentNullException(nameof(eventProcessor));
 			_shutdown = shutdown;
+			_parser = parser ?? throw new ArgumentNullException(nameof(parser));
 		}
 
 		/// <summary>
@@ -50,8 +48,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (string.IsNullOrWhiteSpace(token))
 				token = null;
 
-			_channel = _factory.CreateJsonRpcWebSocket(_logger, isChat: false);
-			_channel.EventReceived += HandleEvents;
+			_channel = _factory.CreateJsonRpcWebSocket(_logger, _parser);
 
 			// Connect to the chat endpoint
 			var continueTrying = true;
@@ -78,34 +75,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			}
 		}
 
-		/// <summary>
-		/// Called when we receive a new live event from server
-		/// </summary>
-		private void HandleEvents(object sender, EventEventArgs e)
-		{
-			if (e.Event == "live")
-			{
-				var channel = e.Data["channel"]?.Value<string>().Split(':');
-				if (channel == null || channel.Length == 0)
-					return;
-				var payload = e.Data["payload"];
-				if (payload == null || payload.Type != JTokenType.Object)
-					return;
-
-				if (channel[0] == "channel")
-				{
-					var channelId = uint.Parse(channel[1]);
-					_eventProcessor.Process(channel.Last(), channelId, payload);
-				}
-			}
-		}
-
 		public void Dispose()
 		{
 			// Dont dispose _client here!
-
-			if (_channel != null)
-				_channel.EventReceived -= HandleEvents;
 
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);

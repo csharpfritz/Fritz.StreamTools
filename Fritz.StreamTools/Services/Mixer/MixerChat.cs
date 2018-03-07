@@ -166,7 +166,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Dispose()
 		{
-			// Dont dispose _client here!
+			// Don't dispose _client here!
 
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);

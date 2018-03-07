@@ -18,7 +18,7 @@ namespace Fritz.StreamTools.Services.Mixer
 	{
 		/// <summary>Is the connected user authenticated</summary>
 		bool IsAuthenticated { get; }
-		/// <summary>Roles of the authemticated user or null</summary>
+		/// <summary>Roles of the authenticated user or null</summary>
 		string[] Roles { get; }
 		TimeSpan ReplyTimeout { get; set; }
 
@@ -81,8 +81,8 @@ namespace Fritz.StreamTools.Services.Mixer
 		}
 
 		/// <summary>
-		/// Try connecting to the specified websocker url once.
-		/// If the connection is successfull, it will complete the function and you dont have to worry
+		/// Try connecting to the specified websocket url once.
+		/// If the connection is successful, it will complete the function and you don't have to worry
 		/// about reconnects
 		/// </summary>
 		public async Task<bool> TryConnectAsync(Func<string> resolveUrl, string accessToken, Func<Task> postConnectFunc)
@@ -204,7 +204,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 					ProcessReceivedMessage(json);
 
-					ws.ProcessingDone(); // Dont remove! Will break tests
+					ws.ProcessingDone(); // Don't remove! Will break tests
 				}
 				catch (Exception e)
 				{
@@ -220,29 +220,39 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		private void ProcessReceivedMessage(string json)
 		{
-			var doc = JToken.Parse(json);
-			if (doc.IsNullOrEmpty())
-				return;
-
 #if GENERATE_DUMPS
-			if (_isChat)
+			if (_parser.IsChat)
 				File.AppendAllText("ChatDump.json", json + Environment.NewLine, Encoding.UTF8);
 			else if (json.Length > 120 || !json.Contains("payload\":{\"viewers") || _dumpRandom.Next(100) < 5)
 				File.AppendAllText("ConstellationDump.json", json + Environment.NewLine, Encoding.UTF8);
 #endif
 
-			var type = doc["type"];
-			if (type.IsNullOrEmpty())
-				return;
-
-			switch ((string)type)
+			try
 			{
-				case "reply":
-					HandleReply(doc);
-					break;
-				case "event":
-					HandleEvent(doc);
-					break;
+				var doc = JToken.Parse(json);
+				if (doc.IsNullOrEmpty())
+					return;
+
+				var type = doc["type"];
+				if (type.IsNullOrEmpty())
+					return;
+
+				switch ((string)type)
+				{
+					case "reply":
+						HandleReply(doc);
+						break;
+					case "event":
+						HandleEvent(doc);
+						break;
+				}
+			}
+			catch (Exception ex)
+			{
+				// Catch any error in parsing the json message, and move on
+				// NOTE: Maybe I should just catch JsonException here but I like to keep processing messages
+				//			 and not trigger a re-connect
+				_logger.LogWarning("Error in ProcessReceivedMessage: {0}", ex.Message);
 			}
 		}
 

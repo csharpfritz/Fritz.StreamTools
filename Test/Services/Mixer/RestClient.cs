@@ -126,7 +126,7 @@ namespace Test.Services.Mixer
 				Action call = () => sut.InitAsync("InvalidChannelName", Token).Wait(Simulator.TIMEOUT);
 
 				// Assert
-				call.Should().Throw<UnknownChannelException>();
+				call.Should().Throw<MixerException>();
 				Handler.RequestHistory.Count.Should().Be(5);
 			}
 		}

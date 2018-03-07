@@ -12,7 +12,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		void SetRequestHeader(string name, string value);
 		Task ConnectAsync(Uri uri, CancellationToken cancellationToken);
 		/// <summary>
-		/// Reveives the next packet from the websocket. Task completes when there are data available, or the websocket was closed
+		/// Receives the next packet from the websocket. Task completes when there are data available, or the websocket was closed
 		/// IMPORTANT: Call ProcessingDone() after processing the received data
 		/// </summary>
 		Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken);

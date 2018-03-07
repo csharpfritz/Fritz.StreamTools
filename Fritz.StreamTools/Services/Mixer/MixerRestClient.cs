@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -101,7 +100,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				catch (HttpRequestException ex)
 				{
 					if (++tryCounter == MaxTries)
-						throw new UnknownChannelException(ChannelName, ex);
+						throw new MixerException($"Can't find channel '{ChannelName}'", ex);
 					await Task.Delay(RetryDelay);
 				}
 			}
@@ -248,10 +247,9 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Dispose()
 		{
-			// Dont dispose _client here!
+			// Don't dispose _client here!
 			_client?.Dispose();
 			GC.SuppressFinalize(this);
 		}
-
 	}
 }

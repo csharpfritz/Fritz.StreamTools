@@ -65,6 +65,15 @@ namespace Fritz.StreamTools.Services
 			_chat = factory.CreateChat(_restClient, _chatParser, _shutdownRequested.Token);
 		}
 
+		// Can be used during future testing
+		internal MixerService(IConfiguration config, ILoggerFactory loggerFactory, IMixerFactory factory,
+												ConstellationEventParser liveParser = null, ChatEventParser chatParser = null)
+			: this(config, loggerFactory, factory)
+		{
+			_liveParser = liveParser ?? _liveParser;
+			_chatParser = chatParser ?? _chatParser;
+		}
+
 		#region IHostedService
 
 		public async Task StartAsync(CancellationToken cancellationToken)

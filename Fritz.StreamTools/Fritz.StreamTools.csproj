@@ -6,6 +6,12 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="ClientApp\**" />
+    <Content Remove="ClientApp\**" />
+    <EmbeddedResource Remove="ClientApp\**" />
+    <None Remove="ClientApp\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="2.6.362" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0-alpha2-final" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.3" />
@@ -21,8 +27,5 @@
     <None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
     <None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
     <None Include="wwwroot\js\GoalConfiguration\Preview.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ClientApp\" />
   </ItemGroup>
 </Project>

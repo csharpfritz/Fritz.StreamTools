@@ -98,12 +98,17 @@ namespace Fritz.StreamTools.Services
 				myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
 
 			}
-			catch (JsonReaderException ex)
+			catch (JsonReaderException ex) 
 			{
 
 				Logger.LogError($"Unable to read stream from Twitch: {ex}");
 				return;
 
+			}
+			catch (Exception)
+			{
+				Logger.LogError($"Error while communicating with Twitch");
+				return;
 			}
 
 			if (_CurrentViewerCount != (myStream.Stream?.Viewers ?? 0))

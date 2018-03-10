@@ -9,6 +9,8 @@ namespace Fritz.StreamTools.Services
 
 		public string ServiceName { get; set; }
 
+		public uint ChannelId { get; set; }
+
 		public int? NewFollowers { get; set; }
 
 		public int? NewViewers { get; set; }

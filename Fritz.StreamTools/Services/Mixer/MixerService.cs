@@ -11,6 +11,11 @@ namespace Fritz.StreamTools.Services
 {
 	public interface IMixerService : IChatService, IStreamService
 	{
+		uint? ChannelID { get; }
+		string ChannnelName { get; }
+		uint? UserId { get; }
+		string UserName { get; }
+
 		event EventHandler<FollowedEventArgs> Followed;
 		event EventHandler<HostedEventArgs> Hosted;
 		event EventHandler<SubscribedEventArgs> Subscribed;
@@ -42,6 +47,10 @@ namespace Fritz.StreamTools.Services
 		public int CurrentFollowerCount { get => _liveParser.Followers; }
 		public int CurrentViewerCount { get => _liveParser.Viewers; }
 		public bool IsAuthenticated => ( _chat?.IsAuthenticated ).GetValueOrDefault();
+		public uint? ChannelID { get => _restClient.ChannelId; }
+		public string ChannnelName { get => _restClient.ChannelName; }
+		public uint? UserId { get => _restClient.UserId; }
+		public string UserName { get => _restClient.UserName; }
 
 		readonly ConstellationEventParser _liveParser;
 		readonly ChatEventParser _chatParser;
@@ -87,7 +96,7 @@ namespace Fritz.StreamTools.Services
 			}
 
 			// Get our current channel information
-			var (online, viewers, followers) = await _restClient.InitAsync(_config["StreamServices:Mixer:Channel"], _config["StreamServices:Mixer:Token"]);
+			var (online, viewers, followers) = await _restClient.InitAsync(channelName, _config["StreamServices:Mixer:Token"]);
 			_liveParser.IsOnline = online;
 			_liveParser.Followers = followers;
 			_liveParser.Viewers = viewers;

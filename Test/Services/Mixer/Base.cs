@@ -99,13 +99,13 @@ namespace Test.Services.Mixer
 			return JsonConvert.SerializeObject(root, JsonSettings);
 		}
 
-		protected static string BuildUserJoinOrLeave(string userName, uint userId, bool isJoin)
+		protected static string BuildUserJoinOrLeave(Simulator sim, string userName, uint userId, bool isJoin)
 		{
 			var root = new WS.ChatEvent<WS.User>() {
 				Type = "event",
 				Event = isJoin ? "UserJoin" : "UserLeave",
 				Data = new WS.User {
-					OriginatingChannel = 234234,
+					OriginatingChannel = sim.ChannelInfo.Id,
 					Id = userId,
 					Username = userName,
 					Roles = new string[] { "User" }

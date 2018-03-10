@@ -41,6 +41,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			_fireEvent(nameof(MixerService.UserLeft), new ChatUserInfoEventArgs {
 				ServiceName = MixerService.SERVICE_NAME,
+				ChannelId = user.OriginatingChannel,
 				UserId = user.Id,
 				UserName = user.Username,
 				Properties = {
@@ -53,6 +54,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		{
 			_fireEvent(nameof(MixerService.UserJoined), new ChatUserInfoEventArgs {
 				ServiceName = MixerService.SERVICE_NAME,
+				ChannelId = user.OriginatingChannel,
 				UserId = user.Id,
 				UserName = user.Username,
 				Properties = {
@@ -73,6 +75,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 			_fireEvent(nameof(MixerService.ChatMessage), new ChatMessageEventArgs {
 				ServiceName = MixerService.SERVICE_NAME,
+				ChannelId = data.Channel,
 				UserId = data.UserId,
 				UserName = data.UserName,
 				IsWhisper = isWhisper,

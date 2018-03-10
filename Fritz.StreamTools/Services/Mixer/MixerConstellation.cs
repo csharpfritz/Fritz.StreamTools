@@ -39,7 +39,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <summary>
 		/// Connect to the live event server, and join our channel
 		/// </summary>
-		/// <param name="channelId">Out channelId</param>
+		/// <param name="channelId">Our channelId</param>
 		/// <returns></returns>
 		public async Task ConnectAndJoinAsync(uint channelId)
 		{
@@ -77,8 +77,6 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Dispose()
 		{
-			// Don't dispose _client here!
-
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);
 		}

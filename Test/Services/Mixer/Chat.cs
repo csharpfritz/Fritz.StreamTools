@@ -92,7 +92,8 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.ChatMessage))
-						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789 && !a.IsModerator && a.IsOwner && !a.IsWhisper)
+						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789
+																						&& !a.IsModerator && a.IsOwner && !a.IsWhisper && a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}
@@ -111,7 +112,8 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.ChatMessage))
-						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789 && !a.IsModerator && a.IsOwner && a.IsWhisper)
+						.WithArgs<ChatMessageEventArgs>(a => a.Message == "Hello world!" && a.UserName == "connor" && a.UserId == 56789
+																						&& !a.IsModerator && a.IsOwner && a.IsWhisper && a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}
@@ -140,9 +142,8 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaisesUserJoinsEvent()
 		{
-			var packet = BuildUserJoinOrLeave("SomeNewUser", 34103083, isJoin: true);
-
 			var sim = SimAnon.Value;
+			var packet = BuildUserJoinOrLeave(sim, "SomeNewUser", 34103083, isJoin: true);
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
@@ -151,7 +152,7 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.UserJoined))
-						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "SomeNewUser" && a.ServiceName == "Mixer")
+						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "SomeNewUser" && a.ServiceName == "Mixer" && a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}
@@ -160,9 +161,8 @@ namespace Test.Services.Mixer
 		[Fact]
 		public void RaisesUserLeftEvent()
 		{
-			var packet = BuildUserJoinOrLeave("SomeNewUser", 34103083, isJoin: false);
-
 			var sim = SimAnon.Value;
+			var packet = BuildUserJoinOrLeave(sim, "SomeNewUser", 34103083, isJoin: false);
 			var ws = sim.ChatWebSocket;
 			using (var sut = new MixerService(sim.Config, LoggerFactory, sim))
 			{
@@ -171,7 +171,7 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.UserLeft))
-						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "SomeNewUser" && a.ServiceName == "Mixer")
+						.WithArgs<ChatUserInfoEventArgs>(a => a.UserId == 34103083 && a.UserName == "SomeNewUser" && a.ServiceName == "Mixer" && a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}

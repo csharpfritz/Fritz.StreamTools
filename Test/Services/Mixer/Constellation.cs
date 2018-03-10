@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using FluentAssertions;
 using Fritz.StreamTools.Services;
 using Newtonsoft.Json;
@@ -47,7 +46,8 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 66 && a.NewViewers == null && a.IsOnline == null && a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 66 && a.NewViewers == null && a.IsOnline == null && a.ServiceName == "Mixer"
+																							&& a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}
@@ -67,7 +67,8 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null && a.NewViewers == 735 && a.IsOnline == null && a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == null && a.NewViewers == 735 && a.IsOnline == null && a.ServiceName == "Mixer"
+																							 && a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}
@@ -106,7 +107,7 @@ namespace Test.Services.Mixer
 				{
 					ws.InjectPacket(packet);
 					monitor.Should().Raise(nameof(sut.Updated))
-						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 22 && a.NewViewers == 43 && a.IsOnline == true && a.ServiceName == "Mixer")
+						.WithArgs<ServiceUpdatedEventArgs>(a => a.NewFollowers == 22 && a.NewViewers == 43 && a.IsOnline == true && a.ServiceName == "Mixer" && a.ChannelId == sim.ChannelInfo.Id)
 						.WithSender(sut);
 				}
 			}
@@ -170,7 +171,7 @@ namespace Test.Services.Mixer
 			{
 				sut.StartAsync(sim.Cancel.Token).Wait(Simulator.TIMEOUT);
 
-				foreach(var line in File.ReadAllLines("Services/Mixer/Data/ConstellationDump.json"))
+				foreach (var line in File.ReadAllLines("Services/Mixer/Data/ConstellationDump.json"))
 				{
 					if (string.IsNullOrWhiteSpace(line))
 						continue;

@@ -47,28 +47,28 @@ namespace Fritz.StreamTools.Services.Mixer
 			switch (eventName)
 			{
 				case "update":
-					HandleUpdate(data.GetObject<WS.LivePayload>());
+					HandleUpdate(channelId, data.GetObject<WS.LivePayload>());
 					break;
 				case "followed":
-					HandleFollowed(data.GetObject<WS.FollowedPayload>());
+					HandleFollowed(channelId, data.GetObject<WS.FollowedPayload>());
 					break;
 				case "subscribed":
-					HandleSubscribed(data.GetObject<WS.SubscribedPayload>());
+					HandleSubscribed(channelId, data.GetObject<WS.SubscribedPayload>());
 					break;
 				case "resubscribed":
 				case "resubShared":
-					HandleResubscribed(data.GetObject<WS.ResubSharedPayload>());
+					HandleResubscribed(channelId, data.GetObject<WS.ResubSharedPayload>());
 					break;
 				case "hosted":
-					HandleHosted(data.GetObject<WS.HostedPayload>());
+					HandleHosted(channelId, data.GetObject<WS.HostedPayload>());
 					break;
 				case "unhosted":
-					HandleUnhosted(data.GetObject<WS.HostedPayload>());
+					HandleUnhosted(channelId, data.GetObject<WS.HostedPayload>());
 					break;
 			}
 		}
 
-		private void HandleUpdate(WS.LivePayload data)
+		private void HandleUpdate(uint channelId, WS.LivePayload data)
 		{
 			ServiceUpdatedEventArgs update = null;
 
@@ -103,37 +103,38 @@ namespace Fritz.StreamTools.Services.Mixer
 			if (update != null)
 			{
 				update.ServiceName = MixerService.SERVICE_NAME;
+				update.ChannelId = channelId;
 				_fireEvent(nameof(MixerService.Updated), update);
 			}
 		}
 
-		void HandleFollowed(WS.FollowedPayload payload)
+		void HandleFollowed(uint channelId, WS.FollowedPayload payload)
 		{
 			_fireEvent(nameof(MixerService.Followed),
-				new FollowedEventArgs { IsFollowing = payload.Following, UserName = payload.User.Username });
+				new FollowedEventArgs { ChannelId = channelId, IsFollowing = payload.Following, UserName = payload.User.Username });
 		}
 
-		void HandleHosted(WS.HostedPayload payload)
+		void HandleHosted(uint channelId, WS.HostedPayload payload)
 		{
 			_fireEvent(nameof(MixerService.Hosted),
-				new HostedEventArgs { IsHosting = true, HosterName = payload.Hoster.Name, CurrentViewers = payload.Hoster.ViewersCurrent });
+				new HostedEventArgs { ChannelId = channelId, IsHosting = true, HosterName = payload.Hoster.Name, CurrentViewers = payload.Hoster.ViewersCurrent });
 		}
 
-		void HandleUnhosted(WS.HostedPayload payload)
+		void HandleUnhosted(uint channelId, WS.HostedPayload payload)
 		{
 			_fireEvent(nameof(MixerService.Hosted),
-				new HostedEventArgs { IsHosting = false, HosterName = payload.Hoster.Name, CurrentViewers = payload.Hoster.ViewersCurrent });
+				new HostedEventArgs { ChannelId = channelId, IsHosting = false, HosterName = payload.Hoster.Name, CurrentViewers = payload.Hoster.ViewersCurrent });
 		}
 
-		void HandleSubscribed(WS.SubscribedPayload payload)
+		void HandleSubscribed(uint channelId, WS.SubscribedPayload payload)
 		{
-			_fireEvent(nameof(MixerService.Subscribed), new SubscribedEventArgs { UserName = payload.User.Username });
+			_fireEvent(nameof(MixerService.Subscribed), new SubscribedEventArgs { ChannelId = channelId, UserName = payload.User.Username });
 		}
 
-		void HandleResubscribed(WS.ResubSharedPayload payload)
+		void HandleResubscribed(uint channelId, WS.ResubSharedPayload payload)
 		{
 			_fireEvent(nameof(MixerService.Resubscribed),
-				new ResubscribedEventArgs { UserName = payload.User.Username, Since = payload.Since, TotalMonths = payload.TotalMonths });
+				new ResubscribedEventArgs { ChannelId = channelId, UserName = payload.User.Username, Since = payload.Since, TotalMonths = payload.TotalMonths });
 		}
 	}
 }

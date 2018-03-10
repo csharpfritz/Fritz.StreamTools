@@ -23,7 +23,7 @@ namespace Fritz.StreamTools.Services.Mixer
 		readonly IConfiguration _config;
 		readonly ILoggerFactory _loggerFactory;
 		readonly IMixerFactory _factory;
-		readonly IMixerRestClient _client;
+		readonly IMixerRestClient _restClient;
 		readonly CancellationToken _shutdown;
 		readonly ILogger _logger;
 		uint _myUserId;
@@ -39,7 +39,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
-			_client = client ?? throw new ArgumentNullException(nameof(client));
+			_restClient = client ?? throw new ArgumentNullException(nameof(client));
 			_logger = loggerFactory.CreateLogger(nameof(MixerChat));
 			_parser = parser ?? throw new ArgumentNullException(nameof(parser));
 			_shutdown = shutdown;
@@ -59,7 +59,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_channel = _factory.CreateJsonRpcWebSocket(_logger, _parser);
 
 			// Get chat authkey and endpoints
-			var chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
+			var chatData = await _restClient.GetChatAuthKeyAndEndpointsAsync();
 			var endpointIndex = Math.Min(1, chatData.Endpoints.Count - 1); // Skip 1st one, seems to fail often
 
 			// Local function to choose the next endpoint to try
@@ -90,7 +90,7 @@ namespace Fritz.StreamTools.Services.Mixer
 				if (!continueTrying && !string.IsNullOrEmpty(chatData.Authkey))
 				{
 					// Try again with a new chatAuthKey
-					chatData = await _client.GetChatAuthKeyAndEndpointsAsync();
+					chatData = await _restClient.GetChatAuthKeyAndEndpointsAsync();
 					endpointIndex = Math.Min(1, chatData.Endpoints.Count - 1);
 
 					await joinAndAuth(); // If this fail give up !
@@ -166,7 +166,7 @@ namespace Fritz.StreamTools.Services.Mixer
 
 		public void Dispose()
 		{
-			// Don't dispose _client here!
+			// Don't dispose _restClient here!
 
 			_channel?.Dispose();
 			GC.SuppressFinalize(this);

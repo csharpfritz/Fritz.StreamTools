@@ -38,7 +38,7 @@
 	{
 		"outputFileName": "wwwroot/lib/signalr/signalr-client.js",
 		"inputFiles": [
-			"node_modules/@aspnet/signalr-client/dist/browser/signalr-client-1.0.0-alpha2-final.min.js"
+			"node_modules/@aspnet/signalr/dist/browser/signalr.min.js"
 		],
 		// NOTE: Dont remove this. Causes build errors if not there.
 		//			 Properly because the minifier does not understand ES2015

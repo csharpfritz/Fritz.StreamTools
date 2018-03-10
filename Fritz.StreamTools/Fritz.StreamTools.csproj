@@ -1,31 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-    <UserSecretsId>78c713a0-80e0-4e16-956a-33cf16f08a02</UserSecretsId>
+	<PropertyGroup>
+		<TargetFramework>netcoreapp2.1</TargetFramework>
+		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+		<UserSecretsId>78c713a0-80e0-4e16-956a-33cf16f08a02</UserSecretsId>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="ClientApp\**" />
-    <Content Remove="ClientApp\**" />
-    <EmbeddedResource Remove="ClientApp\**" />
-    <None Remove="ClientApp\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="BuildBundlerMinifier" Version="2.6.362" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0-alpha2-final" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.3" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.1" />
-    <PackageReference Include="System.IO.Abstractions" Version="2.1.0.178" />
-    <PackageReference Include="TwitchLib" Version="1.6.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
-    <DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="2.0.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
-    <None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
-    <None Include="wwwroot\js\GoalConfiguration\Preview.js" />
-  </ItemGroup>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Remove="ClientApp\**" />
+		<Content Remove="ClientApp\**" />
+		<EmbeddedResource Remove="ClientApp\**" />
+		<None Remove="ClientApp\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BuildBundlerMinifier" Version="2.6.362" />
+		<!--<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0-alpha2-final" />-->
+		<PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0-preview1-final" />
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-preview1-final" />
+		<PackageReference Include="System.IO.Abstractions" Version="2.1.0.178" />
+		<PackageReference Include="TwitchLib" Version="1.6.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<!--<DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
+		<DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="2.0.0" />-->
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
+		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
+		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />
+	</ItemGroup>
 </Project>

@@ -32,7 +32,7 @@ namespace Fritz.StreamTools
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+		public void Configure(IApplicationBuilder app, Microsoft.Extensions.Hosting.IHostingEnvironment env)
 		{
 			if (env.IsDevelopment())
 			{
@@ -46,10 +46,10 @@ namespace Fritz.StreamTools
 
 			app.UseStaticFiles();
 
-      app.UseSignalR(configure =>
-      {
-        configure.MapHub<FollowerHub>("followerstream");
-      });
+			app.UseSignalR(configure =>
+			{
+				configure.MapHub<FollowerHub>("/followerstream");
+			});
 
 			app.UseMvc(routes =>
 			{

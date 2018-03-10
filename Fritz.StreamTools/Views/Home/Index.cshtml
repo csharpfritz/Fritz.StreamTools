@@ -1,0 +1,43 @@
+﻿<h1 class="mt-5">Stream Tools for Streamers from Streamers!</h1>
+
+<p class="lead">
+		Incredible, awe-inspiring text full of buzz words that will hype up streamers to use the awesome tools built by Jeff and his friends!
+</p>
+
+
+<h3>Available Widgets</h3>
+<div class="row">
+
+	<div class="col-md-4">
+		<h4>Current Viewers</h4>
+		<iframe src="/CurrentViewers" scrolling="no"></iframe>
+		<br/>
+		<a asp-page="/CurrentViewers">/CurrentViewers</a>
+	</div>
+
+	<div class="col-md-4">
+		<h4>Current Followers</h4>
+		<iframe src="/Followers/Count" scrolling="no"></iframe>
+		<br/>
+		<a asp-controller="Followers" asp-action="Count">/Followers/Count</a>
+	</div>
+	
+	<div class="col-md-4">
+		<h4>Follower Goal</h4>
+		<iframe src="/followers/goal/100/Goal?width=890&FillBackgroundColor=%23800080,%2300ff00,%23ff8000&FillBackgroundColorBlend=1,1,1&EmptyBackgroundColor=%23cccccc&EmptyFontColor=%23000000&FillFontColor=%23ffffff&fontName=Carter%20One&width=280&CurrentValue=95" scrolling="no"></iframe>
+		<br/>
+		<a asp-controller="Followers" asp-action="Goal">/Followers/Goal</a>
+	</div>
+	
+</div>
+
+@section styles {
+	<style>
+	iframe {
+		border: 0;
+		width: 25vw;
+		min-width: 300px;
+		height: 60px;
+	}
+	</style>
+}

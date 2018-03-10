@@ -1,8 +1,8 @@
-FROM microsoft/aspnetcore:2.0 AS base
+FROM microsoft/aspnetcore:2.1.0-preview1 AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/aspnetcore-build:2.0 AS build
+FROM microsoft/aspnetcore-build:2.1.0-preview1 AS build
 WORKDIR /src
 COPY *.sln ./
 COPY Fritz.StreamTools/Fritz.StreamTools.csproj Fritz.StreamTools/

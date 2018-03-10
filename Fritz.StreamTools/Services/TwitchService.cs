@@ -24,6 +24,8 @@ namespace Fritz.StreamTools.Services
 		private IConfiguration Configuration { get; }
 		public ILogger Logger { get; }
 
+		private static int ErrorsReadingViewers = 0;
+
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 
 		public TwitchService(IConfiguration config, ILoggerFactory loggerFactory)
@@ -89,7 +91,17 @@ namespace Fritz.StreamTools.Services
 		{
 
 			var api = new TwitchLib.TwitchAPI(clientId: ClientId);
-			var v5Stream = new TwitchLib.Streams.V5(api);
+			TwitchLib.Streams.V5 v5Stream = null;
+			
+			try {
+				v5Stream = new TwitchLib.Streams.V5(api);
+				TwitchService.ErrorsReadingViewers = 0;
+			}
+			catch (Exception ex) {
+				TwitchService.ErrorsReadingViewers++;
+				Logger.LogError(ex, $"Error reading viewers.. {ErrorsReadingViewers} consecutive errors");
+				return;
+			}
 			StreamByUser myStream = null;
 
 			try

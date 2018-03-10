@@ -25,8 +25,6 @@ namespace Fritz.StreamTools.StartupServices
 			services.ConfigureStreamingServices(configuration);
 			services.AddSingleton<FollowerClient>();
 			services.ConfigureAspNetFeatures();
-			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
-			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);

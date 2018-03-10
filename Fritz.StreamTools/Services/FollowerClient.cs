@@ -21,13 +21,13 @@ namespace Fritz.StreamTools.Services
 		public void UpdateFollowers(int newFollowers)
 		{
 
-			FollowerContext.Clients.All.InvokeAsync("OnFollowersCountUpdated", newFollowers);
+			FollowerContext.Clients.All.SendAsync("OnFollowersCountUpdated", newFollowers);
 
 		}
 
 		public void UpdateViewers(string serviceName, int viewerCount)
 		{
-			FollowerContext.Clients.All.InvokeAsync("OnViewersCountUpdated", serviceName.ToLowerInvariant(), viewerCount);
+			FollowerContext.Clients.All.SendAsync("OnViewersCountUpdated", serviceName.ToLowerInvariant(), viewerCount);
 		}
 	}
 

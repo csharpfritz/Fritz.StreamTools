@@ -12,6 +12,7 @@
 		"outputFileName": "wwwroot/js/site.min.js",
 		"inputFiles": [
 					"wwwroot/js/site.js"
+					
 		],
 		// Optionally specify minification options
 		"minify": {
@@ -21,9 +22,23 @@
 		"sourceMap": false
 	},
 	{
+		"outputFileName": "wwwroot/js/GoalConfiguration.min.js",
+			"inputFiles": [
+				"wwwroot/js/GoalConfiguration/GoogleFonts.js",
+				"wwwroot/js/GoalConfiguration/Preview.js",
+				"wwwroot/js/GoalConfiguration/GoalConfiguration.js"
+			],
+		// Optionally specify minification options
+		"minify": {
+			"enabled": true
+		},
+		// Optionally generate .map file
+		"sourceMap": false
+	},
+	{
 		"outputFileName": "wwwroot/lib/signalr/signalr-client.js",
 		"inputFiles": [
-			"node_modules/@aspnet/signalr-client/dist/browser/signalr-client-1.0.0-alpha2-final.min.js"
+			"node_modules/@aspnet/signalr/dist/browser/signalr.min.js"
 		],
 		// NOTE: Dont remove this. Causes build errors if not there.
 		//			 Properly because the minifier does not understand ES2015

@@ -1,15 +1,14 @@
-FROM microsoft/aspnetcore:2.0 AS base
+FROM microsoft/aspnetcore:2.1.0-preview1 AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/aspnetcore-build:2.0 AS build
+FROM microsoft/aspnetcore-build:2.1.300-preview1 AS build
 WORKDIR /src
-COPY *.sln ./
 COPY Fritz.StreamTools/Fritz.StreamTools.csproj Fritz.StreamTools/
-RUN dotnet restore
-COPY . .
 WORKDIR /src/Fritz.StreamTools
-RUN dotnet build -c Release -o /app
+RUN dotnet restore
+COPY Fritz.StreamTools/. .
+RUN dotnet build -c Release -o /app --no-restore
 
 FROM build AS publish
 RUN dotnet publish -c Release -o /app -r linux-x64 --self-contained

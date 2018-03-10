@@ -1,7 +1,15 @@
 ﻿@page
 @model Fritz.StreamTools.Pages.CurrentViewersModel
+@using System.Collections.Generic
 @{
-    Layout = null;
+	Layout = null;
+
+	var fontIcon = new Dictionary<string, string>
+	{
+		{"Mixer", "microsoft"},
+		{"Fake", "tumblr" }
+	};
+
 }
 
 <!DOCTYPE html>
@@ -16,7 +24,7 @@
 	@foreach (var service in Model.StreamService.ViewerCountByService.OrderByDescending(s => s.service))
 	{
 
-		<i class="fab fa-@(service.service == "Mixer" ?  "microsoft" : service.service.ToLowerInvariant() )"></i> <span class="serviceCount" id="@service.service.ToLowerInvariant()Count">@service.count</span>
+		<i class="fab fa-@(fontIcon.ContainsKey(service.service) ? fontIcon[service.service] : service.service.ToLowerInvariant() )"></i> <span class="serviceCount" id="@service.service.ToLowerInvariant()Count">@service.count</span>
 
 	}
 

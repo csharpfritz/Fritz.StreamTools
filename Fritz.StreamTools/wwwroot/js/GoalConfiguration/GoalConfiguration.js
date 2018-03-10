@@ -1,11 +1,3 @@
-var log = function (message, params) {
-	console.log(message, params);
-
-};
-
-
-// "fontname",
-
 var isLoadingFromStorage = false;
 
 (function () {
@@ -203,7 +195,7 @@ function addColor(key) {
 		const addButton = spans[spans.length - 1].nextSibling,
 			newNode = spans[spans.length - 1].cloneNode(true),
 			bgColorField = newNode.getElementsByTagName('input')[0],
-			bgBlendField = newNode.getElementsByTagName('input')[0];
+			bgBlendField = newNode.getElementsByTagName('input')[1];
 
 		bgColorField.id = key ? `bgcolor${key}` : `bgcolor${spans.length + 1}`;
 		bgColorField.onchange = loadPreview;

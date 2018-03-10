@@ -1,3 +1,4 @@
+@inject Microsoft.AspNetCore.Hosting.IHostingEnvironment HostingEnvironment
 @model FollowerGoalConfiguration
 <div class="py-5 text-center">
 	<h2>Configure Follower Goal</h2>
@@ -41,15 +42,20 @@
 
 	
 <div class="row">
-	<div class="col-md-6 mb-3 form-inline">
+	<div class="col-md-4 mb-3 form-inline">
 		<label asp-for="EmptyBackgroundColor"></label>
 		&nbsp;
 		<input type="color" asp-for="EmptyBackgroundColor" value="#CCCCCC" />
 	</div>
-	<div class="col-md-6 mb-3 form-inline">
+	<div class="col-md-4 mb-3 form-inline">
 		<label asp-for="EmptyFontColor"></label>
 		&nbsp;
 		<input type="color" asp-for="EmptyFontColor" />
+	</div>
+	<div class="col-md-4 mb-3 form-inline">
+		<label asp-for="FillFontColor"></label>
+		&nbsp;
+		<input type="color" asp-for="FillFontColor" />
 	</div>
 </div>
 
@@ -95,9 +101,17 @@
 				CurrentValue: "@nameof(Model.CurrentValue)",
 				EmptyBackgroundColor: "@nameof(Model.EmptyBackgroundColor)",
 				EmptyFontColor: "@nameof(Model.EmptyFontColor)",
+				FillFontColor: "@nameof(Model.FillFontColor)",
 				FillBackgroundColor: "@nameof(Model.FillBackgroundColor)",
 				FillBackgroundColorBlend: "@nameof(Model.FillBackgroundColorBlend)"
 			};
+
+			var log = function (message, params) {
+				@if (HostingEnvironment.IsDevelopment())
+					{
+						<text>console.log(message, params);</text>
+					}
+				};
 
 		</script>
 

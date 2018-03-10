@@ -5,6 +5,7 @@ function InitPreview() {
 		ConfigurationModel.CurrentValue,
 		ConfigurationModel.EmptyBackgroundColor,
 		ConfigurationModel.EmptyFontColor,
+		ConfigurationModel.FillFontColor,
 		"bgcolor1", "bgblend1"];
 
 	for (var tb of quickPreviewTextBoxes) {
@@ -35,11 +36,12 @@ function loadPreview() {
 	urlTemplate += `?width=${iframeWidth}`;
 	urlTemplate += getBgColors();
 	urlTemplate += getBgBlend();
-	urlTemplate += `&EmptyBackgroundColor=${escape(document.getElementById(ConfigurationModel.EmptyBackgroundColor).value)}`;
-	urlTemplate += `&emptyFontColor=${escape(document.getElementById(ConfigurationModel.EmptyFontColor).value)}`;
+	urlTemplate += `&${ConfigurationModel.EmptyBackgroundColor}=${escape(document.getElementById(ConfigurationModel.EmptyBackgroundColor).value)}`;
+	urlTemplate += `&${ConfigurationModel.EmptyFontColor}=${escape(document.getElementById(ConfigurationModel.EmptyFontColor).value)}`;
+	urlTemplate += `&${ConfigurationModel.FillFontColor}=${escape(document.getElementById(ConfigurationModel.FillFontColor).value)}`;
 	urlTemplate += `&fontName=${escape(fontName)}`;
 
-	document.getElementById("widgetPreview").src = urlTemplate + `&currentValue=${document.getElementById(ConfigurationModel.CurrentValue).value}`
+	document.getElementById("widgetPreview").src = urlTemplate + `&${ConfigurationModel.CurrentValue}=${document.getElementById(ConfigurationModel.CurrentValue).value}`
 	log(urlTemplate);
 
 	document.getElementById("outputUrl").textContent = urlTemplate;

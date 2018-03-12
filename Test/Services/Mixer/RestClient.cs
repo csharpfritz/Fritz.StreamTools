@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using FluentAssertions;
 using Fritz.StreamTools.Helpers;
-using Fritz.StreamTools.Services;
 using Fritz.StreamTools.Services.Mixer;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
@@ -24,6 +21,7 @@ namespace Test.Services.Mixer
 		private const string OtherUserName = "OtherUser";
 		private readonly string[] Endpoints;
 		private readonly DateTime NowTestValue;
+		private const uint GameTypeId = 6654321;
 
 		private readonly DateTime StartedAtTestValue;
 
@@ -50,21 +48,12 @@ namespace Test.Services.Mixer
 			Handler.On($"channels/{WebUtility.UrlEncode(OtherUserName)}", _ => {
 				return new JsonContent(new { userId = OtherUserId }); // ??? Do I need to return anything else ?
 			});
+			Handler.On($"channels/{ChannelId}", _ => {
+				return new JsonContent(new API.Channel { Id = ChannelId, UserId = UserId, TypeId = GameTypeId, Name = "Test stream title 1", NumFollowers = 543, ViewersCurrent = 32 });
+			});
 			Handler.On($"users/current", _ => new JsonContent(new { id = UserId, username = UserName }));
-			Handler.On(new HttpMethod("PATCH"), $"channels/{ChannelId}/users/{OtherUserId}", ctx => {
-				if (string.IsNullOrEmpty(ctx.Content))
-					throw new HttpRequestException("Empty content");
-				var doc = JToken.Parse(ctx.Content);
-				if (doc["add"] == null && doc["remove"] == null)
-					throw new HttpRequestException("need add or remove in content");
-				var e = doc["add"] ?? doc["remove"];
-				if (!e.Values<string>().Contains("Banned"))
-					throw new HttpRequestException("[Banned] as arg to add/remove");
-				return new JsonContent(new { });
-			});
-			Handler.On($"chats/{ChannelId}", _ => {
-				return new JsonContent(new { authkey = SimAuth.Value.ChatAuthKey, Endpoints });
-			});
+			Handler.On(new HttpMethod("PATCH"), $"channels/{ChannelId}/users/{OtherUserId}", _ => new JsonContent(new { }));
+			Handler.On($"chats/{ChannelId}", _ => new JsonContent(new { authkey = SimAuth.Value.ChatAuthKey, Endpoints }));
 			Handler.On($"channels/{ChannelId}/manifest.light2", _ => {
 				return new JsonContent(new {
 					// ISO 8601 date time format
@@ -72,6 +61,11 @@ namespace Test.Services.Mixer
 					startedAt = StartedAtTestValue.ToString("o")
 				});
 			});
+			Handler.On($"types/{GameTypeId}", _ => new JsonContent(new API.GameTypeSimple { Id = GameTypeId, Name = "TestGameName" }));
+			Handler.On($"types", ctx => new JsonContent(new API.GameTypeSimple[] {
+				new API.GameTypeSimple { Id = GameTypeId, Name = ctx.Query["query"] }
+			}));
+			Handler.On(new HttpMethod("PATCH"), $"channels/{ChannelId}", ctx => new JsonContent(new { }));
 		}
 
 		[Fact]
@@ -141,7 +135,13 @@ namespace Test.Services.Mixer
 				var result = sut.BanUserAsync(OtherUserName).Result;
 
 				// Assert
-				result.Should().BeTrue();
+				var req = Handler.FindRequest($"channels/{ChannelId}/users/{OtherUserId}", new HttpMethod("PATCH"));
+				req.Should().NotBeNull();
+				req.Content.Should().NotBeNullOrWhiteSpace();
+
+				var doc = JToken.Parse(req.Content);
+				doc["add"].Should().NotBeNull();
+				doc["add"].Values<string>().Should().Contain("Banned");
 			}
 		}
 
@@ -155,7 +155,13 @@ namespace Test.Services.Mixer
 				var result = sut.UnbanUserAsync(OtherUserName).Result;
 
 				// Assert
-				result.Should().BeTrue();
+				var req = Handler.FindRequest($"channels/{ChannelId}/users/{OtherUserId}", new HttpMethod("PATCH"));
+				req.Should().NotBeNull();
+				req.Content.Should().NotBeNullOrWhiteSpace();
+
+				var doc = JToken.Parse(req.Content);
+				doc["remove"].Should().NotBeNull();
+				doc["remove"].Values<string>().Should().Contain("Banned");
 			}
 		}
 
@@ -223,6 +229,89 @@ namespace Test.Services.Mixer
 
 				var userId = sut.LookupUserIdAsync("InvalidUserNameForSure").Result;
 				userId.Should().BeNull();
+			}
+		}
+
+		[Fact]
+		public void CanGetChannelInfo()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+
+				var (title, gameTypeId) = sut.GetChannelInfoAsync().Result;
+
+				// Assert
+				title.Should().Be("Test stream title 1");
+				gameTypeId.Should().Be(GameTypeId);
+			}
+		}
+
+		[Fact]
+		public void CanUpdateGetChannelInfo()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+
+				sut.UpdateChannelInfoAsync("New stream title", GameTypeId).Wait();
+
+				var req = Handler.FindRequest($"channels/{ChannelId}", new HttpMethod("PATCH"));
+				req.Should().NotBeNull();
+				req.Content.Should().NotBeNullOrWhiteSpace();
+
+				var doc = JToken.Parse(req.Content);
+				doc["name"].Should().NotBeNull();
+				doc["name"].Value<string>().Should().Be("New stream title");
+				doc["typeId"].Should().NotBeNull();
+				doc["typeId"].Value<uint>().Should().Be(GameTypeId);
+			}
+		}
+
+		[Fact]
+		public void CanLookupGameTypeByQuery()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+
+				var gameTypes = sut.LookupGameTypeAsync("GameName").Result;
+
+				// Assert
+				gameTypes.Should().NotBeNull();
+				gameTypes.Should().ContainSingle();
+				gameTypes.First().Id.Should().Be(GameTypeId);
+				gameTypes.First().Name.Should().Be("GameName");
+			}
+		}
+
+		[Fact]
+		public void CanLookupGameTypeById()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+
+				var gameType = sut.LookupGameTypeByIdAsync(GameTypeId).Result;
+
+				// Assert
+				gameType.Should().NotBeNull();
+				gameType.Id.Should().Be(GameTypeId);
+				gameType.Name.Should().Be("TestGameName");
+			}
+		}
+
+		[Fact]
+		public void HandlesUnknownGameTypeById()
+		{
+			using (var sut = new MixerRestClient(LoggerFactory, Client))
+			{
+				sut.InitAsync(ChannelName, Token).Wait(Simulator.TIMEOUT);
+
+				var gameType = sut.LookupGameTypeByIdAsync(34634).Result;
+
+				// Assert
+				gameType.Should().BeNull();
 			}
 		}
 	}

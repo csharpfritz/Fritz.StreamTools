@@ -6,6 +6,7 @@ using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Fritz.StreamTools.Services
 {
@@ -20,6 +21,11 @@ namespace Fritz.StreamTools.Services
 		event EventHandler<HostedEventArgs> Hosted;
 		event EventHandler<SubscribedEventArgs> Subscribed;
 		event EventHandler<ResubscribedEventArgs> Resubscribed;
+
+		Task<IEnumerable<API.GameTypeSimple>> LookupGameTypeAsync(string query);
+		Task<API.GameTypeSimple> LookupGameTypeByIdAsync(uint gameTypeId);
+		Task<(string title, uint? gameTypeId)> GetChannelInfoAsync();
+		Task UpdateChannelInfoAsync(string title, uint? gameTypeId = null);
 	}
 
 	public class MixerService : IHostedService, IMixerService, IDisposable
@@ -133,6 +139,10 @@ namespace Fritz.StreamTools.Services
 		public Task<bool> SendWhisperAsync(string userName, string message) => _chat.SendWhisperAsync(userName, message);
 		public Task<bool> SendMessageAsync(string message) => _chat.SendMessageAsync(message);
 		public Task<bool> TimeoutUserAsync(string userName, TimeSpan time) => _chat.TimeoutUserAsync(userName, time);
+		public Task<IEnumerable<API.GameTypeSimple>> LookupGameTypeAsync(string query) => _restClient.LookupGameTypeAsync(query);
+		public Task<API.GameTypeSimple> LookupGameTypeByIdAsync(uint gameTypeId) => _restClient.LookupGameTypeByIdAsync(gameTypeId);
+		public Task UpdateChannelInfoAsync(string title, uint? gameTypeId) => _restClient.UpdateChannelInfoAsync(title, gameTypeId);
+		public Task<(string title, uint? gameTypeId)> GetChannelInfoAsync() => _restClient.GetChannelInfoAsync();
 
 		/// <summary>
 		/// Get stream uptime (cached for 10 seconds)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -31,6 +32,10 @@ namespace Fritz.StreamTools.Services.Mixer
 		Task<bool> BanUserAsync(string userName);
 		Task<bool> UnbanUserAsync(string userName);
 		Task<DateTime?> GetStreamStartedAtAsync();
+		Task<IEnumerable<API.GameTypeSimple>> LookupGameTypeAsync(string query);
+		Task<API.GameTypeSimple> LookupGameTypeByIdAsync(uint gameTypeId);
+		Task UpdateChannelInfoAsync(string title, uint? gameTypeId = null);
+		Task<(string title, uint? gameTypeId)> GetChannelInfoAsync();
 	}
 
 	internal class MixerRestClient : IMixerRestClient
@@ -222,6 +227,68 @@ namespace Fritz.StreamTools.Services.Mixer
 			return GetAsync<API.Chats>(req);
 		}
 
+		/// <summary>
+		/// Get channel current stream title and gameTypeId
+		/// </summary>
+		public async Task<(string title, uint? gameTypeId)> GetChannelInfoAsync()
+		{
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
+
+			var result = await GetAsync<API.Channel>($"channels/{ChannelId}?fields=name,gameType");
+			return (result.Name, result.TypeId);
+		}
+
+		/// <summary>
+		/// Changes the channels steam title and game type
+		/// NOTE: Requires OAuth 2.0 Scopes: channel:update
+		/// </summary>
+		public Task UpdateChannelInfoAsync(string title, uint? gameTypeId = null)
+		{
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
+			if (!HasToken)
+				throw new Exception("Requires authorization token!");
+
+			object data = null;
+			if (gameTypeId != null)
+				data = new { name = title, typeId = gameTypeId };
+			else
+				data = new { name = title };
+
+			return PatchAsync($"channels/{ChannelId}", data);
+		}
+
+		/// <summary>
+		/// Lookup game type info.
+		/// </summary>
+		/// <param name="query">Game name</param>
+		/// <returns>GameType info or null if not found</returns>
+		public async Task<API.GameTypeSimple> LookupGameTypeByIdAsync(uint gameTypeId)
+		{
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
+
+			var result = await _client.GetAsync($"types/{gameTypeId}");
+			if (result.StatusCode != HttpStatusCode.OK)
+				return null;
+			var json = await result.Content.ReadAsStringAsync();
+			return MixerSerializer.Deserialize<API.GameTypeSimple>(json);
+		}
+
+		/// <summary>
+		/// Lookup game type info from id.
+		/// </summary>
+		/// <param name="query">Game name</param>
+		/// <returns>Up to 10 gameTypes matching the query</returns>
+		public async Task<IEnumerable<API.GameTypeSimple>> LookupGameTypeAsync(string query)
+		{
+			if (!_initDone)
+				throw new Exception("Call InitAsync() first!");
+
+			return await GetAsync<API.GameTypeSimple[]>($"types?limit=10&noCount=1&scope=all&query={WebUtility.UrlEncode(query)}");
+		}
+
 		#region HttpClient helpers
 
 		async Task<T> GetAsync<T>(string requestUri)
@@ -232,7 +299,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			return MixerSerializer.Deserialize<T>(json);
 		}
 
-		async Task PatchAsync<T>(string requestUri, T data)
+		async Task<string> PatchAsync<T>(string requestUri, T data)
 		{
 			_logger.LogTrace("PATCH {0}{1}", API_URL, requestUri);
 
@@ -241,6 +308,9 @@ namespace Fritz.StreamTools.Services.Mixer
 			};
 			var response = await _client.SendAsync(message);
 			response.EnsureSuccessStatusCode();
+			if (response.Content != null)
+				return await response.Content.ReadAsStringAsync();
+			return null;
 		}
 
 		#endregion

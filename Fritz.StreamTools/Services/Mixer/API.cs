@@ -110,5 +110,13 @@ namespace Fritz.StreamTools.Services.Mixer
 			public IList<string> Endpoints { get; set; }
 			public bool IsLoadShed { get; set; }
 		}
+
+		public class GameTypeSimple
+		{
+			public uint Id { get; set; }
+			public string Name { get; set; }
+			public string CoverUrl { get; set; }
+			public string BackgroundUrl { get; set; }
+		}
 	}
 }

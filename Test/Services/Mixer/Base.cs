@@ -14,7 +14,6 @@ namespace Test.Services.Mixer
 		protected Lazy<Simulator> SimAuth { get; }
 		protected Lazy<Simulator> SimAnon { get; }
 		public string Token { get; } = "abcd1234";
-		static public JsonSerializerSettings JsonSettings { get; } = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 
 		protected Base()
 		{
@@ -66,7 +65,7 @@ namespace Test.Services.Mixer
 					Messages = _BuildContentMessages(text, link, isWhisper)
 				}
 			};
-			return JsonConvert.SerializeObject(root, JsonSettings);
+			return MixerSerializer.Serialize(root);
 		}
 
 		protected static string BuildTimeoutReply(int id)
@@ -76,7 +75,7 @@ namespace Test.Services.Mixer
 				Id = id,
 				Data = "username has been timed out for some time."
 			};
-			return JsonConvert.SerializeObject(root, JsonSettings);
+			return MixerSerializer.Serialize(root);
 		}
 
 		protected static string BuildMsgReply(Simulator sim, int id, string text, string target = null)
@@ -96,7 +95,7 @@ namespace Test.Services.Mixer
 					Target = target
 				}
 			};
-			return JsonConvert.SerializeObject(root, JsonSettings);
+			return MixerSerializer.Serialize(root);
 		}
 
 		protected static string BuildUserJoinOrLeave(Simulator sim, string userName, uint userId, bool isJoin)
@@ -111,7 +110,7 @@ namespace Test.Services.Mixer
 					Roles = new string[] { "User" }
 				}
 			};
-			return JsonConvert.SerializeObject(root, JsonSettings);
+			return MixerSerializer.Serialize(root);
 		}
 
 		protected static string BuildLiveEvent(string channel, uint? followers = null, uint? viewers = null, bool? online = null)
@@ -128,7 +127,7 @@ namespace Test.Services.Mixer
 					}
 				}
 			};
-			return JsonConvert.SerializeObject(root, JsonSettings);
+			return MixerSerializer.Serialize(root);
 		}
 	}
 }

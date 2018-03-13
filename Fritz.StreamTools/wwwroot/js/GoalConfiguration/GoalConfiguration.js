@@ -70,6 +70,8 @@ var isLoadingFromStorage = false;
 
 		InitGoogleFonts();
 
+		ConfigureDefaultFontColors();
+
 		isLoadingFromStorage = false; 
 
 	}
@@ -222,4 +224,47 @@ function renumberColors() {
 		spans[i].getElementsByTagName('input')[0].id = `bgcolor${i + 1}`;
 		spans[i].getElementsByTagName('input')[1].id = `bgblend${i + 1}`;
 	}
+}
+
+function colourIsLight (r, g, b) {
+
+	// Counting the perceptive luminance
+	// human eye favors green color... 
+	var a = 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+	console.log(a);
+	return (a < 0.5);
+}
+
+function ConfigureDefaultFontColors() {
+
+	var buttons = ["defaultEmptyFontColor", "defaultFillFontColor"];
+
+	for (var button of buttons) {
+
+		var thisButton = document.getElementById(button);
+		thisButton.onclick = function (event) {
+
+			event.preventDefault()
+
+			var targetColorEl = document.getElementById(this.getAttribute("data-target"));
+			var inspectColor = this.getAttribute("data-background");
+			var inspectRgb = hexToRgb(document.getElementById(inspectColor).value.replace("#", ""));
+			var newFontColor = colourIsLight(inspectRgb[0], inspectRgb[1], inspectRgb[2]) ? "#000000" : "#FFFFFF";
+			
+			targetColorEl.value = newFontColor;
+			loadPreview();
+
+		};
+
+	}
+
+}
+
+function hexToRgb(hex) {
+	var bigint = parseInt(hex, 16);
+	var r = (bigint >> 16) & 255;
+	var g = (bigint >> 8) & 255;
+	var b = bigint & 255;
+
+	return [r, g, b];
 }

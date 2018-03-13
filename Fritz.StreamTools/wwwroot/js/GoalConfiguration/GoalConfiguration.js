@@ -72,6 +72,8 @@ var isLoadingFromStorage = false;
 
 		ConfigureDefaultFontColors();
 
+		$('[data-toggle="tooltip"]').tooltip();
+
 		isLoadingFromStorage = false; 
 
 	}

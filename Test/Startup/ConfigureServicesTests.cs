@@ -24,6 +24,7 @@ namespace Test.Startup
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<ILoggerFactory>(new LoggerFactory());
+			serviceCollection.AddSingleton<IConfiguration>(configuration);
 				
 			// act
 			ConfigureServices.Execute(serviceCollection, configuration);
@@ -31,8 +32,8 @@ namespace Test.Startup
 			// assert
 			var provider = serviceCollection.BuildServiceProvider();
 
-			Assert.Equal(expected, provider.GetServices<IHostedService>().Select(x => x.GetType()));
-			Assert.Equal(expected, provider.GetServices<IStreamService>().Select(x => x.GetType()));
+			Assert.Equal(expected, provider.GetServices<IHostedService>().Select(x => x.GetType()).Intersect(expected));
+			Assert.Equal(expected, provider.GetServices<IStreamService>().Select(x => x.GetType()).Intersect(expected));
 		}
 
 		public static IEnumerable<object[]> Configurations
@@ -53,7 +54,7 @@ namespace Test.Startup
 			return new Dictionary<string, string>
 			{
 				{"StreamServices:Twitch:ClientId", twitchClientId},
-				{"StreamServices:Mixer:ClientId", mixerClientId},
+				{"StreamServices:Mixer:Channel", mixerClientId},
 				{"StreamServices:Fake:Enabled", enableFake.ToString()}
 			};
 		}

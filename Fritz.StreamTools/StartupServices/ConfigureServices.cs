@@ -28,6 +28,8 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
+
+			services.AddSingleton<IHostedService, SampleChatBot>();
 		}
 
 		private static void ConfigureStreamingServices(this IServiceCollection services,
@@ -38,7 +40,7 @@ namespace Fritz.StreamTools.StartupServices
 				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
 			services.ConfigureStreamService(configuration, 
 				(c, l) => new MixerService(c, l),                                   // Factory
-				c => string.IsNullOrEmpty(c["StreamServices:Mixer:ClientId"]));			// Test to disable
+				c => string.IsNullOrEmpty(c["StreamServices:Mixer:Channel"]));			// Test to disable
 			services.ConfigureStreamService(configuration, 
 				(c, l) => new FakeService(c, l),                                                          // Factory
 				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
@@ -76,6 +78,11 @@ namespace Fritz.StreamTools.StartupServices
 			
 			services.AddSingleton(service as IHostedService);
 			services.AddSingleton(service as IStreamService);
+
+			if (service is IChatService chatService)
+			{
+				services.AddSingleton(chatService);
+			}
 		}
 
 		/// <summary>

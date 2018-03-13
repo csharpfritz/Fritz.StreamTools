@@ -64,6 +64,8 @@ namespace Fritz.StreamTools.Services
 
 		public string Name { get { return "Twitch"; } }
 
+		public TimeSpan? Uptime => null;
+
 		private async Task StartTwitchMonitoring()
 		{
 			var api = new TwitchLib.TwitchAPI(clientId: ClientId);

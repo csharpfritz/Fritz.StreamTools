@@ -27,5 +27,8 @@
 		<None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
 		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
 		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />
+		<None Update="SampleQuotes.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>

@@ -7,11 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture" Version="4.0.0" />
-    <PackageReference Include="AutoFixture.AutoMoq" Version="4.0.0" />
-    <PackageReference Include="AutoFixture.Xunit2" Version="4.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
-    <PackageReference Include="Moq" Version="4.8.1" />
+    <PackageReference Include="AutoFixture" Version="4.1.0" />
+    <PackageReference Include="AutoFixture.AutoMoq" Version="4.1.0" />
+    <PackageReference Include="AutoFixture.Xunit2" Version="4.1.0" />
+    <PackageReference Include="FluentAssertions" Version="5.1.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
+    <PackageReference Include="Moq" Version="4.8.2" />
     <PackageReference Include="System.IO.Abstractions" Version="2.1.0.178" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
@@ -21,6 +22,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fritz.StreamTools\Fritz.StreamTools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Services\Mixer\Data\ChatDump.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Services\Mixer\Data\ConstellationDump.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

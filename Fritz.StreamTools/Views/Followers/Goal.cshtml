@@ -77,6 +77,11 @@
 		<script src="~/lib/signalr/signalr-client.js"></script>
 		<script src="~/js/streamhub.js"></script>
 		<script>
+
+				var fullBarWidth = @Model.Width;
+
+				var goalValue = @Model.Goal;
+
 				(function () {
 
 						var hub = new StreamHub();

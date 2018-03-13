@@ -14,7 +14,7 @@ namespace Test.Services.Mixer
 		public class SimulatedHttpMessageHandler : HttpMessageHandler
 		{
 			public List<RequestContext> RequestHistory { get; } = new List<RequestContext>();
-			List<RequestTrigger> _triggers = new List<RequestTrigger>();
+			readonly List<RequestTrigger> _triggers = new List<RequestTrigger>();
 			private readonly string _prefix;
 
 			public void On(string path, Func<RequestContext, HttpContent> callback) => On(HttpMethod.Get, path, callback);
@@ -25,8 +25,8 @@ namespace Test.Services.Mixer
 				_triggers.Add(trigger);
 			}
 
-			public RequestContext FindRequest(string path, HttpMethod method) =>  RequestHistory.FirstOrDefault(x => x.Path == _prefix + path && x.Method == method);
-			public RequestContext FindRequest(string path) => RequestHistory.FirstOrDefault(x => x.Path == _prefix + path && x.Method == HttpMethod.Get);
+			public RequestContext FindRequest(string path, HttpMethod method) => RequestHistory.Find(x => x.Path == _prefix + path && x.Method == method);
+			public RequestContext FindRequest(string path) => RequestHistory.Find(x => x.Path == _prefix + path && x.Method == HttpMethod.Get);
 			public RequestContext[] FindRequests(string path) => RequestHistory.Where(x => x.Path == _prefix + path && x.Method == HttpMethod.Get).ToArray();
 
 			public SimulatedHttpMessageHandler(string prefix = null)
@@ -47,7 +47,7 @@ namespace Test.Services.Mixer
 
 				var response = new HttpResponseMessage(HttpStatusCode.NotFound);
 				var found = _triggers.OrderByDescending(x => x.Path.Length).Where(t => t.Method == request.Method && request.RequestUri.AbsolutePath == t.Path);
-				foreach(var t in found)
+				foreach (var t in found)
 				{
 					var content = t.Callback(ctx);
 					if (content != null)

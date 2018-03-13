@@ -42,12 +42,13 @@ namespace Fritz.StreamTools.Services.Mixer
 	internal class JsonRpcWebSocket : IJsonRpcWebSocket, IDisposable
 	{
 		const int CONNECT_TIMEOUT = 20000;  // In milliseconds
-		const int SOCKET_BUFFER_SIZE = 1024;
+		const int READ_BUFFER_SIZE = 1024;
 
 		readonly ILogger _logger;
 		readonly IMixerFactory _factory;
 		readonly IEventParser _parser;
-		readonly byte[] _receiveBuffer;
+		readonly byte[] _readBuffer;
+		readonly MemoryStream _receiveStream = new MemoryStream();
 
 		IClientWebSocketProxy _ws;
 		readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
@@ -75,7 +76,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_factory = factory ?? throw new ArgumentNullException(nameof(factory));
 			_parser = parser ?? throw new ArgumentNullException(nameof(parser));
-			_receiveBuffer = new byte[SOCKET_BUFFER_SIZE];
+			_readBuffer = new byte[READ_BUFFER_SIZE];
 			ReplyTimeout = TimeSpan.FromSeconds(10);
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 		}
@@ -418,26 +419,23 @@ namespace Fritz.StreamTools.Services.Mixer
 		/// <returns>The text message, or null if socket was closed</returns>
 		private async Task<string> ReceiveNextMessageAsync(IClientWebSocketProxy ws)
 		{
-			var buffer = new ArraySegment<byte>(_receiveBuffer);
+			_receiveStream.Position = 0;
 			WebSocketReceiveResult result;
-			using (var ms = new MemoryStream())
+			do
 			{
-				do
-				{
-					result = await ws.ReceiveAsync(buffer, _cancellationToken.Token);
-					if (result == null || result.Count == 0 || result.MessageType == WebSocketMessageType.Close)
-						return null;
-					if (ws.CloseStatus.HasValue)
-						return null;
-					Debug.Assert(result.MessageType == WebSocketMessageType.Text);
-					ms.Write(buffer.Array, buffer.Offset, result.Count);
-				}
-				while (!result.EndOfMessage);
-
-				ms.Seek(0, SeekOrigin.Begin);
-				using (var reader = new StreamReader(ms, Encoding.UTF8))
-					return reader.ReadToEnd();
+				result = await ws.ReceiveAsync(_readBuffer, _cancellationToken.Token);
+				if (result == null || result.Count == 0 || result.MessageType == WebSocketMessageType.Close)
+					return null;
+				if (ws.CloseStatus.HasValue)
+					return null;
+				Debug.Assert(result.MessageType == WebSocketMessageType.Text);
+				if (result.EndOfMessage && _receiveStream.Position == 0)
+					return Encoding.UTF8.GetString(_readBuffer, 0, result.Count); // No need to use memory stream
+				_receiveStream.Write(_readBuffer, 0, result.Count);
 			}
+			while (!result.EndOfMessage);
+
+			return Encoding.UTF8.GetString(_receiveStream.GetBuffer(), 0, (int)_receiveStream.Position);
 		}
 
 		/// <summary>
@@ -454,6 +452,7 @@ namespace Fritz.StreamTools.Services.Mixer
 			// Wait for it to complete
 			_receiverTask?.Wait();
 
+			_receiveStream.Dispose();
 			_disposed = true;
 		}
 	}

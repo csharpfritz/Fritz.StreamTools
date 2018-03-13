@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Services.Mixer;
 using Newtonsoft.Json.Linq;
-using Xunit.Abstractions;
 
 namespace Test.Services.Mixer
 {
@@ -30,9 +29,9 @@ namespace Test.Services.Mixer
 		readonly string _welcomeMessage;
 		bool _isFirstSend = true;
 		private readonly bool _isAuthenticated;
-		NamedPipeServerStream _serverPipe;
-		NamedPipeClientStream _injectPipe;
-		int _myId;
+		readonly NamedPipeServerStream _serverPipe;
+		readonly NamedPipeClientStream _injectPipe;
+		readonly int _myId;
 
 		public SimulatedClientWebSocket(bool isChat, bool isAuthenticated, string welcomeMessage = null)
 		{
@@ -74,7 +73,7 @@ namespace Test.Services.Mixer
 			int n = await _serverPipe.ReadAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 			if (cancellationToken.IsCancellationRequested)
 				return null;
-			if(n == 0)
+			if (n == 0)
 				throw new WebSocketException("WebSocket closed");
 
 			return new WebSocketReceiveResult(n, WebSocketMessageType.Text, true);
@@ -92,7 +91,7 @@ namespace Test.Services.Mixer
 				if (IsChat)
 				{
 					JoinedChat.Set();
-					if(_isAuthenticated)
+					if (_isAuthenticated)
 					{
 						InjectPacket("{'type':'reply','error':null,'id':<MSGID>,'data':{'authenticated':true,'roles':[]}}"
 							.Replace("'", "\"")
@@ -122,7 +121,7 @@ namespace Test.Services.Mixer
 
 		virtual public void SetRequestHeader(string name, string value)
 		{
-			Headers.Remove(name);	// Remove if its already there
+			Headers.Remove(name); // Remove if its already there
 			Headers.Add(name, value);
 		}
 

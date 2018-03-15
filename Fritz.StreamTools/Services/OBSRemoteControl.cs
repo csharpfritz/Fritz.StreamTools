@@ -80,7 +80,10 @@ namespace Fritz.StreamTools.Services
 				try
 				{
 					_lock.Wait();
+
 					var ws = new ClientWebSocket();
+					ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+
 					await ws.ConnectAsync(new Uri(url), _shutdown.Token);
 					_webSocket = ws;
 					_receiverTask = Task.Factory.StartNew(() => ReceiverTask(connect), TaskCreationOptions.LongRunning);

@@ -42,7 +42,6 @@ namespace Fritz.StreamTools.Services
 		CancellationTokenSource _shutdown;
 		readonly ConcurrentDictionary<int, TaskCompletionSource<JObject>> _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<JObject>>();
 		readonly byte[] _buffer = new byte[1024];
-		readonly Random _random = new Random();
 		int _nextId = 1;
 		string _audioDevice;
 

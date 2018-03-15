@@ -130,11 +130,13 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		Task Send(string method, string events)
 		{
-			var data = new {
+			var data = new
+			{
 				id = _nextCommandId++,
 				type = "method",
 				method,
-				@params = new {
+				@params = new
+				{
 					events = new string[]
 							{
 												events
@@ -201,7 +203,8 @@ namespace Fritz.StreamTools.Services
 				Interlocked.Exchange(ref _numberOfFollowers, data["numFollowers"].Value<int>());
 				Logger.LogInformation($"New Followers on Mixer, new total: {_numberOfFollowers}");
 
-				Updated?.Invoke(this, new ServiceUpdatedEventArgs {
+				Updated?.Invoke(this, new ServiceUpdatedEventArgs
+				{
 					ServiceName = Name,
 					NewFollowers = data["numFollowers"].Value<int>()
 				});
@@ -212,7 +215,8 @@ namespace Fritz.StreamTools.Services
 				var n = data["viewersCurrent"].Value<int>();
 				if (n != Interlocked.Exchange(ref _numberOfViewers, n))
 				{
-					Updated?.Invoke(this, new ServiceUpdatedEventArgs {
+					Updated?.Invoke(this, new ServiceUpdatedEventArgs
+					{
 						ServiceName = Name,
 						NewViewers = data["viewersCurrent"].Value<int>()
 					});

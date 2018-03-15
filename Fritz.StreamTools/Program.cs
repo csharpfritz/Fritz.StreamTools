@@ -21,6 +21,5 @@ namespace Fritz.StreamTools
 				WebHost.CreateDefaultBuilder(args)
 						.UseStartup<Startup>()
 						.Build();
-
 	}
 }

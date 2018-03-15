@@ -10,12 +10,26 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+
+// Talks to the OBS plugin 'obs-websocket' to remotely control the volume of a single Audio Device
+// Get the plugin here: https://github.com/Palakis/obs-websocket
 
 namespace Fritz.StreamTools.Services
 {
 	public interface IOBSRemoteControl
 	{
-		Task ConnectAsync();
+		/// <summary>
+		/// Set the volume of the OBS audio device
+		/// </summary>
+		/// <param name="volume">A value between 0 and 1</param>
+		Task SetVolumeAsync(float volume);
+
+		/// <summary>
+		/// Get the volume of the OBS audio device
+		/// </summary>
+		/// <returns>A value between 0 and 1</returns>
+		Task<float> GetVolumeAsync();
 	}
 
 	internal class OBSRemoteControl : IOBSRemoteControl
@@ -30,6 +44,7 @@ namespace Fritz.StreamTools.Services
 		readonly byte[] _buffer = new byte[1024];
 		readonly Random _random = new Random();
 		int _nextId = 1;
+		string _audioDevice;
 
 		public OBSRemoteControl(ILoggerFactory loggerFactory, IConfiguration config)
 		{
@@ -48,7 +63,17 @@ namespace Fritz.StreamTools.Services
 
 			url = _config["OBSRemoteControl:Url"];
 			if (string.IsNullOrEmpty(url))
+			{
+				_logger.LogWarning("No OBSRemoteControl:Url config parameter");
 				return false;
+			}
+
+			_audioDevice = _config["OBSRemoteControl:AudioDevice"];
+			if (string.IsNullOrEmpty(_audioDevice))
+			{
+				_logger.LogWarning("No OBSRemoteControl:AudioDevice config parameter");
+				return false;
+			}
 
 			async Task connect()
 			{
@@ -122,7 +147,9 @@ namespace Fritz.StreamTools.Services
 
 			try
 			{
-				var data = Encoding.UTF8.GetBytes(body.ToString());
+				var s = body.ToString(Formatting.None);
+				_logger.LogTrace(">> {0}", s);
+				var data = Encoding.UTF8.GetBytes(s);
 				await _webSocket.SendAsync(data, WebSocketMessageType.Text, true, _shutdown.Token);
 				await tcs.Task;
 			}
@@ -132,7 +159,7 @@ namespace Fritz.StreamTools.Services
 			}
 
 			var result = tcs.Task.Result;
-			if ((string)result["status"] == "error")
+			if (result["status"]?.Value<string>() == "error")
 				throw new Exception((string)result["error"]);
 
 			return result;
@@ -149,6 +176,7 @@ namespace Fritz.StreamTools.Services
 				Debug.Assert(result.EndOfMessage);
 				var s = Encoding.UTF8.GetString(_buffer, 0, result.Count);
 				var body = JObject.Parse(s);
+				_logger.LogTrace("<< {0}", body.ToString(Formatting.None));
 
 				if (body["message-id"] != null)
 				{
@@ -187,24 +215,27 @@ namespace Fritz.StreamTools.Services
 			return new OBSAuthInfo(response);
 		}
 
-		public async Task ConnectAsync()
-		{
-			await EnsureConnected();
-			var vi = await GetVolumeAsync("Desktop Audio");
-			;
-
-		}
-
-
-		public async Task<VolumeInfo> GetVolumeAsync(string sourceName)
+		public async Task<float> GetVolumeAsync()
 		{
 			var requestFields = new JObject();
-			requestFields.Add("source", sourceName);
+			requestFields.Add("source", _audioDevice);
 
 			var response = await SendAsync("GetVolume", requestFields);
-			return new VolumeInfo(response);
+			var vi = new VolumeInfo(response);
+			return vi.Volume;
 		}
 
+		public Task SetVolumeAsync(float volume)
+		{
+			if (volume < 0 || volume > 1)
+				throw new ArgumentOutOfRangeException(nameof(volume));
+
+			var requestFields = new JObject();
+			requestFields.Add("source", _audioDevice);
+			requestFields.Add("volume", volume);
+
+			return SendAsync("SetVolume", requestFields);
+		}
 
 		/// <summary>
 		/// Data required by authentication
@@ -263,6 +294,5 @@ namespace Fritz.StreamTools.Services
 				Muted = (bool)data["muted"];
 			}
 		}
-
 	}
 }

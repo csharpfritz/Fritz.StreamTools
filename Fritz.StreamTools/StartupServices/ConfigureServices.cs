@@ -36,14 +36,14 @@ namespace Fritz.StreamTools.StartupServices
 			IConfiguration configuration)
 		{
 			services.ConfigureStreamService(configuration,
-				(c, l) => new TwitchService(c, l),                                  // Factory
-				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));    // Test to disable
+				(c, l) => new TwitchService(c, l),																	// Factory
+				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
 			services.ConfigureStreamService(configuration,
 				(c, l) => new MixerService(c, l),                                   // Factory
-				c => string.IsNullOrEmpty(c["StreamServices:Mixer:ClientId"]));     // Test to disable
+				c => string.IsNullOrEmpty(c["StreamServices:Mixer:ClientId"]));			// Test to disable
 			services.ConfigureStreamService(configuration,
 				(c, l) => new FakeService(c, l),                                                          // Factory
-				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);      // Test to disable
+				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
 
 			services.AddSingleton<StreamService>();
 		}
@@ -71,7 +71,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			// Configure and grab a logger so that we can log information
 			// about the creation of the services
-			var provider = services.BuildServiceProvider();   // Build a 'temporary' instance of the DI container
+			var provider = services.BuildServiceProvider();		// Build a 'temporary' instance of the DI container
 			var loggerFactory = provider.GetService<ILoggerFactory>();
 
 			var service = factory(configuration, loggerFactory);

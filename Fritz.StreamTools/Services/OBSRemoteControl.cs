@@ -220,6 +220,9 @@ namespace Fritz.StreamTools.Services
 
 		public async Task<float> GetVolumeAsync()
 		{
+			if (!await EnsureConnected())
+				return 0;
+
 			var requestFields = new JObject();
 			requestFields.Add("source", _audioDevice);
 
@@ -228,16 +231,18 @@ namespace Fritz.StreamTools.Services
 			return vi.Volume;
 		}
 
-		public Task SetVolumeAsync(float volume)
+		public async Task SetVolumeAsync(float volume)
 		{
 			if (volume < 0 || volume > 1)
 				throw new ArgumentOutOfRangeException(nameof(volume));
+			if (!await EnsureConnected())
+				return;
 
 			var requestFields = new JObject();
 			requestFields.Add("source", _audioDevice);
 			requestFields.Add("volume", volume);
 
-			return SendAsync("SetVolume", requestFields);
+			await SendAsync("SetVolume", requestFields);
 		}
 
 		/// <summary>

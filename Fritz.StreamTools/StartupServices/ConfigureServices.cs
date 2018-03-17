@@ -28,22 +28,24 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
+
+			services.AddSingleton<IOBSRemoteControl, OBSRemoteControl>();
 		}
 
 		private static void ConfigureStreamingServices(this IServiceCollection services,
 			IConfiguration configuration)
-		{		
-			services.ConfigureStreamService(configuration, 
+		{
+			services.ConfigureStreamService(configuration,
 				(c, l) => new TwitchService(c, l),																	// Factory
 				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
-			services.ConfigureStreamService(configuration, 
+			services.ConfigureStreamService(configuration,
 				(c, l) => new MixerService(c, l),                                   // Factory
 				c => string.IsNullOrEmpty(c["StreamServices:Mixer:ClientId"]));			// Test to disable
-			services.ConfigureStreamService(configuration, 
+			services.ConfigureStreamService(configuration,
 				(c, l) => new FakeService(c, l),                                                          // Factory
 				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
-			
-			services.AddSingleton<StreamService>();	
+
+			services.AddSingleton<StreamService>();
 		}
 
 		/// <summary>
@@ -54,10 +56,10 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="configuration">Application Configuration to use to populate our service</param>
 		/// <param name="factory">Callback method that defines how to instantiate the service</param>
 		/// <param name="isDisabled">Callback test to determine whether to disable the service</param>
-		private static void ConfigureStreamService<TStreamService>(this IServiceCollection services, 
+		private static void ConfigureStreamService<TStreamService>(this IServiceCollection services,
 			IConfiguration configuration,
-			Func<IConfiguration, ILoggerFactory, TStreamService> factory, 
-			Func<IConfiguration, bool> isDisabled) 
+			Func<IConfiguration, ILoggerFactory, TStreamService> factory,
+			Func<IConfiguration, bool> isDisabled)
 			where TStreamService : class, IStreamService
 		{
 
@@ -73,7 +75,7 @@ namespace Fritz.StreamTools.StartupServices
 			var loggerFactory = provider.GetService<ILoggerFactory>();
 
 			var service = factory(configuration, loggerFactory);
-			
+
 			services.AddSingleton(service as IHostedService);
 			services.AddSingleton(service as IStreamService);
 		}

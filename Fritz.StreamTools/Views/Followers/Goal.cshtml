@@ -77,6 +77,11 @@
 		<script src="~/lib/signalr/signalr-client.js"></script>
 		<script src="~/js/streamhub.js"></script>
 		<script>
+
+				var fullBarWidth = @Model.Width;
+
+				var goalValue = @Model.Goal;
+
 				(function () {
 
 						var hub = new StreamHub();
@@ -90,7 +95,7 @@
 
 						if (window.self == window.top) {
 								console.log("Topmost window - enabling SignalR");
-								hub.start();
+								hub.start("followers");
 						} else {
 								console.log("hosted in a frame - disabling SignalR");
 						}

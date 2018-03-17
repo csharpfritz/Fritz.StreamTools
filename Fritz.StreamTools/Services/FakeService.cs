@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Fritz.StreamLib.Core;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -36,6 +37,8 @@ namespace Fritz.StreamTools.Services
 		public int CurrentFollowerCount => _numberOfFollowers;
 
 		public int CurrentViewerCount => _numberOfViewers;
+
+		public TimeSpan? Uptime => null;
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 

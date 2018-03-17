@@ -14,7 +14,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFi
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamAnalytics", "StreamAnalytics\StreamAnalytics.csproj", "{65DF3EC8-34F7-4F02-B2F1-ECB65BC4B20E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamAnalytics", "StreamAnalytics\StreamAnalytics.csproj", "{65DF3EC8-34F7-4F02-B2F1-ECB65BC4B20E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.StreamLib.Core", "Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj", "{3D5AA800-4C89-4255-AB04-D49EE2F5C704}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MixerLib", "MixerLib\MixerLib.csproj", "{68BC2C5E-FF6A-4112-8E9B-50905A635B5E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +42,14 @@ Global
 		{65DF3EC8-34F7-4F02-B2F1-ECB65BC4B20E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65DF3EC8-34F7-4F02-B2F1-ECB65BC4B20E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65DF3EC8-34F7-4F02-B2F1-ECB65BC4B20E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D5AA800-4C89-4255-AB04-D49EE2F5C704}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D5AA800-4C89-4255-AB04-D49EE2F5C704}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D5AA800-4C89-4255-AB04-D49EE2F5C704}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D5AA800-4C89-4255-AB04-D49EE2F5C704}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68BC2C5E-FF6A-4112-8E9B-50905A635B5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68BC2C5E-FF6A-4112-8E9B-50905A635B5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68BC2C5E-FF6A-4112-8E9B-50905A635B5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68BC2C5E-FF6A-4112-8E9B-50905A635B5E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

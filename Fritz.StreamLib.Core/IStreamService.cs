@@ -1,7 +1,6 @@
 ﻿using System;
-using Microsoft.Extensions.Configuration;
 
-namespace Fritz.StreamTools.Services
+namespace Fritz.StreamLib.Core
 {
 
 	public interface IStreamService
@@ -12,6 +11,8 @@ namespace Fritz.StreamTools.Services
 		int CurrentFollowerCount { get; }
 
 		int CurrentViewerCount { get; }
+
+		TimeSpan? Uptime { get; }
 
 		/// <summary>
 		/// Event raised when the number of Followers or Viewers changes

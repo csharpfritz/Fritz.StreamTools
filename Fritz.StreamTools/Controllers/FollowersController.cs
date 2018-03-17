@@ -96,7 +96,7 @@ namespace Fritz.StreamTools.Controllers
             }
 
             model.LoadDefaultValues(Configuration);
-            model.CurrentValue = Configuration.CurrentValue == -1 ? StreamService.CurrentFollowerCount : model.CurrentValue;
+            model.CurrentValue = model.CurrentValue <= 0 ? StreamService.CurrentFollowerCount : model.CurrentValue;
 
 
             return View(model);

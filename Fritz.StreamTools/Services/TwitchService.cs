@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Fritz.StreamLib.Core;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -64,6 +65,8 @@ namespace Fritz.StreamTools.Services
 
 		public string Name { get { return "Twitch"; } }
 
+		public TimeSpan? Uptime => null;
+
 		private async Task StartTwitchMonitoring()
 		{
 			var api = new TwitchLib.TwitchAPI(clientId: ClientId);
@@ -95,65 +98,65 @@ namespace Fritz.StreamTools.Services
 
 
 		private async void CheckViews(object state)
-    {
+		{
 
 			if (!(state is TwitchLib.Streams.V5)) return;
 
-      TwitchLib.Streams.V5 v5Stream = state as TwitchLib.Streams.V5;
+			TwitchLib.Streams.V5 v5Stream = state as TwitchLib.Streams.V5;
 
-      StreamByUser myStream = null;
+			StreamByUser myStream = null;
 
-      try
-      {
+			try
+			{
 
-        myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
+				myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
 
-      }
-      catch (JsonReaderException ex)
-      {
+			}
+			catch (JsonReaderException ex)
+			{
 
-        Logger.LogError($"Unable to read stream from Twitch: {ex}");
-        return;
+				Logger.LogError($"Unable to read stream from Twitch: {ex}");
+				return;
 
-      }
-      catch (Exception)
-      {
-        Logger.LogError($"Error while communicating with Twitch");
-        return;
-      }
+			}
+			catch (Exception)
+			{
+				Logger.LogError($"Error while communicating with Twitch");
+				return;
+			}
 
-      if (_CurrentViewerCount != (myStream.Stream?.Viewers ?? 0))
-      {
-        _CurrentViewerCount = (myStream.Stream?.Viewers ?? 0);
-        Updated?.Invoke(null, new ServiceUpdatedEventArgs
-        {
-          ServiceName = Name,
-          NewViewers = _CurrentViewerCount
-        });
-      }
+			if (_CurrentViewerCount != (myStream.Stream?.Viewers ?? 0))
+			{
+				_CurrentViewerCount = (myStream.Stream?.Viewers ?? 0);
+				Updated?.Invoke(null, new ServiceUpdatedEventArgs
+				{
+					ServiceName = Name,
+					NewViewers = _CurrentViewerCount
+				});
+			}
 
-    }
+		}
 
 		private TwitchLib.Streams.V5 CreateTwitchStream(TwitchLib.TwitchAPI api) {
 
 			TwitchLib.Streams.V5 v5Stream = null;
 
 			try
-      {
-        v5Stream = new TwitchLib.Streams.V5(api);
-        TwitchService.ErrorsReadingViewers = 0;
-      }
-      catch (Exception ex)
-      {
-        TwitchService.ErrorsReadingViewers++;
-        Logger.LogError(ex, $"Error reading viewers.. {TwitchService.ErrorsReadingViewers} consecutive errors");
-      }
+			{
+				v5Stream = new TwitchLib.Streams.V5(api);
+				TwitchService.ErrorsReadingViewers = 0;
+			}
+			catch (Exception ex)
+			{
+				TwitchService.ErrorsReadingViewers++;
+				Logger.LogError(ex, $"Error reading viewers.. {TwitchService.ErrorsReadingViewers} consecutive errors");
+			}
 
 			return v5Stream;
 
 		}
 
-    internal void Service_OnNewFollowersDetected(object sender,
+		internal void Service_OnNewFollowersDetected(object sender,
 		TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
 		{
 			Interlocked.Exchange(ref _CurrentFollowerCount, _CurrentFollowerCount + e.NewFollowers.Count);

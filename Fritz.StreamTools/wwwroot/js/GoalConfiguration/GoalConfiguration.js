@@ -32,7 +32,7 @@ var isLoadingFromStorage = false;
 			log(key, item);
 
 			// store an array of all the required color pickers
-			if (key.substr(0, 2) == "bg") {
+			if (key.substr(0, 2) === "bg") {
 				bgArray.push(key);
 			} else {
 
@@ -46,24 +46,24 @@ var isLoadingFromStorage = false;
 
 		const sortedArray = bgArray.sort();
 
-		for (var i of sortedArray) {
+		for (var k of sortedArray) {
 
-			if (i.substr(0, 7) == "bgcolor") {
+			if (k.substr(0, 7) === "bgcolor") {
 
-				if (!document.getElementById(i)) {
-					var key = i.substr(7);
-					addColor(key);
+				if (!document.getElementById(k)) {
+					var bgkey = k.substr(7);
+					addColor(bgkey);
 				}
 
 			}
 
 		}
 
-		for (var i of sortedArray) {
+		for (var j of sortedArray) {
 
-			var el = document.getElementById(i);
-			if (el) {
-				el.value = localStorage.getItem(i);
+			var elStorage = document.getElementById(j);
+			if (elStorage) {
+				elStorage.value = localStorage.getItem(j);
 			}
 
 		}
@@ -159,7 +159,7 @@ document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 	const keyCodeTab = 9;
 	const keyCodeEnter = 13;
 
-	if (d.keyCode == keyCodeEnter || d.keyCode == keyCodeTab) {
+	if (d.keyCode === keyCodeEnter || d.keyCode === keyCodeTab) {
 		log("Selecting the current font..");
 		document.getElementById('fontsPanel').style.display = 'none';
 		loadPreview();
@@ -169,9 +169,9 @@ document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 
 	// log(d.keyCode);
 	if (
-		d.keyCode != 8 &&
-		d.keyCode != 32 &&
-		d.keyCode != 46 &&
+		d.keyCode !== 8 &&
+		d.keyCode !== 32 &&
+		d.keyCode !== 46 &&
 		(
 			d.keyCode < 65 ||
 			d.keyCode > 90)
@@ -185,7 +185,7 @@ document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 document.getElementById('fontNames').onchange = function () {
 
 	document.getElementById('fontsPanel').style.display = 'none';
-	document.getElementById('fontname').value = this.value;
+	document.getElementById('FontName').value = this.value;
 
 	loadPreview();
 

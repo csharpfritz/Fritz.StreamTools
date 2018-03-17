@@ -15,7 +15,7 @@ namespace Fritz.StreamTools.Services
 {
 
 
-	public class TwitchService : IHostedService, IStreamService
+	public class TwitchService : IHostedService, IStreamService //, IChatService
 	{
 
 		/// <summary>
@@ -28,6 +28,9 @@ namespace Fritz.StreamTools.Services
 		private static int ErrorsReadingViewers = 0;
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
+		//public event EventHandler<ChatMessageEventArgs> ChatMessage;
+		//public event EventHandler<ChatUserInfoEventArgs> UserJoined;
+		//public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
 		public TwitchService(IConfiguration config, ILoggerFactory loggerFactory)
 		{
@@ -66,6 +69,8 @@ namespace Fritz.StreamTools.Services
 		public string Name { get { return "Twitch"; } }
 
 		public TimeSpan? Uptime => null;
+
+		public bool IsAuthenticated => throw new NotImplementedException();
 
 		private async Task StartTwitchMonitoring()
 		{
@@ -173,6 +178,31 @@ namespace Fritz.StreamTools.Services
 		{
 			Service.StopService();
 			return Task.CompletedTask;
+		}
+
+		public Task<bool> SendMessageAsync(string message)
+		{
+			throw new NotImplementedException();
+		}
+
+		public Task<bool> SendWhisperAsync(string userName, string message)
+		{
+			throw new NotImplementedException();
+		}
+
+		public Task<bool> TimeoutUserAsync(string userName, TimeSpan time)
+		{
+			throw new NotImplementedException();
+		}
+
+		public Task<bool> BanUserAsync(string userName)
+		{
+			throw new NotImplementedException();
+		}
+
+		public Task<bool> UnbanUserAsync(string userName)
+		{
+			throw new NotImplementedException();
 		}
 	}
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Fritz.StreamLib.Core;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,6 +48,7 @@ namespace Fritz.StreamTools.Services
 			}
 		}
 
+		public TimeSpan? Uptime => null;
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated
 		{

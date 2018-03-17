@@ -1,4 +1,5 @@
-﻿using Fritz.StreamTools.Services;
+﻿using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TwitchLib.Events.Services.FollowerService;

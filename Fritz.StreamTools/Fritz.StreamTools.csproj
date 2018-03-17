@@ -4,7 +4,6 @@
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
 		<UserSecretsId>78c713a0-80e0-4e16-956a-33cf16f08a02</UserSecretsId>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<Version>0.9.2</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="ClientApp\**" />
@@ -21,12 +20,13 @@
 		<PackageReference Include="TwitchLib" Version="1.6.1" />
 	</ItemGroup>
 	<ItemGroup>
-		<!--<DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
-		<DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="2.0.0" />-->
-	</ItemGroup>
-	<ItemGroup>
 		<None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
 		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
 		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />
+		<ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
+		<ProjectReference Include="..\MixerLib\MixerLib.csproj" />
+		<None Update="SampleQuotes.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>

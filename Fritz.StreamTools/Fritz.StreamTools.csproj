@@ -4,6 +4,7 @@
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
 		<UserSecretsId>78c713a0-80e0-4e16-956a-33cf16f08a02</UserSecretsId>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<Version>0.9.2.$(VersionSuffix)</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="ClientApp\**" />

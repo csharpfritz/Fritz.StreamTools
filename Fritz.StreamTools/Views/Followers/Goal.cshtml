@@ -95,7 +95,7 @@
 
 						if (window.self == window.top) {
 								console.log("Topmost window - enabling SignalR");
-								hub.start();
+								hub.start("followers");
 						} else {
 								console.log("hosted in a frame - disabling SignalR");
 						}

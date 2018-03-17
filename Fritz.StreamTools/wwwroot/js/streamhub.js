@@ -7,8 +7,9 @@ class StreamHub {
 				this._hub = null;
 		}
 
-		start() {
-				this._hub = new signalR.HubConnection("/followerstream");
+		start(groups) {
+				let url = (groups) ? "/followerstream?groups=" + groups : "/followerstream";
+				this._hub = new signalR.HubConnection(url);
 
 				this._hub.onclose(() => {
 						if (this.debug) console.debug("hub connection closed");

@@ -1,7 +1,7 @@
 var supportedFonts = [];
 
 function InitGoogleFonts() {
-    if (supportedFonts.length == 0){
+    if (supportedFonts.length === 0){
 
         googleFontsAdapter(setSupportedFontsFromApi);
     }

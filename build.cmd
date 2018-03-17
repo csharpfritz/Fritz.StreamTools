@@ -6,4 +6,5 @@ docker tag fritz.streamtools:%1 fritzregistry.azurecr.io/fritz.streamtools:lates
 git tag v%1
 git push --tags
 
-docker push fritzregistry.azurecr.io/fritz.streamtools
+docker push fritzregistry.azurecr.io/fritz.streamtools:%1
+docker push fritzregistry.azurecr.io/fritz.streamtools:latest

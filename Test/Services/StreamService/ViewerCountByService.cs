@@ -1,4 +1,5 @@
-﻿using Fritz.StreamTools.Services;
+﻿using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Services;
 using System.Linq;
 using Xunit;
 

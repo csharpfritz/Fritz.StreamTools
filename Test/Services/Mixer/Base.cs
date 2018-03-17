@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MixerLib;
 using Newtonsoft.Json;
-using Fritz.StreamTools.Services.Mixer;
 using Newtonsoft.Json.Serialization;
 
 namespace Test.Services.Mixer

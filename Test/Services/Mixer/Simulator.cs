@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Fritz.StreamTools.Services.Mixer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MixerLib;
 using Moq;
 
 namespace Test.Services.Mixer

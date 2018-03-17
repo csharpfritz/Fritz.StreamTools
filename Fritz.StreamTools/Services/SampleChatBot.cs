@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.StreamLib.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MixerLib;
 
 namespace Fritz.StreamTools.Services
 {
@@ -153,9 +155,9 @@ namespace Fritz.StreamTools.Services
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
 		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
-		private void Mixer_Subscribed(object sender, Mixer.SubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} subscribed on Mixer");
-		private void Mixer_Resubscribed(object sender, Mixer.ResubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} re-subscribed for {e.TotalMonths} month in a row");
-		private void Mixer_Followed(object sender, Mixer.FollowedEventArgs e)
+		private void Mixer_Subscribed(object sender, SubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} subscribed on Mixer");
+		private void Mixer_Resubscribed(object sender, ResubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} re-subscribed for {e.TotalMonths} month in a row");
+		private void Mixer_Followed(object sender, FollowedEventArgs e)
 		{
 			if (e.IsFollowing)
 				_logger.LogInformation($"{e.UserName} followed on Mixer");

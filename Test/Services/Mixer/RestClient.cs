@@ -5,7 +5,8 @@ using System.Net;
 using System.Net.Http;
 using FluentAssertions;
 using Fritz.StreamTools.Helpers;
-using Fritz.StreamTools.Services.Mixer;
+using MixerLib;
+using MixerLib.Helpers;
 using Newtonsoft.Json.Linq;
 using Xunit;
 

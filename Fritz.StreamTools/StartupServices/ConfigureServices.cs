@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MixerLib;
 
 namespace Fritz.StreamTools.StartupServices
 {

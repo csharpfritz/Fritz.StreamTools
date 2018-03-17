@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.StartupServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MixerLib;
 using Xunit;
 
 namespace Test.Startup

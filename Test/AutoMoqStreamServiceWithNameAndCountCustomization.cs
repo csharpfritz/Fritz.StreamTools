@@ -1,6 +1,7 @@
 ﻿using System;
 using AutoFixture;
 using AutoFixture.Kernel;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Services;
 using Moq;
 

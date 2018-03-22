@@ -6,7 +6,7 @@ using System.Linq;
 namespace Fritz.StreamTools.Models
 {
 
-public class FollowerGoalConfiguration
+	public class FollowerGoalConfiguration
 	{
 
 		public string Caption { get; set; } = "Follower Goal";
@@ -60,4 +60,5 @@ public class FollowerGoalConfiguration
 
 		}
 	}
+
 }

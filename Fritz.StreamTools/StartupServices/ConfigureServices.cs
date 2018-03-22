@@ -24,9 +24,10 @@ namespace Fritz.StreamTools.StartupServices
 		{
 			services.AddSingleton<RundownRepository>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
-			services.ConfigureStreamingServices(configuration);
+			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
+			services.AddStreamingServices(configuration);
 			services.AddSingleton<FollowerClient>();
-			services.ConfigureAspNetFeatures();
+			services.AddAspNetFeatures();
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
@@ -34,16 +35,16 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<IHostedService, SampleChatBot>();
 		}
 
-		private static void ConfigureStreamingServices(this IServiceCollection services,
+		private static void AddStreamingServices(this IServiceCollection services,
 			IConfiguration configuration)
 		{		
-			services.ConfigureStreamService(configuration, 
+			services.AddStreamService(configuration, 
 				(c, l) => new TwitchService(c, l),																	// Factory
 				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
-			services.ConfigureStreamService(configuration, 
+			services.AddStreamService(configuration, 
 				(c, l) => new MixerService(c, l),                                   // Factory
 				c => string.IsNullOrEmpty(c["StreamServices:Mixer:Channel"]));			// Test to disable
-			services.ConfigureStreamService(configuration, 
+			services.AddStreamService(configuration, 
 				(c, l) => new FakeService(c, l),                                                          // Factory
 				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
 			
@@ -58,7 +59,7 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="configuration">Application Configuration to use to populate our service</param>
 		/// <param name="factory">Callback method that defines how to instantiate the service</param>
 		/// <param name="isDisabled">Callback test to determine whether to disable the service</param>
-		private static void ConfigureStreamService<TStreamService>(this IServiceCollection services, 
+		private static void AddStreamService<TStreamService>(this IServiceCollection services, 
 			IConfiguration configuration,
 			Func<IConfiguration, ILoggerFactory, TStreamService> factory, 
 			Func<IConfiguration, bool> isDisabled) 
@@ -91,7 +92,7 @@ namespace Fritz.StreamTools.StartupServices
 		/// Configure the standard ASP.NET Core services
 		/// </summary>
 		/// <param name="services"></param>
-		private static void ConfigureAspNetFeatures(this IServiceCollection services)
+		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
 			services.AddSignalR();
 			services.AddSingleton<FollowerHub>();

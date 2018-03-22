@@ -1,4 +1,4 @@
-﻿@model int
+﻿@model FollowerCountConfiguration
 @{
     Layout = null;
 }
@@ -11,7 +11,7 @@
     <style>
 
         body {
-          background-color: #333;
+          background-color: @Model.BackgroundColor;
         }
 
         #fg {
@@ -22,17 +22,21 @@
             top: 10px;
             left: 10px;
             z-index: 10;
+            color: @Model.FontColor;
+
+			/**
             background: -webkit-linear-gradient(#1500FF, #FFF);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             -webkit-text-stroke: 1px #FFF;
+			**/
         }
 
     </style>
 </head>
 <body>
 
-  <span id="fg">Followers: <span id="count">@Model</span></span>
+  <span id="fg">Followers: <span id="count">@Model.CurrentValue</span></span>
 
 		<script src="~/lib/signalr/signalr-client.js"></script>
 		<script src="~/js/streamhub.js"></script>
@@ -45,7 +49,12 @@
 								document.getElementById("count").textContent = count;
 						}
 
-						hub.start("followers");
+						if (window.self == window.top) {
+								console.log("Topmost window - enabling SignalR");
+								hub.start("followers");
+						} else {
+								console.log("hosted in a frame - disabling SignalR");
+						}
 
 				})();
 		</script>

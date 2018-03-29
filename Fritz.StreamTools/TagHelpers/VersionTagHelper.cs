@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.TagHelpers
@@ -68,5 +69,5 @@ namespace Fritz.StreamTools.TagHelpers
 			await base.ProcessAsync(context, output);
 			return;
 		}
-  }
+	}
 }

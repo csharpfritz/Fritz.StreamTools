@@ -5,13 +5,13 @@ EXPOSE 80
 FROM microsoft/aspnetcore-build:2.1.300-preview1 AS build
 WORKDIR /src
 COPY Fritz.StreamTools/Fritz.StreamTools.csproj Fritz.StreamTools/
-COPY MixerLib/MixerLib.csproj MixerLib/
 COPY Fritz.StreamLib.Core/Fritz.StreamLib.Core.csproj Fritz.StreamLib.Core/
+COPY Fritz.Chatbot/Fritz.Chatbot.csproj Fritz.Chatbot/
 WORKDIR /src/Fritz.StreamTools
 RUN dotnet restore
 COPY Fritz.StreamTools/. .
 COPY Fritz.StreamLib.Core/. ../Fritz.StreamLib.Core
-COPY MixerLib/. ../MixerLib/.
+COPY Fritz.Chatbot/. ../Fritz.Chatbot/.
 RUN dotnet build -c Release -o /app --no-restore
 
 FROM build AS publish

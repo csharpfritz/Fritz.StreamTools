@@ -41,14 +41,6 @@ namespace Fritz.StreamTools.Services
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
 
-			// Subscribe to specific mixer events
-			if (Array.Find(_streamServices, x => x.Name == "Mixer") is IMixerService mixerService)
-			{
-				mixerService.Followed += Mixer_Followed;
-				mixerService.Subscribed += Mixer_Subscribed;
-				mixerService.Resubscribed += Mixer_Resubscribed;
-			}
-
 			var cooldownConfig = config["SampleChatBot:CooldownTime"];
 			_cooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
 			_logger.LogInformation("Command cooldown set to {0}", _cooldownTime);
@@ -155,14 +147,6 @@ namespace Fritz.StreamTools.Services
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
 		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
-		private void Mixer_Subscribed(object sender, SubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} subscribed on Mixer");
-		private void Mixer_Resubscribed(object sender, ResubscribedEventArgs e) => _logger.LogInformation($"{e.UserName} re-subscribed for {e.TotalMonths} month in a row");
-		private void Mixer_Followed(object sender, FollowedEventArgs e)
-		{
-			if (e.IsFollowing)
-				_logger.LogInformation($"{e.UserName} followed on Mixer");
-			else
-				_logger.LogInformation($"{e.UserName} un-followed on Mixer");
-		}
+	
 	}
 }

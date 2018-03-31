@@ -13,8 +13,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="BuildBundlerMinifier" Version="2.5.357" />
-		<PackageReference Include="Bundgaard.MixerLib" Version="0.1.52" />
-		<!--<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0-alpha2-final" />-->
+		<PackageReference Include="Bundgaard.MixerLib" Version="0.1.53" />
 		<PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0-preview1-final" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-preview1-final" />
 		<PackageReference Include="System.IO.Abstractions" Version="2.1.0.178" />
@@ -25,7 +24,6 @@
 		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
 		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />
 		<ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
-		<ProjectReference Include="..\MixerLib\MixerLib.csproj" />
 		<None Update="SampleQuotes.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

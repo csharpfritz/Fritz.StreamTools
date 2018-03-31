@@ -52,7 +52,7 @@ namespace Fritz.StreamTools.Services
 			_shutdownRequested = new CancellationTokenSource();
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 			_LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-			_logger = loggerFactory.CreateLogger(nameof(MixerService));
+			_logger = loggerFactory.CreateLogger("StreamServices");
 
 
 		}

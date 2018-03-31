@@ -32,7 +32,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
-			services.AddSingleton<IHostedService, SampleChatBot>();
+			services.AddSingleton<IHostedService, FritzBot>();
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services,

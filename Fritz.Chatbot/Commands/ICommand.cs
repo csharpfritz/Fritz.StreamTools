@@ -10,6 +10,8 @@ namespace Fritz.Chatbot.Commands
 
 		string Name { get; }
 
+		string Description { get; }
+
 		Task Execute(params string[] args);
 
 	}

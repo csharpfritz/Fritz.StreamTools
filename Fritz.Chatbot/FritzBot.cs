@@ -39,10 +39,7 @@ namespace Fritz.StreamTools.Services
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
 
-			var cooldownConfig = config["SampleChatBot:CooldownTime"];
-			_cooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
-			_logger.LogInformation("Command cooldown set to {0}", _cooldownTime);
-
+			ConfigureCommandCooldown(config);
 
 			RegisterCommands();
 
@@ -51,6 +48,13 @@ namespace Fritz.StreamTools.Services
 			{
 				_quotes = File.ReadLines(QUOTES_FILENAME).ToArray();
 			}
+		}
+
+		private void ConfigureCommandCooldown(IConfiguration config)
+		{
+			var cooldownConfig = config["SampleChatBot:CooldownTime"];
+			_cooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
+			_logger.LogInformation("Command cooldown set to {0}", _cooldownTime);
 		}
 
 		private void RegisterCommands()

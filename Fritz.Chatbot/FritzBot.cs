@@ -18,43 +18,45 @@ namespace Fritz.StreamTools.Services
 
 	public class FritzBot : IHostedService
 	{
-		const string QUOTES_FILENAME = "SampleQuotes.txt";
+
+		public const string CONFIGURATION_ROOT = "FritzBot";
 		const char COMMAND_PREFIX = '!';
-		readonly IConfiguration _config;
-		readonly IServiceProvider _serviceProvider;
-		readonly ILogger _logger;
-		readonly Random _random = new Random();
-		readonly string[] _quotes;
-		readonly IChatService[] _chatServices;
-		readonly IStreamService[] _streamServices;
-		TimeSpan _cooldownTime;
+		IConfiguration _config;
+		ILogger _logger;
+		internal IChatService[] _chatServices;
 		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
-		static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
+		internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
+
+		public TimeSpan CooldownTime { get; private set; }
 
 		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 		{
+
+			var chatServices = serviceProvider.GetServices<IChatService>().ToArray();
+			Initialize(config, chatServices, loggerFactory);
+
+		}
+
+		internal FritzBot() { }
+
+		internal void Initialize(IConfiguration config, IChatService[] chatServices, ILoggerFactory loggerFactory)
+		{
+
 			_config = config;
-			_serviceProvider = serviceProvider;
 			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
-			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
-			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
+			_chatServices = chatServices;
 
 			ConfigureCommandCooldown(config);
 
 			RegisterCommands();
 
-
-			if (File.Exists(QUOTES_FILENAME))
-			{
-				_quotes = File.ReadLines(QUOTES_FILENAME).ToArray();
-			}
 		}
 
 		private void ConfigureCommandCooldown(IConfiguration config)
 		{
-			var cooldownConfig = config["SampleChatBot:CooldownTime"];
-			_cooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
-			_logger.LogInformation("Command cooldown set to {0}", _cooldownTime);
+			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
+			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
+			_logger.LogInformation("Command cooldown set to {0}", CooldownTime);
 		}
 
 		private void RegisterCommands()
@@ -140,20 +142,15 @@ namespace Fritz.StreamTools.Services
 				case "uptime":
 					{
 						// Get uptime from the mixer stream service
-						var mixer = Array.Find(_streamServices, x => x.Name == "Mixer");
-						if (mixer == null)
+						var svc = Array.Find(_chatServices, x => x is IStreamService) as IStreamService;
+						if (svc == null)
 							break;
-						if (mixer.Uptime.HasValue)
-							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
+						if (svc.Uptime.HasValue)
+							await chatService.SendMessageAsync($"The stream has been up for {svc.Uptime.Value}");
 						else
 							await chatService.SendMessageAsync("Stream is offline");
 						break;
 					}
-				case "quote":
-					if (_quotes == null)
-						break;
-					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
-					break;
 				default:
 					ICommand cmd = null;
 					if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd)) {
@@ -173,7 +170,7 @@ namespace Fritz.StreamTools.Services
 
 			if (!args.IsModerator && !args.IsOwner)
 			{
-				if (DateTime.UtcNow - user.LastCommandTime < _cooldownTime)
+				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
 				{
 					_logger.LogWarning($"Ignoring command {namedCommand} from {args.UserName} on {args.ServiceName}. Cooldown active");
 					return true;
@@ -184,6 +181,7 @@ namespace Fritz.StreamTools.Services
 		}
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+
 		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
 
 	}

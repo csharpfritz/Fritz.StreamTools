@@ -26,8 +26,4 @@
     <ProjectReference Include="..\Fritz.StreamTools\Fritz.StreamTools.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Chatbot\" />
-  </ItemGroup>
-
 </Project>

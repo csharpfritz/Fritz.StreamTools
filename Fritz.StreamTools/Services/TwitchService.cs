@@ -75,7 +75,17 @@ namespace Fritz.StreamTools.Services
 
 		public string Name { get { return "Twitch"; } }
 
-		public TimeSpan? Uptime => null;
+		public TimeSpan? Uptime
+		{
+			get
+			{
+				var api = new TwitchLib.TwitchAPI(clientId: ClientId, accessToken: ChatToken);
+				var v5Stream = CreateTwitchStream(api);
+				var myStream = Task.Run(async () => await v5Stream.GetStreamByUserAsync(ChannelId)).GetAwaiter().GetResult();
+				return DateTime.UtcNow - myStream.Stream.CreatedAt;
+
+			}
+		}
 
 		public bool IsAuthenticated => ChatToken != null;
 

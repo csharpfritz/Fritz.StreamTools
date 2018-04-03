@@ -8,6 +8,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.1.0-preview1-final" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.1.0-preview1-final" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
   <ItemGroup>

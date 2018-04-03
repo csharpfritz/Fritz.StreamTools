@@ -19,12 +19,18 @@ namespace Fritz.Chatbot.Commands
 
 
 			if (!(ChatService is IStreamService svc))
+			{
 				return;
-			if (svc.Uptime.HasValue)
-				await ChatService.SendMessageAsync($"The stream has been up for {svc.Uptime.Value}");
-			else
-				await ChatService.SendMessageAsync("Stream is offline");
+			}
 
+			if (svc.Uptime.HasValue)
+			{
+				await ChatService.SendMessageAsync($"The stream has been up for {svc.Uptime.Value.ToString(@"hh\:mm\:ss")}");
+			}
+			else
+			{
+				await ChatService.SendMessageAsync("Stream is offline");
+			}
 		}
 	}
 }

@@ -24,6 +24,7 @@ namespace Fritz.StreamTools.Services
 		IConfiguration _config;
 		ILogger _logger;
 		internal IChatService[] _chatServices;
+		private AzureQnACommand _qnaCommand;
 		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
 		internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
 
@@ -76,6 +77,12 @@ namespace Fritz.StreamTools.Services
 				_CommandRegistry.Add(cmd.Name, cmd);
 			}
 
+			// Handle Q&A separately
+			_CommandRegistry.Remove("qna");
+			_qnaCommand = new AzureQnACommand()
+			{
+				Configuration = _config
+			};
 
 		}
 
@@ -107,7 +114,21 @@ namespace Fritz.StreamTools.Services
 
 		private async void Chat_ChatMessage(object sender, ChatMessageEventArgs e)
 		{
-			if (string.IsNullOrEmpty(e.Message) || e.Message[0] != COMMAND_PREFIX)
+
+			// message is empty OR message doesn't start with ! AND doesn't end with ?
+
+			if (e.Message.EndsWith("?"))
+			{
+				var azureUserKey = $"{e.ServiceName}:{e.UserName}";
+				if (!_activeUsers.TryGetValue(azureUserKey, out var azureUser))
+					azureUser = new ChatUserInfo();
+
+				if (CommandsTooFast(e, azureUser, "qna")) return;
+				await HandleAzureQuestion(e.Message, e.UserName, sender as IChatService);
+				return;
+			}
+
+			if (string.IsNullOrEmpty(e.Message) || (e.Message[0] != COMMAND_PREFIX & !e.Message.EndsWith("?")))
 				return; // e.Message.StartsWith(...) did not work for some reason ?!?
 			var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 			if (segments.Length == 0)
@@ -135,6 +156,7 @@ namespace Fritz.StreamTools.Services
 				await cmd.Execute(e.UserName, e.Message);
 			} else
 			{
+
 				await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
 				return;
 			}
@@ -142,6 +164,13 @@ namespace Fritz.StreamTools.Services
 			// Remember last command time
 			user.LastCommandTime = DateTime.UtcNow;
 			_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+		}
+
+		private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
+		{
+			_qnaCommand.ChatService = chatService;
+			await _qnaCommand.Execute(userName, message);
+			return;
 		}
 
 		private bool CommandsTooFast(ChatMessageEventArgs args, ChatUserInfo user, string namedCommand)

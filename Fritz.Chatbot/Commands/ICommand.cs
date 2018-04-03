@@ -14,7 +14,7 @@ namespace Fritz.Chatbot.Commands
 
 		// Could this be string userName, string command??
 
-		Task Execute(params string[] args);
+		Task Execute(string userName, string fullCommandText);
 
 	}
 

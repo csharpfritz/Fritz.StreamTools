@@ -129,35 +129,14 @@ namespace Fritz.StreamTools.Services
 			_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
 
 			// Handle commands
-			switch (segments[0].ToLowerInvariant())
+			ICommand cmd = null;
+			if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd)) {
+				cmd.ChatService = chatService;
+				await cmd.Execute(e.UserName, e.Message);
+			} else
 			{
-				case "ping":
-					await chatService.SendWhisperAsync(e.UserName, "pong");
-					break;
-				case "echo":
-					if (segments.Length < 2)
-						return;
-					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
-					break;
-				case "uptime":
-					{
-						// Get uptime from the mixer stream service
-						var svc = Array.Find(_chatServices, x => x is IStreamService) as IStreamService;
-						if (svc == null)
-							break;
-						if (svc.Uptime.HasValue)
-							await chatService.SendMessageAsync($"The stream has been up for {svc.Uptime.Value}");
-						else
-							await chatService.SendMessageAsync("Stream is offline");
-						break;
-					}
-				default:
-					ICommand cmd = null;
-					if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd)) {
-						cmd.ChatService = chatService;
-						await cmd.Execute();
-					}
-						break; // Unknown command
+				await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
+				return;
 			}
 
 			// Remember last command time

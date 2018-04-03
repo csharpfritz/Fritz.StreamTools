@@ -73,6 +73,8 @@ namespace Fritz.StreamTools.Services
 
 		private string ChatToken {  get {  return Configuration["StreamServices:Twitch:ChatToken"];} }
 
+		private string ChatBotName { get { return Configuration["StreamServices:Twitch:ChatBotName"]; } }
+
 		public string Name { get { return "Twitch"; } }
 
 		public TimeSpan? Uptime
@@ -113,12 +115,13 @@ namespace Fritz.StreamTools.Services
 
 			if (ChatToken != null)
 			{
-				var creds = new ConnectionCredentials(Channel, ChatToken);
+				var creds = new ConnectionCredentials(ChatBotName, ChatToken);
 				_TwitchClient = new TwitchClient(creds, Channel);
 				_TwitchClient.OnUserJoined += _TwitchClient_OnUserJoined;
 				_TwitchClient.OnUserLeft += _TwitchClient_OnUserLeft;
 				_TwitchClient.OnMessageReceived += _TwitchClient_OnMessageReceived;
 				_TwitchClient.OnWhisperReceived += _TwitchClient_OnWhisperReceived;
+				_TwitchClient.OnConnected += _TwitchClient_OnConnected;
 				_TwitchClient.Connect();
 			}
 
@@ -127,6 +130,11 @@ namespace Fritz.StreamTools.Services
 
 			_Timer = new Timer(CheckViews, v5Stream, 0, 5000);
 
+		}
+
+		private void _TwitchClient_OnConnected(object sender, OnConnectedArgs e)
+		{
+			Logger.LogInformation("Now connected to Twitch Chat Room");
 		}
 
 		private void _TwitchClient_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)

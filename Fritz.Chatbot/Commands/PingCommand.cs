@@ -11,9 +11,9 @@ namespace Fritz.Chatbot.Commands
 
 		public string Description => "Receive a quick acknowledgement from the bot through a whisper";
 
-		public Task Execute(params string[] args)
+		public async Task Execute(string userName, string fullCommandText)
 		{
-			throw new System.NotImplementedException();
+			await ChatService.SendWhisperAsync(userName, "pong");
 		}
 	}
 

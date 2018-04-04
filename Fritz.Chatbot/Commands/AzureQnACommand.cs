@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Fritz.Chatbot.Commands
@@ -16,6 +17,8 @@ namespace Fritz.Chatbot.Commands
 		public IConfiguration Configuration { get; set; }
 
 		public IChatService ChatService { get; set; }
+
+		public ILogger Logger { get; set; }
 
 		public string Name => "qna";
 
@@ -31,11 +34,11 @@ namespace Fritz.Chatbot.Commands
 			// Exit now if we don't know how to connect to Azure
 			if (string.IsNullOrEmpty(AzureKey)) return;
  
-			await Query(fullCommandText);
+			await Query(userName, fullCommandText);
 			
 		}
 
-		public async Task Query(string query)
+		public async Task Query(string userName, string query)
 		{
 
 			var responseString = string.Empty;
@@ -74,17 +77,49 @@ namespace Fritz.Chatbot.Commands
 				{
 					await ChatService.SendMessageAsync("I'm not certain, but prehaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
 
+				} else
+				{
+					Logger.LogInformation($"Unable to find suitable answer to {userName}'s question: {query}");
 				}
 
 			}
-			catch
+			catch (Exception ex)
 			{
-				// Not sure what to do with this yet...
 
-				//throw new Exception("Unable to deserialize QnA Maker response string.");
+				Logger.LogWarning($"Exception while asking knowledgebase: '{ex.Message}'");
+
 			}
 
 		}
+
+
+		public void Retrain()
+		{
+
+			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v2.0");
+			var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}");
+
+
+			//Send the POST request
+			using (var client = new WebClient())
+			{
+				//Set the encoding to UTF8
+				client.Encoding = System.Text.Encoding.UTF8;
+
+				//Add the subscription key header
+				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
+				client.Headers.Add("Content-Type", "application/json");
+
+			//Add the question as part of the body
+			var postBody = $"{{\"add\": {{\"urls\": [\"https://github.com/csharpfritz/Fritz.LiveStream/wiki/Frequently-Asked-Questions\"]}} }}";
+
+
+				var responseString = client.UploadString(builder.Uri, "PATCH", postBody);
+			}
+
+
+		}
+
 
 	}
 

@@ -81,7 +81,8 @@ namespace Fritz.StreamTools.Services
 			_CommandRegistry.Remove("qna");
 			_qnaCommand = new AzureQnACommand()
 			{
-				Configuration = _config
+				Configuration = _config,
+				Logger = _logger
 			};
 
 		}
@@ -119,6 +120,9 @@ namespace Fritz.StreamTools.Services
 
 			if (e.Message.EndsWith("?"))
 			{
+
+				_logger.LogInformation($"Handling question: \"{e.Message}\" from {e.UserName} on {e.ServiceName}");
+
 				var azureUserKey = $"{e.ServiceName}:{e.UserName}";
 				if (!_activeUsers.TryGetValue(azureUserKey, out var azureUser))
 					azureUser = new ChatUserInfo();

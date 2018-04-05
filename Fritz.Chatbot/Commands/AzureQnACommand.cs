@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -60,7 +61,16 @@ namespace Fritz.Chatbot.Commands
 				//Add the subscription key header
 				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
 				client.Headers.Add("Content-Type", "application/json");
-				responseString = client.UploadString(builder.Uri, postBody);
+
+				try
+				{
+					responseString = await client.UploadStringTaskAsync(builder.Uri, postBody).OrTimeout();
+				} catch (TimeoutException)
+				{
+					Logger.LogWarning($"Azure Services did not respond in time to question '{query}'");
+					ChatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();
+					return;
+				}
 			}
 
 			QnAMakerResult response;
@@ -75,7 +85,7 @@ namespace Fritz.Chatbot.Commands
 					await ChatService.SendMessageAsync(response.Answer);
 				} else if (response.Score > 30)
 				{
-					await ChatService.SendMessageAsync("I'm not certain, but prehaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
+					await ChatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
 
 				} else
 				{
@@ -93,7 +103,7 @@ namespace Fritz.Chatbot.Commands
 		}
 
 
-		public void Retrain()
+		public async Task Retrain()
 		{
 
 			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v2.0");
@@ -114,7 +124,7 @@ namespace Fritz.Chatbot.Commands
 			var postBody = $"{{\"add\": {{\"urls\": [\"https://github.com/csharpfritz/Fritz.LiveStream/wiki/Frequently-Asked-Questions\"]}} }}";
 
 
-				var responseString = client.UploadString(builder.Uri, "PATCH", postBody);
+				var responseString = await client.UploadStringTaskAsync(builder.Uri, "PATCH", postBody);
 			}
 
 

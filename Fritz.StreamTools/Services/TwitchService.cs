@@ -3,9 +3,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchLib;
@@ -42,9 +45,9 @@ namespace Fritz.StreamTools.Services
 			this.Logger = loggerFactory.CreateLogger("StreamServices");
 		}
 
-		public Task StartAsync(CancellationToken cancellationToken)
+		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			return StartTwitchMonitoring();
+			await StartTwitchMonitoring();
 		}
 
 		public Task StopAsync(CancellationToken cancellationToken)
@@ -62,6 +65,19 @@ namespace Fritz.StreamTools.Services
 		public static int _CurrentViewerCount;
 		private Timer _Timer;
 		private TwitchClient _TwitchClient;
+		private Streams.V5 _TwitchStream;
+
+		internal Streams.V5 TwitchStream
+		{
+			get
+			{
+				if (_TwitchStream == null)
+				{
+					_TwitchStream = CreateTwitchStream();
+				}
+				return _TwitchStream;
+			}
+		}
 
 		public int CurrentViewerCount { get { return _CurrentViewerCount; } }
 
@@ -71,7 +87,7 @@ namespace Fritz.StreamTools.Services
 
 		private string ChannelId { get { return Configuration["StreamServices:Twitch:UserId"]; } }
 
-		private string ChatToken {  get {  return Configuration["StreamServices:Twitch:ChatToken"];} }
+		private string ChatToken { get { return Configuration["StreamServices:Twitch:ChatToken"]; } }
 
 		private string ChatBotName { get { return Configuration["StreamServices:Twitch:ChatBotName"]; } }
 
@@ -81,55 +97,82 @@ namespace Fritz.StreamTools.Services
 		{
 			get
 			{
-				var api = new TwitchLib.TwitchAPI(clientId: ClientId, accessToken: ChatToken);
-				var v5Stream = CreateTwitchStream(api);
-				var myStream = Task.Run(async () => await v5Stream.GetStreamByUserAsync(ChannelId)).GetAwaiter().GetResult();
-				return DateTime.UtcNow - myStream.Stream.CreatedAt;
+
+				var sw = Stopwatch.StartNew();
+				var uptime = TwitchProxy.GetUptimeForStream(Channel, ClientId);
+				Logger.LogInformation($"Twitch Uptime took: {sw.ElapsedMilliseconds}ms");
+				return uptime;
 
 			}
 		}
 
 		public bool IsAuthenticated => ChatToken != null;
 
-		private async Task StartTwitchMonitoring()
+		private Task StartTwitchMonitoring()
 		{
 			var api = new TwitchLib.TwitchAPI(clientId: ClientId, accessToken: ChatToken);
 			Service = new FollowerService(api);
 			Service.SetChannelByName(Channel);
-			await Service.StartService();
+			var svcTask = Task.Run( async () => {
 
-			var v5 = new TwitchLib.Channels.V5(api);
+				await Service.StartService();
+				Logger.LogTrace("Connected to Twitch Service");
+				Service.OnNewFollowersDetected += Service_OnNewFollowersDetected;
 
-			var follows = await v5.GetAllFollowersAsync(ChannelId);
-			_CurrentFollowerCount = follows.Count;
-			Service.OnNewFollowersDetected += Service_OnNewFollowersDetected;
+			});
 
-			var v5Stream = CreateTwitchStream(api);
-			if (v5Stream == null) {
-				await Task.Delay(2000);
-				await StartTwitchMonitoring();
-				return;
-			}
-			var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
-			_CurrentViewerCount = myStream.Stream?.Viewers ?? 0;
-
-			if (ChatToken != null)
+			var viewerTask = Task.Run(() =>
 			{
-				var creds = new ConnectionCredentials(ChatBotName, ChatToken);
-				_TwitchClient = new TwitchClient(creds, Channel);
-				_TwitchClient.OnUserJoined += _TwitchClient_OnUserJoined;
-				_TwitchClient.OnUserLeft += _TwitchClient_OnUserLeft;
-				_TwitchClient.OnMessageReceived += _TwitchClient_OnMessageReceived;
-				_TwitchClient.OnWhisperReceived += _TwitchClient_OnWhisperReceived;
-				_TwitchClient.OnConnected += _TwitchClient_OnConnected;
-				_TwitchClient.Connect();
-			}
+				TwitchStream.GetStreamByUserAsync(ChannelId).ContinueWith((s) =>
+				{
+					var myStream = s.Result;
+					_CurrentViewerCount = myStream.Stream?.Viewers ?? 0;
+					Logger.LogTrace($"Identified {_CurrentViewerCount} viewers on Twitch");
+				});
 
+			});
+
+			var followerTask = GetFollowerCount();
+
+			var chatTask = Task.Run(() =>
+			{
+
+				if (ChatToken != null)
+				{
+					var creds = new ConnectionCredentials(ChatBotName, ChatToken);
+					_TwitchClient = new TwitchClient(creds, Channel);
+					_TwitchClient.OnUserJoined += _TwitchClient_OnUserJoined;
+					_TwitchClient.OnUserLeft += _TwitchClient_OnUserLeft;
+					_TwitchClient.OnMessageReceived += _TwitchClient_OnMessageReceived;
+					_TwitchClient.OnWhisperReceived += _TwitchClient_OnWhisperReceived;
+					_TwitchClient.OnConnected += _TwitchClient_OnConnected;
+					_TwitchClient.Connect();
+				}
+
+			});
+
+			Task.WaitAll(svcTask, viewerTask, followerTask, chatTask);
+
+			_CurrentFollowerCount = followerTask.Result;
 
 			Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
 
-			_Timer = new Timer(CheckViews, v5Stream, 0, 5000);
+			_Timer = new Timer(CheckViews, null, 0, 5000);
 
+			return Task.CompletedTask;
+
+		}
+
+		private async Task<int> GetFollowerCount()
+		{
+
+			var api = new TwitchLib.TwitchAPI(clientId: ClientId, accessToken: ChatToken);
+			var v5 = new TwitchLib.Channels.V5(api);
+
+			var follows = await v5.GetChannelFollowersAsync(ChannelId, limit: 1);
+
+			Logger.LogTrace($"Identified {follows.Total} followers on Twitch");
+			return follows.Total;
 		}
 
 		private void _TwitchClient_OnConnected(object sender, OnConnectedArgs e)
@@ -192,16 +235,12 @@ namespace Fritz.StreamTools.Services
 		private async void CheckViews(object state)
 		{
 
-			if (!(state is TwitchLib.Streams.V5)) return;
-
-			TwitchLib.Streams.V5 v5Stream = state as TwitchLib.Streams.V5;
-
 			StreamByUser myStream = null;
 
 			try
 			{
 
-				myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
+				myStream = await TwitchStream.GetStreamByUserAsync(ChannelId);
 
 			}
 			catch (JsonReaderException ex)
@@ -229,19 +268,28 @@ namespace Fritz.StreamTools.Services
 
 		}
 
-		private TwitchLib.Streams.V5 CreateTwitchStream(TwitchLib.TwitchAPI api) {
+		private TwitchLib.Streams.V5 CreateTwitchStream(TwitchLib.TwitchAPI api = null)
+		{
 
+			if (api == null)
+			{
+				api = new TwitchLib.TwitchAPI(clientId: ClientId, accessToken: ChatToken);
+			}
 			TwitchLib.Streams.V5 v5Stream = null;
 
-			try
+			while (v5Stream == null || TwitchService.ErrorsReadingViewers > 0)
 			{
-				v5Stream = new TwitchLib.Streams.V5(api);
-				TwitchService.ErrorsReadingViewers = 0;
-			}
-			catch (Exception ex)
-			{
-				TwitchService.ErrorsReadingViewers++;
-				Logger.LogError(ex, $"Error reading viewers.. {TwitchService.ErrorsReadingViewers} consecutive errors");
+				try
+				{
+					v5Stream = new TwitchLib.Streams.V5(api);
+					TwitchService.ErrorsReadingViewers = 0;
+				}
+				catch (Exception ex)
+				{
+					TwitchService.ErrorsReadingViewers++;
+					Logger.LogError(ex, $"Error reading viewers.. {TwitchService.ErrorsReadingViewers} consecutive errors.  Delaying 2 seconds");
+					Task.Delay(2000);
+				}
 			}
 
 			return v5Stream;
@@ -301,6 +349,73 @@ namespace Fritz.StreamTools.Services
 			_TwitchClient.UnbanUser(userName);
 			return Task.FromResult(true);
 		}
+
+		internal void MessageReceived(bool isModerator, bool isBroadcaster, string message, string userName)
+		{
+			ChatMessage?.Invoke(this, new ChatMessageEventArgs
+			{
+				IsModerator = isModerator,
+				IsOwner = isBroadcaster,
+				IsWhisper = false,
+				Message = message,
+				ServiceName = "Twitch",
+				UserName = userName
+			});
+
+		}
+
+	}
+
+	internal class TwitchProxy
+	{
+
+		static DateTime? _CreatedAtUtc = null;
+		static DateTime _LastCheckUtc = DateTime.MinValue;
+
+
+		public static TimeSpan? GetUptimeForStream(string channelName, string clientId)
+		{
+
+			if (_LastCheckUtc > DateTime.UtcNow.AddMinutes(-5)) {
+
+				if (!_CreatedAtUtc.HasValue) return null;
+				return DateTime.UtcNow.Subtract(_CreatedAtUtc.Value);
+
+			}
+
+			using (var client = new HttpClient())
+			{
+
+				var resultString = client.GetStringAsync($"https://api.twitch.tv/kraken/streams/{channelName}?client_id={clientId}")
+					.GetAwaiter().GetResult();
+
+				_CreatedAtUtc = ParseStreamForCreatedAt(resultString);
+
+				if (_CreatedAtUtc == null) return null;
+
+				_LastCheckUtc = DateTime.UtcNow;
+
+				return DateTime.UtcNow.Subtract(_CreatedAtUtc.Value);
+
+			}
+
+		}
+
+		internal static DateTime? ParseStreamForCreatedAt(string jsonDoc)
+		{
+
+			var jObj = JsonConvert.DeserializeObject<JObject>(jsonDoc);
+
+			var streamData = jObj.GetValue("stream");
+			if (streamData == null || !streamData.HasValues)
+			{
+				return null;
+			}
+
+			return streamData["created_at"].Value<DateTime>();
+
+		}
+
 	}
 
 }

@@ -1,0 +1,18 @@
+﻿@page
+@model Fritz.StreamTools.Pages.TestTwitchbotModel
+@*
+	For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+
+<form method="post">
+	<p>UserName:</p>
+	<input asp-for="UserName" />
+
+	<br />
+
+	<p>Message to send:</p>
+	<input asp-for="Message" />
+
+	<input type="submit" value="Send Message" class="btn btn-default" />
+	
+</form>

@@ -81,6 +81,7 @@ namespace Fritz.StreamTools.StartupServices
 			
 			services.AddSingleton(service as IHostedService);
 			services.AddSingleton(service as IStreamService);
+			services.AddSingleton(service);
 
 			if (service is IChatService chatService)
 			{

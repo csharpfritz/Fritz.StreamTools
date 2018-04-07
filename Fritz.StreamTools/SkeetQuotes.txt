@@ -1,0 +1,6 @@
+﻿Jon Skeet is immutable. If something's going to change, it's going to have to be the rest of the universe.
+Jon Skeet can divide by zero.
+When Jon Skeet's code fails to compile the compiler apologises.
+Jon Skeet has already written a book about C# 5.0. It’s currently sealed up. In three years, Anders Hejlsberg is going to open the book to see if the language design team got it right.
+Jon Skeet can stop an infinite loop just by thinking about it
+Jon Skeet doesn't need a debugger, he just stares down the bug until the code confesses

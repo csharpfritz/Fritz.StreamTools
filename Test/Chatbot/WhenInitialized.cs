@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using Fritz.StreamLib.Core;
 
 namespace Test.Chatbot
 {
@@ -88,18 +90,68 @@ namespace Test.Chatbot
 	  Task.WaitAll(sut.Execute("", ""));
 	  
 	  // Act
-
 	  Assert.Equal(quote[0], fake.MessageSent);
-	  ///await sut.Execute("username", "");
+
+	}
+[Fact]
+	public void ShouldReturnAChatCommand()
+	{
+
+	  var fake = new FakeChatService();
+	  var config = new Moq.Mock<IConfiguration>();
+	  
+	  var loggingFactory = new Moq.Mock<ILoggerFactory>();
+	  var logger = new Mock<ILogger>();
+	  loggingFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+
+	  var chatService = new Mock<IChatService>();
+
+	
+	  chatService.Raise(cs => cs.ChatMessage += null, args);
 
 
+	  var chatservices = new List<IChatService>();
+	  
+	  var serviceProvider = new Mock<IServiceProvider>();
+	  serviceProvider
+		  .Setup(x => x.GetService(typeof(IEnumerable<IChatService>)))
+		  .Returns(chatservices);
+			
+	  var serviceScope = new Mock<IServiceScope>();
+	  serviceScope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
+
+	  var serviceScopeFactory = new Mock<IServiceScopeFactory>();
+	  serviceScopeFactory
+		  .Setup(x => x.CreateScope())
+		  .Returns(serviceScope.Object);
+
+	  serviceProvider
+		  .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
+		  .Returns(serviceScopeFactory.Object);
 
 
+	  var args = new ChatMessageEventArgs
+	  {
+		Message = "!skeet",
+		IsModerator = false,
+		IsOwner = false
+	  };
+
+	  //string[] quote = { "test quote" };
+	  var sut = new FritzBot(config.Object, serviceProvider.Object, loggingFactory.Object);
+	  
+
+	  // Act
 
 
 	}
 
+	private void WhenInitialized_ChatMessage(object sender, ChatMessageEventArgs e)
+	{
+	  throw new NotImplementedException();
+	}
 
+	
   }
 
 }

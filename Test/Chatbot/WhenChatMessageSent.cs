@@ -165,15 +165,15 @@ namespace Test.Chatbot
 				Message = "!help",
 				ServiceName = "TestService",
 				UserName = "Moderator",
-				IsModerator = false,
-				IsOwner = false,
+				IsModerator = true,
+				IsOwner = false
 			};
 
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 
 			_chatservice.Verify(sm => sm.SendMessageAsync(
-						It.Is<string>(x => x.StartsWith("Supported commands: !echo !help !ping !quote !skeet"))), Times.AtLeastOnce);
+						It.Is<string>(x => x.StartsWith("Supported commands: !echo !help !ping !quote !skeet"))), Times.Exactly(2));
 		}
 	}
 }

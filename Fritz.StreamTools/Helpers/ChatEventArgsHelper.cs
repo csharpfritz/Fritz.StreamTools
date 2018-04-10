@@ -16,7 +16,7 @@ namespace Fritz.StreamTools.Helpers
 			outArgs.IsModerator = args.IsModerator;
 			outArgs.IsOwner = args.IsOwner;
 			outArgs.IsWhisper = args.IsWhisper;
-			outArgs.Message = args.Message;
+			outArgs.Message = args.Message.Replace("( Removed by CatBot )", "");
 			outArgs.ServiceName = "Mixer";
 			outArgs.UserId = args.UserId;
 			outArgs.UserName = args.UserName;

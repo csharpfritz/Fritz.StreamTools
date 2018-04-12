@@ -34,6 +34,10 @@ namespace Fritz.Twitch
 		public event EventHandler<NewMessageEventArgs> NewMessage;
 		public event EventHandler<ChatUserJoinedEventArgs> UserJoined;
 
+		private DateTime _NextReset;
+		private int _RemainingThrottledCommands;
+		// private static readonly ReaderWriterLockSlim _
+
 		public ChatClient(IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory) : this(settings.Value, loggerFactory.CreateLogger(LOGGER_CATEGORY))
 		{
 
@@ -54,6 +58,9 @@ namespace Fritz.Twitch
 
 		~ChatClient()
 		{
+
+			Logger.LogError("GC the ChatClient");
+
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(false);
 		}
@@ -99,11 +106,36 @@ namespace Fritz.Twitch
 		private async Task SendMessage(string message, bool flush = true)
 		{
 
-			await outputStream.WriteLineAsync(message);
+			var throttled = CheckThrottleStatus();
+
+			await Task.Delay(throttled.GetValueOrDefault(TimeSpan.FromSeconds(0)));
+
+			await outputStream.WriteLineAsync(message).OrTimeout(2000);
 			if (flush)
 			{
 				await outputStream.FlushAsync();
 			}
+
+		}
+
+		private TimeSpan? CheckThrottleStatus()
+		{
+
+			var throttleDuration = TimeSpan.FromSeconds(30);
+			var maximumCommands = 100;
+
+			if (_NextReset == null)
+			{
+				_NextReset = DateTime.UtcNow.Add(throttleDuration);
+			} else if (_NextReset < DateTime.UtcNow)
+			{
+				_NextReset = DateTime.UtcNow.Add(throttleDuration);
+			}
+
+			// TODO: FInish checking and enforcing the chat throttling
+
+			return null;
+
 
 		}
 
@@ -153,6 +185,7 @@ namespace Fritz.Twitch
 					// Handle the Twitch keep-alive
 					if (msg.StartsWith("PING"))
 					{
+						Logger.LogWarning("Received PING from Twitch... sending PONG");
 						SendMessage($"PONG :{msg.Split(':')[1]}").GetAwaiter().GetResult();
 						continue;
 					}
@@ -164,15 +197,20 @@ namespace Fritz.Twitch
 					// Reconnect
 					Logger.LogWarning("Disconnected from Twitch.. Reconnecting in 2 seconds");
 					await Task.Delay(2000);
-					this.Connect();
+					this.Init();
+					return;
 				}
 
 			}
+
+			Logger.LogWarning("Exiting ReceiveMessages Loop");
 
 		}
 
 		private void ProcessMessage(string msg)
 		{
+
+			// Logger.LogTrace("Processing message: " + msg);
 
 			var userName = "";
 			var message = "";
@@ -216,16 +254,29 @@ namespace Fritz.Twitch
 		private Task<string> ReadMessageAsync()
 		{
 
-			var message = inputStream.ReadLineAsync();
-			return message;
+			Task<string> message = null;
+
+			try
+			{
+				message = inputStream.ReadLineAsync();
+			} catch (Exception ex)
+			{
+				Logger.LogError("Error reading messages: " + ex);
+			}
+
+			return message ?? Task.FromResult("");
 
 		}
 
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 
+
 		protected virtual void Dispose(bool disposing)
 		{
+
+			Logger.LogWarning("Disposing of ChatClient");
+
 			if (!disposedValue)
 			{
 				if (disposing)

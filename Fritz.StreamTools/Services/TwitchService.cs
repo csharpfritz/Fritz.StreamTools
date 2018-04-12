@@ -89,7 +89,7 @@ namespace Fritz.StreamTools.Services
 
 			_CurrentFollowerCount = Proxy.GetFollowerCount();
 			Proxy.NewFollowers += Proxy_NewFollowers;
-			Proxy.WatchFollowers();
+			Proxy.WatchFollowers(10000);
 
 			_CurrentViewerCount = Proxy.GetViewerCount();
 			Proxy.NewViewers += Proxy_NewViewers;

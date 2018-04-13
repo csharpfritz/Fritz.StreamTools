@@ -95,7 +95,7 @@ namespace Test.Chatbot
 
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 			_chatservice.Verify(sm => sm.SendMessageAsync(
-						It.Is<string>(x => x.StartsWith("Supported commands: !echo !help !ping !quote !skeet"))), Times.AtLeastOnce);
+						It.Is<string>(x => x.Contains("Supported commands: "))), Times.AtLeastOnce);
 		}
 
 		[Fact]
@@ -173,7 +173,26 @@ namespace Test.Chatbot
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 
 			_chatservice.Verify(sm => sm.SendMessageAsync(
-						It.Is<string>(x => x.StartsWith("Supported commands: !echo !help !ping !quote !skeet"))), Times.Exactly(2));
+						It.Is<string>(x => x.Contains("Supported commands: !"))), Times.Exactly(2));
 		}
+
+	[Fact]
+	public void ShouldReturnGithubCommand()
+	{
+	  var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);
+	  Task.WaitAll(sut.StartAsync(new CancellationToken()));
+	  var args = new ChatMessageEventArgs
+	  {
+		Message = "!github",
+		UserName = "testusername",
+		IsModerator = false,
+		IsOwner = false
+	  };
+
+	  _chatservice.Raise(cs => cs.ChatMessage += null, args);
+	  _chatservice.Verify(sm => sm.SendMessageAsync(
+						It.Is<string>(x => x.Contains("Jeff's Github repository can by found here: https://github.com/csharpfritz/"))), Times.Exactly(1));
 	}
+
+  }
 }

@@ -70,7 +70,8 @@ namespace Fritz.Twitch
 
 			Connect();
 
-			_ReceiveMassagesTask = Task.Factory.StartNew(() => ReceiveMessages(), TaskCreationOptions.LongRunning);
+			_ReceiveMessagesThread = new Thread(ReceiveMessagesOnThread);
+			_ReceiveMessagesThread.Start();
 
 		}
 
@@ -84,7 +85,7 @@ namespace Fritz.Twitch
 		private void Connect()
 		{
 
-			_TcpClient = new TcpClient("irc.chat.twitch.tv", 6667);
+			_TcpClient = new TcpClient("irc.chat.twitch.tv", 80);
 
 			inputStream = new StreamReader(_TcpClient.GetStream());
 			outputStream = new StreamWriter(_TcpClient.GetStream());
@@ -103,17 +104,17 @@ namespace Fritz.Twitch
 
 		}
 
-		private async Task SendMessage(string message, bool flush = true)
+		private void SendMessage(string message, bool flush = true)
 		{
 
 			var throttled = CheckThrottleStatus();
 
-			await Task.Delay(throttled.GetValueOrDefault(TimeSpan.FromSeconds(0)));
+			Thread.Sleep(throttled.GetValueOrDefault(TimeSpan.FromSeconds(0)));
 
-			await outputStream.WriteLineAsync(message).OrTimeout(2000);
+			outputStream.WriteLine(message);
 			if (flush)
 			{
-				await outputStream.FlushAsync();
+				outputStream.Flush();
 			}
 
 		}
@@ -148,7 +149,7 @@ namespace Fritz.Twitch
 
 			var fullMessage = $":{Settings.ChatBotName}!{Settings.ChatBotName}@{Settings.ChatBotName}.tmi.twitch.tv PRIVMSG #{Settings.ChannelName} :{message}";
 
-			SendMessage(fullMessage).GetAwaiter().GetResult();
+			SendMessage(fullMessage);
 
 		}
 
@@ -156,15 +157,25 @@ namespace Fritz.Twitch
 		{
 
 			var fullMessage = $":{Settings.ChatBotName}!{Settings.ChatBotName}@{Settings.ChatBotName}.tmi.twitch.tv PRIVMSG #jtv :/w {userName} {message}";
-			SendMessage(fullMessage).GetAwaiter().GetResult();
+			SendMessage(fullMessage);
 
 		}
 
-		private async Task ReceiveMessages()
+		private void ReceiveMessagesOnThread()
 		{
+
+			var lastMessageReceivedTimestamp = DateTime.Now;
+			var errorPeriod = TimeSpan.FromSeconds(60);
 
 			while (true)
 			{
+
+				Thread.Sleep(50);
+
+				if (DateTime.Now.Subtract(lastMessageReceivedTimestamp) > errorPeriod)
+				{
+					Logger.LogTrace($"Haven't received a message in {errorPeriod.TotalSeconds} seconds");
+				}
 
 				if (_Shutdown.IsCancellationRequested)
 				{
@@ -174,19 +185,20 @@ namespace Fritz.Twitch
 				if (_TcpClient.Connected && _TcpClient.Available > 0)
 				{
 
-					var msg = await ReadMessageAsync();
+					var msg = ReadMessage();
 					if (string.IsNullOrEmpty(msg))
 					{
 						continue;
 					}
 
+					lastMessageReceivedTimestamp = DateTime.Now;
 					Logger.LogTrace($"> {msg}");
 
 					// Handle the Twitch keep-alive
 					if (msg.StartsWith("PING"))
 					{
 						Logger.LogWarning("Received PING from Twitch... sending PONG");
-						SendMessage($"PONG :{msg.Split(':')[1]}").GetAwaiter().GetResult();
+						SendMessage($"PONG :{msg.Split(':')[1]}");
 						continue;
 					}
 
@@ -196,7 +208,7 @@ namespace Fritz.Twitch
 				{
 					// Reconnect
 					Logger.LogWarning("Disconnected from Twitch.. Reconnecting in 2 seconds");
-					await Task.Delay(2000);
+					Thread.Sleep(2000);
 					this.Init();
 					return;
 				}
@@ -251,26 +263,26 @@ namespace Fritz.Twitch
 
 		}
 
-		private Task<string> ReadMessageAsync()
+		private string ReadMessage()
 		{
 
-			Task<string> message = null;
+			string message = null;
 
 			try
 			{
-				message = inputStream.ReadLineAsync();
+				message = inputStream.ReadLine();
 			} catch (Exception ex)
 			{
 				Logger.LogError("Error reading messages: " + ex);
 			}
 
-			return message ?? Task.FromResult("");
+			return message ?? "";
 
 		}
 
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
-
+		private Thread _ReceiveMessagesThread;
 
 		protected virtual void Dispose(bool disposing)
 		{

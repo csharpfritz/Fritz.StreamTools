@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Fritz.Chatbot.Helpers;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -12,125 +12,128 @@ using Newtonsoft.Json;
 namespace Fritz.Chatbot.Commands
 {
 
-	public class AzureQnACommand : ICommand
+  public class AzureQnACommand : ICommand
+  {
+
+	public IConfiguration Configuration { get; set; }
+
+	public IChatService ChatService { get; set; }
+
+	public ILogger Logger { get; set; }
+
+	public string Name => "qna";
+
+	public string AzureKey => Configuration["AzureServices:QnASubscriptionKey"];
+
+	public string KnowledgebaseId => Configuration["FritzBot:QnAKnowledgeBaseId"];
+
+	public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
+
+	public async Task Execute(string userName, string fullCommandText)
 	{
 
-		public IConfiguration Configuration { get; set; }
+	  // Exit now if we don't know how to connect to Azure
+	  if (string.IsNullOrEmpty(AzureKey)) return;
 
-		public IChatService ChatService { get; set; }
+	  await Query(userName, fullCommandText);
 
-		public ILogger Logger { get; set; }
+	}
 
-		public string Name => "qna";
+	public async Task Query(string userName, string query)
+	{
 
-		public string AzureKey => Configuration["AzureServices:QnASubscriptionKey"];
+	  var responseString = string.Empty;
+	  query = WebUtility.UrlEncode(query);
 
-		public string KnowledgebaseId => Configuration["FritzBot:QnAKnowledgeBaseId"];
+	  //Build the URI
+	  var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v1.0");
+	  var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}/generateAnswer");
 
-		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
+	  //Add the question as part of the body
+	  var postBody = $"{{\"question\": \"{query}\"}}";
 
-		public async Task Execute(string userName, string fullCommandText)
+	  //Send the POST request
+	  using (var client = new WebClient())
+	  {
+		//Set the encoding to UTF8
+		client.Encoding = System.Text.Encoding.UTF8;
+
+		//Add the subscription key header
+		client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
+		client.Headers.Add("Content-Type", "application/json");
+
+		try
 		{
-
-			// Exit now if we don't know how to connect to Azure
-			if (string.IsNullOrEmpty(AzureKey)) return;
- 
-			await Query(userName, fullCommandText);
-			
+		  responseString = await client.UploadStringTaskAsync(builder.Uri, postBody).OrTimeout();
 		}
-
-		public async Task Query(string userName, string query)
+		catch (TimeoutException)
 		{
+		  Logger.LogWarning($"Azure Services did not respond in time to question '{query}'");
+		  ChatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();
+		  return;
+		}
+	  }
 
-			var responseString = string.Empty;
-			query = WebUtility.UrlEncode(query);
+	  QnAMakerResult response;
+	  try
+	  {
+		response = JsonConvert.DeserializeObject<QnAMakerResult>(responseString);
 
-			//Build the URI
-			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v1.0");
-			var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}/generateAnswer");
+		response.Answer = WebUtility.HtmlDecode(response.Answer).HandleMarkdownLinks();
 
-			//Add the question as part of the body
-			var postBody = $"{{\"question\": \"{query}\"}}";
-
-			//Send the POST request
-			using (var client = new WebClient())
-			{
-				//Set the encoding to UTF8
-				client.Encoding = System.Text.Encoding.UTF8;
-
-				//Add the subscription key header
-				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
-				client.Headers.Add("Content-Type", "application/json");
-
-				try
-				{
-					responseString = await client.UploadStringTaskAsync(builder.Uri, postBody).OrTimeout();
-				} catch (TimeoutException)
-				{
-					Logger.LogWarning($"Azure Services did not respond in time to question '{query}'");
-					ChatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();
-					return;
-				}
-			}
-
-			QnAMakerResult response;
-			try
-			{
-				response = JsonConvert.DeserializeObject<QnAMakerResult>(responseString);
-
-				response.Answer = WebUtility.HtmlDecode(response.Answer);
-
-				if (response.Score > 50)
-				{
-					await ChatService.SendMessageAsync(response.Answer);
-				} else if (response.Score > 30)
-				{
-					await ChatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
-
-				} else
-				{
-					Logger.LogInformation($"Unable to find suitable answer to {userName}'s question: {query}");
-				}
-
-			}
-			catch (Exception ex)
-			{
-
-				Logger.LogWarning($"Exception while asking knowledgebase: '{ex.Message}'");
-
-			}
+		if (response.Score > 50)
+		{
+		  await ChatService.SendMessageAsync(response.Answer);
+		}
+		else if (response.Score > 30)
+		{
+		  await ChatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
 
 		}
-
-
-		public async Task Retrain()
+		else
 		{
-
-			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v2.0");
-			var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}");
-
-
-			//Send the POST request
-			using (var client = new WebClient())
-			{
-				//Set the encoding to UTF8
-				client.Encoding = System.Text.Encoding.UTF8;
-
-				//Add the subscription key header
-				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
-				client.Headers.Add("Content-Type", "application/json");
-
-			//Add the question as part of the body
-			var postBody = $"{{\"add\": {{\"urls\": [\"https://github.com/csharpfritz/Fritz.LiveStream/wiki/Frequently-Asked-Questions\"]}} }}";
-
-
-				var responseString = await client.UploadStringTaskAsync(builder.Uri, "PATCH", postBody);
-			}
-
-
+		  Logger.LogInformation($"Unable to find suitable answer to {userName}'s question: {query}");
 		}
+
+	  }
+	  catch (Exception ex)
+	  {
+
+		Logger.LogWarning($"Exception while asking knowledgebase: '{ex.Message}'");
+
+	  }
+
+	}
+
+
+	public async Task Retrain()
+	{
+
+	  var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v2.0");
+	  var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}");
+
+
+	  //Send the POST request
+	  using (var client = new WebClient())
+	  {
+		//Set the encoding to UTF8
+		client.Encoding = System.Text.Encoding.UTF8;
+
+		//Add the subscription key header
+		client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
+		client.Headers.Add("Content-Type", "application/json");
+
+		//Add the question as part of the body
+		var postBody = $"{{\"add\": {{\"urls\": [\"https://github.com/csharpfritz/Fritz.LiveStream/wiki/Frequently-Asked-Questions\"]}} }}";
+
+
+		var responseString = await client.UploadStringTaskAsync(builder.Uri, "PATCH", postBody);
+	  }
 
 
 	}
+
+
+  }
 
 }

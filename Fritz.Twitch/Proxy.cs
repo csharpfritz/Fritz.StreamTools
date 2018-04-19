@@ -22,7 +22,7 @@ namespace Fritz.Twitch
 
 		private static short _RateLimitRemaining = 1;
 		private static DateTime _RateLimitReset = DateTime.MaxValue;
-		private readonly static ReaderWriterLockSlim _RateLimitLock = new ReaderWriterLockSlim();
+		private readonly static SemaphoreSlim _RateLimitLock = new SemaphoreSlim(1);
 
 		private static StreamData _CurrentStreamData;
 		private static DateTime _CurrentStreamLastFetchUtc;
@@ -30,7 +30,7 @@ namespace Fritz.Twitch
 		private int _WatchedFollowerCount;
 		private int _WatchedViewerCount;
 		private Timer _ViewersTimer;
-		private readonly static ReaderWriterLockSlim _CurrentStreamLock = new ReaderWriterLockSlim();
+		private readonly static SemaphoreSlim _CurrentStreamLock = new SemaphoreSlim(1);
 
 		private ILogger Logger { get; }
 		internal HttpClient Client { get; private set; }
@@ -73,25 +73,25 @@ namespace Fritz.Twitch
 		{
 
 			// Check rate-limit
-			_RateLimitLock.EnterReadLock();
+			await _RateLimitLock.WaitAsync();
 			if (_RateLimitRemaining <= 0)
 			{
-				_RateLimitLock.ExitReadLock();
+				_RateLimitLock.Release();
 				await Task.Delay(_RateLimitReset.Subtract(DateTime.UtcNow));
 				return await GetFromEndpoint(url);
 			}
-			_RateLimitLock.ExitReadLock();
+			_RateLimitLock.Release();
 
 			var result = await Client.GetAsync(url);
 
 			var remaining = short.Parse(result.Headers.GetValues("RateLimit-Remaining").First());
 			var reset = long.Parse(result.Headers.GetValues("RateLimit-Reset").First());
 
-			_RateLimitLock.EnterWriteLock();
+			await _RateLimitLock.WaitAsync();
 			_RateLimitRemaining = remaining;
 			_RateLimitReset = reset.ToDateTime();
 			Logger.LogTrace($"{DateTime.UtcNow}: Twitch Rate - {remaining} until {_RateLimitReset}");
-			_RateLimitLock.ExitWriteLock();
+			_RateLimitLock.Release();
 
 			result.EnsureSuccessStatusCode();
 
@@ -187,16 +187,16 @@ namespace Fritz.Twitch
 		public async Task<StreamData> GetStreamAsync()
 		{
 
-			_CurrentStreamLock.EnterReadLock();
+			await _CurrentStreamLock.WaitAsync();
 			if (DateTime.UtcNow.Subtract(_CurrentStreamLastFetchUtc) <= TimeSpan.FromSeconds(5) && _CurrentStreamData != null)
 			{
 				var outData = _CurrentStreamData;
-				_CurrentStreamLock.ExitReadLock();
+				_CurrentStreamLock.Release();
 				return outData;
 			}
 
-			_CurrentStreamLock.ExitReadLock();
-			if (_CurrentStreamLock.TryEnterWriteLock(5000))
+			_CurrentStreamLock.Release();
+			if (await _CurrentStreamLock.WaitAsync(5000))
 			{
 
 				var url = $"/helix/streams?user_login={Settings.ChannelName}";
@@ -208,7 +208,7 @@ namespace Fritz.Twitch
 				_CurrentStreamData = ParseStreamResult(resultString);
 				_CurrentStreamLastFetchUtc = DateTime.UtcNow;
 
-				_CurrentStreamLock.ExitWriteLock();
+				_CurrentStreamLock.Release();
 
 			}
 

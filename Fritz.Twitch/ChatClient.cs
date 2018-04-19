@@ -174,7 +174,8 @@ namespace Fritz.Twitch
 
 				if (DateTime.Now.Subtract(lastMessageReceivedTimestamp) > errorPeriod)
 				{
-					Logger.LogTrace($"Haven't received a message in {errorPeriod.TotalSeconds} seconds");
+					Logger.LogError($"Haven't received a message in {errorPeriod.TotalSeconds} seconds");
+					lastMessageReceivedTimestamp = DateTime.Now;
 				}
 
 				if (_Shutdown.IsCancellationRequested)

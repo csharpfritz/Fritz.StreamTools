@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using Fritz.StreamLib.Core;
 
 namespace Test.Chatbot
 {
@@ -77,29 +79,8 @@ namespace Test.Chatbot
         var task = new Task(target);
         task.RunSynchronously();
     }
-	[Fact]
-	public void ShouldReturnARandomSkeetQuoteAsync()
-	{
-	  string[] quote = { "test quote" };
-	  var sut = new SkeetCommand(quote);
-		var fake = new FakeChatService();
-	  sut.ChatService = fake;
-	  // Arrange
-	  Task.WaitAll(sut.Execute("", ""));
-	  
-	  // Act
 
-	  Assert.Equal(quote[0], fake.MessageSent);
-	  ///await sut.Execute("username", "");
-
-
-
-
-
-
-	}
-
-
+	
   }
 
 }

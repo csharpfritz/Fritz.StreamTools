@@ -99,7 +99,7 @@ namespace Fritz.StreamTools.Controllers
 		[Route("followers/count/configuration", Name ="ConfigurationFollowerCount")]
 		public IActionResult CountConfigurationAction()
 		{
-			return View();
+			return View("CountConfiguration");
 		}
 
 		[Route("followers/goal/{*stuff}")]
@@ -132,7 +132,7 @@ namespace Fritz.StreamTools.Controllers
 		{
 
 			ViewBag.GoogleFontsApiKey = AppConfig["GoogleFontsApi:Key"];
-			return View();
+			return View("GoalConfiguration");
 
 		}
 	}

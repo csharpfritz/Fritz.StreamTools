@@ -183,18 +183,22 @@ namespace Fritz.Twitch
 			{
 				// Turn off timer, in case runs longer than interval
 				_FollowersTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-
-				// async void as TimerCallback delegate
-				var foundFollowerCount = await GetFollowerCountAsync();
-				if (foundFollowerCount != _WatchedFollowerCount)
+				try
 				{
-					_WatchedFollowerCount = foundFollowerCount;
-					NewFollowers?.Invoke(this, new NewFollowersEventArgs(foundFollowerCount));
+					var foundFollowerCount = await GetFollowerCountAsync();
+					if (foundFollowerCount != _WatchedFollowerCount)
+					{
+						_WatchedFollowerCount = foundFollowerCount;
+						NewFollowers?.Invoke(this, new NewFollowersEventArgs(foundFollowerCount));
+					}
+				}
+				finally
+				{
+					// Turn on timer
+					var intervalMs = Math.Max(1000, _WatchFollowersIntervalMs);
+					_FollowersTimer?.Change(intervalMs, intervalMs);
 				}
 
-				// Turn on timer
-				var intervalMs = Math.Max(1000, _WatchFollowersIntervalMs);
-				_FollowersTimer?.Change(intervalMs, intervalMs);
 			}
 			catch (Exception ex)
 			{
@@ -218,19 +222,22 @@ namespace Fritz.Twitch
 			{
 				// Turn off timer, in case runs longer than interval
 				_ViewersTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-
-				var foundViewerCount = await GetViewerCountAsync();
-				if (foundViewerCount != _WatchedViewerCount)
+				try
 				{
-
-					_WatchedViewerCount = foundViewerCount;
-					NewViewers?.Invoke(this, new NewViewersEventArgs(foundViewerCount));
-
+					var foundViewerCount = await GetViewerCountAsync();
+					if (foundViewerCount != _WatchedViewerCount)
+					{
+						_WatchedViewerCount = foundViewerCount;
+						NewViewers?.Invoke(this, new NewViewersEventArgs(foundViewerCount));
+					}
+				}
+				finally
+				{
+					// Turn on timer
+					var intervalMs = Math.Max(1000, _WatchViewersIntervalMs);
+					_ViewersTimer?.Change(intervalMs, intervalMs);
 				}
 
-				// Turn on timer
-				var intervalMs = Math.Max(1000, _WatchViewersIntervalMs);
-				_ViewersTimer?.Change(intervalMs, intervalMs);
 			}
 			catch(Exception ex)
 			{

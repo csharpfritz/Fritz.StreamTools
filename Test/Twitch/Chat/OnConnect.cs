@@ -32,17 +32,17 @@ namespace Test.Twitch.Chat
 
 
 		[Fact(Skip ="Need OAuth Token")]
-		public void ShouldWork()
+		public async Task ShouldWork()
 		{
 
 			var sut = new ChatClient(_Settings, new XUnitLogger(OutputHelper));
 			sut.Init();
 
-			Task.Delay(1000);
+			await Task.Delay(1000);
 
 			// sut.WhisperMessage("Hello from your bot", "csharpfritz");
 
-			Task.Delay(1000).GetAwaiter().GetResult();
+			await Task.Delay(1000);
 			sut.Dispose();
 
 		}

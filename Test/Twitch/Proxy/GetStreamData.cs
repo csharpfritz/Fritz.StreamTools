@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using Fritz.Twitch;
 using Xunit;
 using Xunit.Abstractions;
@@ -74,14 +75,14 @@ namespace Test.Twitch.Proxy
 		}
 
 		[Fact]
-		public void ShouldReturnZeroWhenNotStreaming()
+		public async Task ShouldReturnZeroWhenNotStreaming()
 		{
 
 			// Arrange
 			var sut = new Fritz.Twitch.Proxy(_Client, _Settings, Logger);
 
 			// Act
-			var viewerCount = sut.GetViewerCountAsync().GetAwaiter().GetResult();
+			var viewerCount = await sut.GetViewerCountAsync();
 			Output.WriteLine($"csharpfritz Twitch viewer count: {viewerCount}");
 
 			// Assert

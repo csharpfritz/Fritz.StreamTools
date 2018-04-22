@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using Fritz.Twitch;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -44,14 +45,14 @@ namespace Test.Twitch.Proxy
 		public XUnitLogger Logger { get; }
 
 		[Fact]
-		public void ShouldReturnNonZeroCount()
+		public async Task ShouldReturnNonZeroCount()
 		{
 
 			// Arrange
 			var sut = new Fritz.Twitch.Proxy(_Client, _Settings, Logger);
 
 			// Act
-			var followerCount = sut.GetFollowerCount();
+			var followerCount = await sut.GetFollowerCountAsync();
 			Output.WriteLine($"csharpfritz Twitch follower count: {followerCount}");
 
 			// Assert

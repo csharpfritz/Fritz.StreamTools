@@ -23,9 +23,10 @@ namespace Fritz.Chatbot.Commands
 				return;
 			}
 
-			if (svc.Uptime.HasValue)
+			var uptime = await svc.Uptime();
+			if (uptime.HasValue)
 			{
-				await ChatService.SendMessageAsync($"The stream has been up for {svc.Uptime.Value.ToString(@"hh\:mm\:ss")}");
+				await ChatService.SendMessageAsync($"The stream has been up for {uptime.Value.ToString(@"hh\:mm\:ss")}");
 			}
 			else
 			{

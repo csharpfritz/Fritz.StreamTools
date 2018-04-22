@@ -67,19 +67,11 @@ namespace Fritz.StreamTools.Services
 
 		public string Name { get { return "Twitch"; } }
 
-		public TimeSpan? Uptime
-		{
-			get
-			{
-
-				return Proxy.Uptime;
-
-			}
-		}
+		public ValueTask<TimeSpan?> Uptime() => Proxy.Uptime();
 
 		public bool IsAuthenticated => true;
 
-		private Task StartTwitchMonitoring()
+		private async Task StartTwitchMonitoring()
 		{
 
 			_ChatClient.Connected += (c, args) => Logger.LogInformation("Now connected to Twitch Chat");
@@ -87,17 +79,15 @@ namespace Fritz.StreamTools.Services
 			_ChatClient.UserJoined += _ChatClient_UserJoined;
 			_ChatClient.Init();
 
-			_CurrentFollowerCount = Proxy.GetFollowerCount();
+			_CurrentFollowerCount = await Proxy.GetFollowerCountAsync();
 			Proxy.NewFollowers += Proxy_NewFollowers;
 			Proxy.WatchFollowers(10000);
 
-			_CurrentViewerCount = Proxy.GetViewerCount();
+			_CurrentViewerCount = await Proxy.GetViewerCountAsync();
 			Proxy.NewViewers += Proxy_NewViewers;
 			Proxy.WatchViewers();
 
 			Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
-
-			return Task.CompletedTask;
 
 		}
 

@@ -1,8 +1,8 @@
-FROM microsoft/aspnetcore:2.1.0-preview1 AS base
+FROM microsoft/dotnet:2.1-aspnetcore-runtime AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/aspnetcore-build:2.1.300-preview1 AS build
+FROM microsoft/dotnet:2.1-sdk AS build
 WORKDIR /src
 COPY Fritz.StreamTools/Fritz.StreamTools.csproj Fritz.StreamTools/
 COPY Fritz.StreamLib.Core/Fritz.StreamLib.Core.csproj Fritz.StreamLib.Core/

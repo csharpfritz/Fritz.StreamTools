@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 	<PropertyGroup>
 		<TargetFramework>netcoreapp2.1</TargetFramework>
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
@@ -12,10 +12,11 @@
 		<None Remove="ClientApp\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BuildBundlerMinifier" Version="2.6.362" />
-		<!--<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0-alpha2-final" />-->
-		<PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0-preview1-final" />
-		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-preview1-final" />
+		<PackageReference Include="BuildBundlerMinifier" Version="2.5.357" />
+		<PackageReference Include="Bundgaard.MixerLib" Version="0.1.53" />
+		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.1.1" />
+		<PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0-preview2-final" />
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-preview2-final" />
 		<PackageReference Include="System.IO.Abstractions" Version="2.1.0.178" />
 		<PackageReference Include="TwitchLib" Version="1.6.1" />
 	</ItemGroup>
@@ -23,8 +24,9 @@
 		<None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
 		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
 		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />
+		<ProjectReference Include="..\Fritz.Chatbot\Fritz.Chatbot.csproj" />
 		<ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
-		<ProjectReference Include="..\MixerLib\MixerLib.csproj" />
+		<ProjectReference Include="..\Fritz.Twitch\Fritz.Twitch.csproj" />
 		<None Update="SampleQuotes.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Fritz.StreamTools\Helpers\TaskExtensions.cs" Link="Helpers\TaskExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="SkeetQuotes.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

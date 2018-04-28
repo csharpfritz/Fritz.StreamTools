@@ -1,10 +1,28 @@
 var supportedFonts = [];
 
 function InitGoogleFonts() {
-    if (supportedFonts.length == 0){
 
-        googleFontsAdapter(setSupportedFontsFromApi);
-    }
+	if (GoogleFontsApiKey !== '' && supportedFonts.length === 0) {
+
+		googleFontsAdapter(setSupportedFontsFromApi);
+	} else if (GoogleFontsApiKey === '') {
+
+		log('Setting base fonts');
+		setSupportedFontsFromApi(baseFontsAdapter());
+
+	}
+
+}
+
+function baseFontsAdapter() {
+
+	return [
+			{ 'family': 'Arial' },
+			{ 'family': 'Helvetica' },
+			{ 'family': 'Times New Roman' },
+			{ 'family': 'Times' },
+			{ 'family': 'Courier New' }
+	];
 
 }
 

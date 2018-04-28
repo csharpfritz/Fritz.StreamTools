@@ -29,7 +29,7 @@ namespace Fritz.StreamTools.Hubs
 
 		public override async Task OnConnectedAsync()
 		{
-			var groupNames = Context.Connection.GetHttpContext().Request.Query["groups"].SingleOrDefault();
+			var groupNames = Context.GetHttpContext().Request.Query["groups"].SingleOrDefault();
 			if (groupNames != null)
 			{
 				// Join the group(s) the user has specified in the 'groups' query-string

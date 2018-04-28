@@ -17,99 +17,123 @@ using Microsoft.Extensions.Options;
 namespace Fritz.StreamTools.Controllers
 {
 
-    public class FollowersController : Controller
-    {
-        internal static int _TestFollowers;
+	public class FollowersController : Controller
+	{
+		internal static int _TestFollowers;
 
-        public FollowersController(
-                StreamService streamService,
-                IOptions<FollowerGoalConfiguration> config,
-                IHostingEnvironment env,
-                FollowerClient followerClient,
-                IConfiguration appConfig)
-        {
-            this.StreamService = streamService;
-            this.Configuration = config.Value;
-
-
-            this.HostingEnvironment = env;
-            this.FollowerClient = followerClient;
-
-            this.AppConfig = appConfig;
-        }
-
-        public StreamService StreamService { get; }
-        public FollowerGoalConfiguration Configuration { get; }
-        public IHostingEnvironment HostingEnvironment { get; }
-        public FollowerClient FollowerClient { get; }
-        public IConfiguration AppConfig { get; }
+		public FollowersController(
+						StreamService streamService,
+						IOptions<FollowerGoalConfiguration> config,
+						IOptions<FollowerCountConfiguration> countConfig,
+						IHostingEnvironment env,
+						FollowerClient followerClient,
+						IConfiguration appConfig)
+		{
+			this.StreamService = streamService;
+			this.GoalConfiguration = config.Value;
+			this.CountConfiguration = countConfig.Value;
 
 
-        [HttpGet("api/Followers")]
-        public int Get()
-        {
+			this.HostingEnvironment = env;
+			this.FollowerClient = followerClient;
 
-            if (HostingEnvironment.IsDevelopment() && _TestFollowers > 0)
-            {
-                return _TestFollowers;
-            }
+			this.AppConfig = appConfig;
+		}
 
-            return StreamService.CurrentFollowerCount;
-        }
-
-        [HttpPost("api/Followers")]
-        public void Post(int newFollowers)
-        {
-
-            if (HostingEnvironment.IsDevelopment())
-            {
-                _TestFollowers = newFollowers;
-                FollowerClient.UpdateFollowers(newFollowers);
-            }
-
-        }
-
-        public IActionResult Count()
-        {
-
-            return View(StreamService.CurrentFollowerCount);
-
-        }
-
-        [Route("followers/goal/{*stuff}")]
-        public IActionResult Goal(string stuff)
-        {
-
-            return View("Docs_Goal");
-
-        }
-
-        [ResponseCache(NoStore = true)]
-        [Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
-        public IActionResult Goal(FollowerGoalConfiguration model)
-        {
-            if (!ModelState.IsValid)
-            {
-                // TODO: Route to Docs View
-                // Set error message in ViewBag
-                return View("Docs_Goal");
-            }
-
-            model.LoadDefaultValues(Configuration);
-            model.CurrentValue = model.CurrentValue <= 0 ? StreamService.CurrentFollowerCount : model.CurrentValue;
+		public StreamService StreamService { get; }
+		public FollowerGoalConfiguration GoalConfiguration { get; }
+		public FollowerCountConfiguration CountConfiguration { get; }
+		public IHostingEnvironment HostingEnvironment { get; }
+		public FollowerClient FollowerClient { get; }
+		public IConfiguration AppConfig { get; }
 
 
-            return View(model);
-        }
+		[HttpGet("api/Followers")]
+		public int Get()
+		{
+
+			if (HostingEnvironment.IsDevelopment() && _TestFollowers > 0)
+			{
+				return _TestFollowers;
+			}
+
+			return StreamService.CurrentFollowerCount;
+		}
+
+		[HttpPost("api/Followers")]
+		public void Post(int newFollowers)
+		{
+
+			if (HostingEnvironment.IsDevelopment())
+			{
+				_TestFollowers = newFollowers;
+				FollowerClient.UpdateFollowers(newFollowers);
+			}
+
+		}
+
+		public IActionResult Count(FollowerCountConfiguration model)
+		{
+
+			if (!ModelState.IsValid)
+			{
+
+				return View("Docs_Count");
+			}
+
+			// TODO: Read this from AppSettings?
+			model.LoadDefaultSettings(CountConfiguration);
+
+				if (model.CurrentValue == 0)
+				{
+					model.CurrentValue = StreamService.CurrentFollowerCount;
+				}
 
 
-        [Route("followers/goal/configuration", Name = "ConfigureGoal")]
-        public IActionResult GoalConfiguration()
-        {
 
-            ViewBag.GoogleFontsApiKey = AppConfig["GoogleFontsApi:Key"];
-            return View();
 
-        }
-    }
+			return View(model);
+
+		}
+
+		[Route("followers/count/configuration", Name ="ConfigurationFollowerCount")]
+		public IActionResult CountConfigurationAction()
+		{
+			return View("CountConfiguration");
+		}
+
+		[Route("followers/goal/{*stuff}")]
+		public IActionResult Goal(string stuff)
+		{
+			return View("Docs_Goal");
+		}
+
+		[ResponseCache(NoStore = true)]
+		[Route("followers/goal/{goal:int}/{caption:maxlength(25)}")]
+		public IActionResult Goal(FollowerGoalConfiguration model)
+		{
+			if (!ModelState.IsValid)
+			{
+				// TODO: Route to Docs View
+				// Set error message in ViewBag
+				return View("Docs_Goal");
+			}
+
+			model.LoadDefaultValues(GoalConfiguration);
+			model.CurrentValue = model.CurrentValue <= 0 ? StreamService.CurrentFollowerCount : model.CurrentValue;
+
+
+			return View(model);
+		}
+
+
+		[Route("followers/goal/configuration", Name = "ConfigureGoal")]
+		public IActionResult GoalConfigurationAction()
+		{
+
+			ViewBag.GoogleFontsApiKey = ""; // AppConfig["GoogleFontsApi:Key"] ?? "";
+			return View("GoalConfiguration");
+
+		}
+	}
 }

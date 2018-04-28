@@ -1,0 +1,115 @@
+﻿@inject Microsoft.AspNetCore.Hosting.IHostingEnvironment HostingEnvironment
+@model FollowerCountConfiguration
+<div class="py-5 text-center">
+	<h2>Configure Follower Count</h2>
+	<p class="lead">
+		Fill out the options below to generate a customized url to show off your follower count.
+	</p>
+</div>
+
+<div class="row">
+	<div class="col-md-12 mb-6">
+		Preview:
+		<iframe id="widgetPreview" name="widgetPreview" scrolling="no"></iframe>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6 mb-3 form-group">
+		<label asp-for="CurrentValue"></label>
+		<input class="form-control" type="number" asp-for="CurrentValue" value="40" />
+	</div>
+	<div class="col-md-6 mb-3 form-inline">
+		<label asp-for="BackgroundColor"></label>
+		&nbsp;
+		<input type="color" asp-for="BackgroundColor" value="#CCCCCC" />
+	</div>
+</div>
+
+
+<div class="row">
+
+	<div class="col-md-4 mb-3 form-inline">
+		<label asp-for="FontColor"></label>
+		&nbsp;
+		<input type="color" asp-for="FontColor" />
+		<a href="#" id="defaultEmptyFontColor" data-target="@nameof(Model.FontColor)" data-background="@nameof(Model.BackgroundColor)" data-toggle="tooltip" data-placement="top" title="Choose a default color for maximum contrast"><i class="fas fa-adjust"></i></a>
+	</div>
+
+</div>
+
+<button id="preview" class="btn btn-lg btn-primary btn-block mb-3">Preview</button>
+
+<div class="alert alert-info">
+	<h4 class="alert-heading">Here is your URL:</h4>
+	<p><a id="outputUrl" href="#" target="_blank"></a></p>
+</div>
+
+@section scripts {
+
+<script>
+		const ConfigurationModel = {
+			CurrentValue: "@nameof(Model.CurrentValue)",
+			BackgroundColor: "@nameof(Model.BackgroundColor)",
+			FontColor: "@nameof(Model.FontColor)"
+		};
+
+        var log = function (message, params) {
+            @if (HostingEnvironment.IsDevelopment())
+	{
+<text>console.log(message, params);</text>
+}
+        };
+
+		(function () {
+
+	    //document.getElementById('fontsPanel').style.display = 'none';
+
+	        loadPreview();
+
+	        InitPreview();
+        })();
+
+
+		function InitPreview() {
+			const quickPreviewButton = "preview";
+			const quickPreviewTextBoxes = ["preview",
+				ConfigurationModel.CurrentValue,
+				ConfigurationModel.BackgroundColor,
+				ConfigurationModel.FontColor];
+
+			for (var tb of quickPreviewTextBoxes) {
+				document.getElementById(tb).onchange = loadPreview;
+			}
+
+			document.getElementById(quickPreviewButton).onclick = loadPreview;
+
+		}
+
+
+function loadPreview() {
+
+	const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
+
+
+	var urlTemplate = "/followers/count?";
+	urlTemplate += `${ConfigurationModel.BackgroundColor}=${escape(document.getElementById(ConfigurationModel.BackgroundColor).value)}`;
+	urlTemplate += `&${ConfigurationModel.FontColor}=${escape(document.getElementById(ConfigurationModel.FontColor).value)}`;
+	//urlTemplate += `&fontName=${escape(fontName)}`;
+
+	document.getElementById("widgetPreview").src = urlTemplate + `&${ConfigurationModel.CurrentValue}=${document.getElementById(ConfigurationModel.CurrentValue).value}`
+	log(urlTemplate);
+
+	document.getElementById("outputUrl").textContent = urlTemplate;
+	document.getElementById("outputUrl").href = urlTemplate;
+	//saveValues();
+
+}
+
+
+
+
+
+</script>
+
+}

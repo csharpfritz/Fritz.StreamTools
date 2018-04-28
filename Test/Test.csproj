@@ -21,18 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Fritz.Chatbot\Fritz.Chatbot.csproj" />
     <ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
     <ProjectReference Include="..\Fritz.StreamTools\Fritz.StreamTools.csproj" />
-    <ProjectReference Include="..\MixerLib\MixerLib.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Services\Mixer\Data\ChatDump.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Services\Mixer\Data\ConstellationDump.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\Fritz.Twitch\Fritz.Twitch.csproj" />
   </ItemGroup>
 
 </Project>

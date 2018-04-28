@@ -25,6 +25,8 @@ function loadPreview() {
 	const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
 	const fontName = document.getElementById(ConfigurationModel.FontName).value;
 
+  const supportedFonts = window.fontsModule.getSupportedFonts();
+
 	if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
 		alert('Font not supported by Google Fonts');
 		return;

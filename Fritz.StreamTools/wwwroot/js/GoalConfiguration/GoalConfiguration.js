@@ -1,6 +1,7 @@
 var isLoadingFromStorage = false;
 
 (function () {
+	'use strict'; //
 
 	document.getElementById('fontsPanel').style.display = 'none';
 

@@ -21,6 +21,6 @@ namespace Fritz.StreamTools.Models
 
 		}
 
-	} 
+	}
 
 }

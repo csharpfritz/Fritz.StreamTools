@@ -18,39 +18,46 @@ namespace Fritz.StreamTools.Services
 
 	public class FritzBot : IHostedService
 	{
-		const string QUOTES_FILENAME = "SampleQuotes.txt";
+
+		public const string CONFIGURATION_ROOT = "FritzBot";
 		const char COMMAND_PREFIX = '!';
-		readonly IConfiguration _config;
-		readonly IServiceProvider _serviceProvider;
-		readonly ILogger _logger;
-		readonly Random _random = new Random();
-		readonly string[] _quotes;
-		readonly IChatService[] _chatServices;
-		readonly IStreamService[] _streamServices;
-		TimeSpan _cooldownTime;
+		IConfiguration _config;
+		ILogger _logger;
+		internal IChatService[] _chatServices;
+		private AzureQnACommand _qnaCommand;
 		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
-		static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
+		internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
+
+		public TimeSpan CooldownTime { get; private set; }
 
 		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 		{
+
+			var chatServices = serviceProvider.GetServices<IChatService>().ToArray();
+			Initialize(config, chatServices, loggerFactory);
+
+		}
+
+		internal FritzBot() { }
+
+		internal void Initialize(IConfiguration config, IChatService[] chatServices, ILoggerFactory loggerFactory)
+		{
+
 			_config = config;
-			_serviceProvider = serviceProvider;
 			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
-			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
-			_streamServices = serviceProvider.GetServices<IStreamService>().ToArray();
+			_chatServices = chatServices;
 
-			var cooldownConfig = config["SampleChatBot:CooldownTime"];
-			_cooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
-			_logger.LogInformation("Command cooldown set to {0}", _cooldownTime);
-
+			ConfigureCommandCooldown(config);
 
 			RegisterCommands();
 
+		}
 
-			if (File.Exists(QUOTES_FILENAME))
-			{
-				_quotes = File.ReadLines(QUOTES_FILENAME).ToArray();
-			}
+		private void ConfigureCommandCooldown(IConfiguration config)
+		{
+			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
+			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
+			_logger.LogInformation("Command cooldown set to {0}", CooldownTime);
 		}
 
 		private void RegisterCommands()
@@ -70,6 +77,13 @@ namespace Fritz.StreamTools.Services
 				_CommandRegistry.Add(cmd.Name, cmd);
 			}
 
+			// Handle Q&A separately
+			_CommandRegistry.Remove("qna");
+			_qnaCommand = new AzureQnACommand()
+			{
+				Configuration = _config,
+				Logger = _logger
+			};
 
 		}
 
@@ -79,7 +93,7 @@ namespace Fritz.StreamTools.Services
 		{
 			foreach (var chat in _chatServices)
 			{
-				chat.ChatMessage += Chat_ChatMessage;
+				chat.ChatMessage += OnChat_ChatMessage;
 				chat.UserJoined += Chat_UserJoined;
 				chat.UserLeft += Chat_UserLeft;
 			}
@@ -90,7 +104,7 @@ namespace Fritz.StreamTools.Services
 		{
 			foreach (var chat in _chatServices)
 			{
-				chat.ChatMessage -= Chat_ChatMessage;
+				chat.ChatMessage -= OnChat_ChatMessage;
 				chat.UserJoined -= Chat_UserJoined;
 				chat.UserLeft -= Chat_UserLeft;
 			}
@@ -99,9 +113,39 @@ namespace Fritz.StreamTools.Services
 
 		#endregion
 
-		private async void Chat_ChatMessage(object sender, ChatMessageEventArgs e)
+		private async void OnChat_ChatMessage(object sender, ChatMessageEventArgs e)
 		{
-			if (string.IsNullOrEmpty(e.Message) || e.Message[0] != COMMAND_PREFIX)
+			// async void as Event callback
+			try
+			{
+				await Chat_ChatMessage(sender, e);
+			}
+			catch (Exception ex)
+			{
+				// Don't let exception escape from async void
+				_logger.LogError($"{DateTime.UtcNow}: Chat_ChatMessage - Error {Environment.NewLine}{ex}");
+			}
+		}
+
+	  private async Task Chat_ChatMessage(object sender, ChatMessageEventArgs e)
+	  {
+			// message is empty OR message doesn't start with ! AND doesn't end with ?
+
+			if (e.Message.EndsWith("?"))
+			{
+
+				_logger.LogInformation($"Handling question: \"{e.Message}\" from {e.UserName} on {e.ServiceName}");
+
+				var azureUserKey = $"{e.ServiceName}:{e.UserName}";
+				if (!_activeUsers.TryGetValue(azureUserKey, out var azureUser))
+					azureUser = new ChatUserInfo();
+
+				if (CommandsTooFast(e, azureUser, "qna")) return;
+				await HandleAzureQuestion(e.Message, e.UserName, sender as IChatService);
+				return;
+			}
+
+			if (string.IsNullOrEmpty(e.Message) || (e.Message[0] != COMMAND_PREFIX & !e.Message.EndsWith("?")))
 				return; // e.Message.StartsWith(...) did not work for some reason ?!?
 			var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 			if (segments.Length == 0)
@@ -123,40 +167,15 @@ namespace Fritz.StreamTools.Services
 			_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
 
 			// Handle commands
-			switch (segments[0].ToLowerInvariant())
+			ICommand cmd = null;
+			if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd)) {
+				cmd.ChatService = chatService;
+				await cmd.Execute(e.UserName, e.Message);
+			} else
 			{
-				case "ping":
-					await chatService.SendWhisperAsync(e.UserName, "pong");
-					break;
-				case "echo":
-					if (segments.Length < 2)
-						return;
-					await chatService.SendWhisperAsync(e.UserName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
-					break;
-				case "uptime":
-					{
-						// Get uptime from the mixer stream service
-						var mixer = Array.Find(_streamServices, x => x.Name == "Mixer");
-						if (mixer == null)
-							break;
-						if (mixer.Uptime.HasValue)
-							await chatService.SendMessageAsync($"The stream has been up for {mixer.Uptime.Value}");
-						else
-							await chatService.SendMessageAsync("Stream is offline");
-						break;
-					}
-				case "quote":
-					if (_quotes == null)
-						break;
-					await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
-					break;
-				default:
-					ICommand cmd = null;
-					if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd)) {
-						cmd.ChatService = chatService;
-						await cmd.Execute();
-					}
-						break; // Unknown command
+
+				await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
+				return;
 			}
 
 			// Remember last command time
@@ -164,12 +183,19 @@ namespace Fritz.StreamTools.Services
 			_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
 		}
 
+		private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
+		{
+			_qnaCommand.ChatService = chatService;
+			await _qnaCommand.Execute(userName, message);
+			return;
+		}
+
 		private bool CommandsTooFast(ChatMessageEventArgs args, ChatUserInfo user, string namedCommand)
 		{
 
 			if (!args.IsModerator && !args.IsOwner)
 			{
-				if (DateTime.UtcNow - user.LastCommandTime < _cooldownTime)
+				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
 				{
 					_logger.LogWarning($"Ignoring command {namedCommand} from {args.UserName} on {args.ServiceName}. Cooldown active");
 					return true;
@@ -180,6 +206,7 @@ namespace Fritz.StreamTools.Services
 		}
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+
 		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
 
 	}

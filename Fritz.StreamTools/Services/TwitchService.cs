@@ -1,10 +1,12 @@
 ﻿using Fritz.StreamLib.Core;
+using Fritz.Twitch;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,29 +24,29 @@ namespace Fritz.StreamTools.Services
 	public class TwitchService : IHostedService, IStreamService, IChatService
 	{
 
-		/// <summary>
-		/// Service for connecting and monitoring Twitch
-		/// </summary>
-		public FollowerService Service { get; private set; }
 		private IConfiguration Configuration { get; }
 		public ILogger Logger { get; }
 
-		private static int ErrorsReadingViewers = 0;
+		private readonly Proxy Proxy;
+
+		private ChatClient _ChatClient;
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft;
 
-		public TwitchService(IConfiguration config, ILoggerFactory loggerFactory)
+		public TwitchService(IConfiguration config, ILoggerFactory loggerFactory, Fritz.Twitch.Proxy proxy, Fritz.Twitch.ChatClient chatClient)
 		{
 			this.Configuration = config;
 			this.Logger = loggerFactory.CreateLogger("StreamServices");
+			this.Proxy = proxy;
+			this._ChatClient = chatClient;
 		}
 
-		public Task StartAsync(CancellationToken cancellationToken)
+		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			return StartTwitchMonitoring();
+			await StartTwitchMonitoring();
 		}
 
 		public Task StopAsync(CancellationToken cancellationToken)
@@ -60,63 +62,85 @@ namespace Fritz.StreamTools.Services
 		}
 
 		public static int _CurrentViewerCount;
-		private Timer _Timer;
-		private TwitchClient _TwitchClient;
 
 		public int CurrentViewerCount { get { return _CurrentViewerCount; } }
 
-		private string ClientId { get { return Configuration["StreamServices:Twitch:ClientId"]; } }
-
-		private string Channel { get { return Configuration["StreamServices:Twitch:Channel"]; } }
-
-		private string ChannelId { get { return Configuration["StreamServices:Twitch:UserId"]; } }
-
-		private string ChatToken {  get {  return Configuration["StreamServices:Twitch:ChatToken"];} }
-
 		public string Name { get { return "Twitch"; } }
 
-		public TimeSpan? Uptime => null;
+		public ValueTask<TimeSpan?> Uptime() => Proxy.Uptime();
 
-		public bool IsAuthenticated => ChatToken != null;
+		public bool IsAuthenticated => true;
 
 		private async Task StartTwitchMonitoring()
 		{
-			var api = new TwitchLib.TwitchAPI(clientId: ClientId, accessToken: ChatToken);
-			Service = new FollowerService(api);
-			Service.SetChannelByName(Channel);
-			await Service.StartService();
 
-			var v5 = new TwitchLib.Channels.V5(api);
+			_ChatClient.Connected += (c, args) => Logger.LogInformation("Now connected to Twitch Chat");
+			_ChatClient.NewMessage += _ChatClient_NewMessage;
+			_ChatClient.UserJoined += _ChatClient_UserJoined;
+			_ChatClient.Init();
 
-			var follows = await v5.GetAllFollowersAsync(ChannelId);
-			_CurrentFollowerCount = follows.Count;
-			Service.OnNewFollowersDetected += Service_OnNewFollowersDetected;
+			_CurrentFollowerCount = await Proxy.GetFollowerCountAsync();
+			Proxy.NewFollowers += Proxy_NewFollowers;
+			Proxy.WatchFollowers(10000);
 
-			var v5Stream = CreateTwitchStream(api);
-			if (v5Stream == null) {
-				await Task.Delay(2000);
-				await StartTwitchMonitoring();
-				return;
-			}
-			var myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
-			_CurrentViewerCount = myStream.Stream?.Viewers ?? 0;
-
-			if (ChatToken != null)
-			{
-				var creds = new ConnectionCredentials(Channel, ChatToken);
-				_TwitchClient = new TwitchClient(creds, Channel);
-				_TwitchClient.OnUserJoined += _TwitchClient_OnUserJoined;
-				_TwitchClient.OnUserLeft += _TwitchClient_OnUserLeft;
-				_TwitchClient.OnMessageReceived += _TwitchClient_OnMessageReceived;
-				_TwitchClient.OnWhisperReceived += _TwitchClient_OnWhisperReceived;
-				_TwitchClient.Connect();
-			}
-
+			_CurrentViewerCount = await Proxy.GetViewerCountAsync();
+			Proxy.NewViewers += Proxy_NewViewers;
+			Proxy.WatchViewers();
 
 			Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
 
-			_Timer = new Timer(CheckViews, v5Stream, 0, 5000);
+		}
 
+		private void _ChatClient_UserJoined(object sender, ChatUserJoinedEventArgs e)
+		{
+			UserJoined?.Invoke(this, new ChatUserInfoEventArgs
+			{
+				ServiceName = "Twitch",
+				UserName = e.UserName
+			});
+		}
+
+		private void _ChatClient_NewMessage(object sender, NewMessageEventArgs e)
+		{
+
+			ChatMessage?.Invoke(this, new ChatMessageEventArgs
+			{
+				IsModerator = false,
+				IsOwner = (_ChatClient.ChannelName == e.UserName),
+				IsWhisper = e.IsWhisper,
+				Message = e.Message,
+				ServiceName = "Twitch",
+				UserName = e.UserName
+			});
+		}
+
+		private void Proxy_NewViewers(object sender, NewViewersEventArgs e)
+		{
+			Interlocked.Exchange(ref _CurrentViewerCount, e.ViewerCount);
+			Logger.LogInformation($"New Viewers on Twitch, new total: {_CurrentViewerCount}");
+
+			Updated?.Invoke(this, new ServiceUpdatedEventArgs
+			{
+				ServiceName = Name,
+				NewViewers = _CurrentViewerCount
+			});
+		}
+
+		private void Proxy_NewFollowers(object sender, NewFollowersEventArgs e)
+		{
+			Interlocked.Exchange(ref _CurrentFollowerCount, e.FollowerCount);
+			Logger.LogInformation($"New Followers on Twitch, new total: {_CurrentFollowerCount}");
+
+			Updated?.Invoke(this, new ServiceUpdatedEventArgs
+			{
+				ServiceName = Name,
+				NewFollowers = _CurrentFollowerCount
+			});
+		}
+
+		private void _TwitchClient_OnConnected(object sender, OnConnectedArgs e)
+		{
+			Logger.LogInformation("Now connected to Twitch Chat Room");
 		}
 
 		private void _TwitchClient_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)
@@ -171,65 +195,6 @@ namespace Fritz.StreamTools.Services
 
 		}
 
-		private async void CheckViews(object state)
-		{
-
-			if (!(state is TwitchLib.Streams.V5)) return;
-
-			TwitchLib.Streams.V5 v5Stream = state as TwitchLib.Streams.V5;
-
-			StreamByUser myStream = null;
-
-			try
-			{
-
-				myStream = await v5Stream.GetStreamByUserAsync(ChannelId);
-
-			}
-			catch (JsonReaderException ex)
-			{
-
-				Logger.LogError($"Unable to read stream from Twitch: {ex}");
-				return;
-
-			}
-			catch (Exception)
-			{
-				Logger.LogError($"Error while communicating with Twitch");
-				return;
-			}
-
-			if (_CurrentViewerCount != (myStream.Stream?.Viewers ?? 0))
-			{
-				_CurrentViewerCount = (myStream.Stream?.Viewers ?? 0);
-				Updated?.Invoke(null, new ServiceUpdatedEventArgs
-				{
-					ServiceName = Name,
-					NewViewers = _CurrentViewerCount
-				});
-			}
-
-		}
-
-		private TwitchLib.Streams.V5 CreateTwitchStream(TwitchLib.TwitchAPI api) {
-
-			TwitchLib.Streams.V5 v5Stream = null;
-
-			try
-			{
-				v5Stream = new TwitchLib.Streams.V5(api);
-				TwitchService.ErrorsReadingViewers = 0;
-			}
-			catch (Exception ex)
-			{
-				TwitchService.ErrorsReadingViewers++;
-				Logger.LogError(ex, $"Error reading viewers.. {TwitchService.ErrorsReadingViewers} consecutive errors");
-			}
-
-			return v5Stream;
-
-		}
-
 		internal void Service_OnNewFollowersDetected(object sender,
 		TwitchLib.Events.Services.FollowerService.OnNewFollowersDetectedArgs e)
 		{
@@ -245,20 +210,22 @@ namespace Fritz.StreamTools.Services
 
 		private Task StopTwitchMonitoring()
 		{
-			Service.StopService();
+
+			Proxy.Dispose();
+
 			return Task.CompletedTask;
 		}
 
 		public Task<bool> SendMessageAsync(string message)
 		{
-			_TwitchClient.SendMessage(message);
+			_ChatClient.PostMessage(message);
 			return Task.FromResult(true);
 		}
 
 		public Task<bool> SendWhisperAsync(string userName, string message)
 		{
 
-			_TwitchClient.SendWhisper(userName, message);
+			_ChatClient.WhisperMessage(message, userName);
 			return Task.FromResult(true);
 
 		}
@@ -266,23 +233,42 @@ namespace Fritz.StreamTools.Services
 		public Task<bool> TimeoutUserAsync(string userName, TimeSpan time)
 		{
 
-			_TwitchClient.TimeoutUser(userName, time);
-			return Task.FromResult(true);
+			//_TwitchClient.TimeoutUser(userName, time);
+			//return Task.FromResult(true);
+			return Task.FromResult(false);
 
 
 		}
 
 		public Task<bool> BanUserAsync(string userName)
 		{
-			_TwitchClient.BanUser(userName);
-			return Task.FromResult(true);
+			//_TwitchClient.BanUser(userName);
+			//return Task.FromResult(true);
+			return Task.FromResult(false);
+
 		}
 
 		public Task<bool> UnbanUserAsync(string userName)
 		{
-			_TwitchClient.UnbanUser(userName);
-			return Task.FromResult(true);
+			//_TwitchClient.UnbanUser(userName);
+			//return Task.FromResult(true);
+			return Task.FromResult(false);
 		}
+
+		internal void MessageReceived(bool isModerator, bool isBroadcaster, string message, string userName)
+		{
+			ChatMessage?.Invoke(this, new ChatMessageEventArgs
+			{
+				IsModerator = isModerator,
+				IsOwner = isBroadcaster,
+				IsWhisper = false,
+				Message = message,
+				ServiceName = "Twitch",
+				UserName = userName
+			});
+
+		}
+
 	}
 
 }

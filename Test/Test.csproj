@@ -21,8 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Fritz.Chatbot\Fritz.Chatbot.csproj" />
     <ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
     <ProjectReference Include="..\Fritz.StreamTools\Fritz.StreamTools.csproj" />
+    <ProjectReference Include="..\Fritz.Twitch\Fritz.Twitch.csproj" />
   </ItemGroup>
 
 </Project>

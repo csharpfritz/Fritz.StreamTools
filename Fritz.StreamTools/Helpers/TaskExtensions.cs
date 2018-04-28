@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace Fritz.StreamTools.Helpers
+namespace System.Threading.Tasks
 {
 	public static class TaskHelpers
 	{

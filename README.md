@@ -24,6 +24,26 @@ The project supports reading stream metrics from the following services:
 
 This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux, and Windows.  Download the [.NET SDK](https://dot.net) and grab a copy of [Visual Studio Code](https://code.visualstudio.com) to get started on any platform
 
+### Configuration
+
+#### Google Fonts Api
+
+To use your own Google Fonts Api key without modifying the `Fritz.StreamTools\appSettings.json` you can place your key in the `secrets.json` file in the [path appropriate for your OS](https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-2.1&tabs=visual-studio#how-the-secret-manager-tool-works).
+
+The *userSecretsId* is **78c713a0-80e0-4e16-956a-33cf16f08a02** and can be found in `Fritz.StreamTools\Fritz.StreamTools.csproj`.
+
+If you are using Visual Studio you can use the [integrated User Secrets management UI](https://blogs.msdn.microsoft.com/mihansen/2017/09/10/managing-secrets-in-net-core-2-0-apps/)
+
+The `secrets.json` file should look like this
+
+
+    {
+      "GoogleFontsApi": {
+        "Key": "<YOUR API KEY>"
+      }
+    }
+
+
 ### Naming guideline for unit tests:
 *  Create a folder for each "logical class"
 *  Create a test class for each feature to test - end with "Should"

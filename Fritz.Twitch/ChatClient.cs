@@ -15,311 +15,317 @@ using System.Threading.Tasks;
 namespace Fritz.Twitch
 {
 
-	public class ChatClient : IDisposable
-	{
+  public class ChatClient : IDisposable
+  {
 
-		public const string LOGGER_CATEGORY = "Fritz.TwitchChat";
-		private TcpClient _TcpClient;
-		private StreamReader inputStream;
-		private StreamWriter outputStream;
-		private int _Retries;
-		private Task _ReceiveMassagesTask;
-		private MemoryStream _ReceiveStream = new MemoryStream();
+    public const string LOGGER_CATEGORY = "Fritz.TwitchChat";
+    private TcpClient _TcpClient;
+    private StreamReader inputStream;
+    private StreamWriter outputStream;
+    private int _Retries;
+    private Task _ReceiveMassagesTask;
+    private MemoryStream _ReceiveStream = new MemoryStream();
 
-		internal static readonly Regex reUserName = new Regex(@"!([^@]+)@");
-		internal static Regex reChatMessage;
-		internal static Regex reWhisperMessage;
+    internal static readonly Regex reUserName = new Regex(@"!([^@]+)@");
+    internal static Regex reChatMessage;
+    internal static Regex reWhisperMessage;
 
-		public event EventHandler<ChatConnectedEventArgs> Connected;
-		public event EventHandler<NewMessageEventArgs> NewMessage;
-		public event EventHandler<ChatUserJoinedEventArgs> UserJoined;
+    public event EventHandler<ChatConnectedEventArgs> Connected;
+    public event EventHandler<NewMessageEventArgs> NewMessage;
+    public event EventHandler<ChatUserJoinedEventArgs> UserJoined;
 
-		private DateTime _NextReset;
-		private int _RemainingThrottledCommands;
-		// private static readonly ReaderWriterLockSlim _
+    private DateTime _NextReset;
+    private int _RemainingThrottledCommands;
+    // private static readonly ReaderWriterLockSlim _
 
-		public ChatClient(IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory) : this(settings.Value, loggerFactory.CreateLogger(LOGGER_CATEGORY))
-		{
+    public ChatClient(IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory) : this(settings.Value, loggerFactory.CreateLogger(LOGGER_CATEGORY))
+    {
 
-		}
+    }
 
-		internal ChatClient(ConfigurationSettings settings, ILogger logger)
-		{
+    internal ChatClient(ConfigurationSettings settings, ILogger logger)
+    {
 
-			this.Settings = settings;
-			this.Logger = logger;
+      this.Settings = settings;
+      this.Logger = logger;
 
-			reChatMessage = new Regex($@"PRIVMSG #{Settings.ChannelName} :(.*)$");
-			reWhisperMessage = new Regex($@"WHISPER {Settings.ChatBotName} :(.*)$");
+      reChatMessage = new Regex($@"PRIVMSG #{Settings.ChannelName} :(.*)$");
+      reWhisperMessage = new Regex($@"WHISPER {Settings.ChatBotName} :(.*)$");
 
-			_Shutdown = new CancellationTokenSource();
+      _Shutdown = new CancellationTokenSource();
 
-		}
+    }
 
-		~ChatClient()
-		{
+    ~ChatClient()
+    {
 
-			Logger.LogError("GC the ChatClient");
+      Logger.LogError("GC the ChatClient");
 
-			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-			Dispose(false);
-		}
+      // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+      Dispose(false);
+    }
 
-		public void Init()
-		{
+    public void Init()
+    {
 
-			Connect();
+      Connect();
+      var receiveTask = Task.Run(async () => await ReceiveMessagesOnThread());
+    }
 
-			_ReceiveMessagesThread = new Thread(ReceiveMessagesOnThread);
-			_ReceiveMessagesThread.Start();
+    public ConfigurationSettings Settings { get; }
+    public ILogger Logger { get; }
 
-		}
+    public string ChannelName => Settings.ChannelName;
 
-		public ConfigurationSettings Settings { get; }
-		public ILogger Logger { get; }
+    private readonly CancellationTokenSource _Shutdown;
 
-		public string ChannelName => Settings.ChannelName;
+    private void Connect()
+    {
 
-		private readonly CancellationTokenSource _Shutdown;
+      _TcpClient = new TcpClient("irc.chat.twitch.tv", 80);
 
-		private void Connect()
-		{
+      inputStream = new StreamReader(_TcpClient.GetStream());
+      outputStream = new StreamWriter(_TcpClient.GetStream());
 
-			_TcpClient = new TcpClient("irc.chat.twitch.tv", 80);
+      Logger.LogTrace("Beginning IRC authentication to Twitch");
+      outputStream.WriteLine("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
+      outputStream.WriteLine($"PASS oauth:{Settings.OAuthToken}");
+      outputStream.WriteLine($"NICK {Settings.ChatBotName}");
+      outputStream.WriteLine($"USER {Settings.ChatBotName} 8 * :{Settings.ChatBotName}");
+      outputStream.Flush();
 
-			inputStream = new StreamReader(_TcpClient.GetStream());
-			outputStream = new StreamWriter(_TcpClient.GetStream());
+      outputStream.WriteLine($"JOIN #{Settings.ChannelName}");
+      outputStream.Flush();
 
-			Logger.LogTrace("Beginning IRC authentication to Twitch");
-			outputStream.WriteLine("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
-			outputStream.WriteLine($"PASS oauth:{Settings.OAuthToken}");
-			outputStream.WriteLine($"NICK {Settings.ChatBotName}");
-			outputStream.WriteLine($"USER {Settings.ChatBotName} 8 * :{Settings.ChatBotName}");
-			outputStream.Flush();
+      Connected?.Invoke(this, new ChatConnectedEventArgs());
 
-			outputStream.WriteLine($"JOIN #{Settings.ChannelName}");
-			outputStream.Flush();
+    }
 
-			Connected?.Invoke(this, new ChatConnectedEventArgs());
+    private async Task SendMessageAsync(string message, bool flush = true)
+    {
 
-		}
+      var throttled = CheckThrottleStatus();
 
-		private void SendMessage(string message, bool flush = true)
-		{
+      await Task.Delay(throttled.GetValueOrDefault(TimeSpan.FromSeconds(0)));
 
-			var throttled = CheckThrottleStatus();
+      await outputStream.WriteLineAsync(message);
+      if (flush)
+      {
+        await outputStream.FlushAsync();
+      }
 
-			Thread.Sleep(throttled.GetValueOrDefault(TimeSpan.FromSeconds(0)));
+    }
 
-			outputStream.WriteLine(message);
-			if (flush)
-			{
-				outputStream.Flush();
-			}
+    private TimeSpan? CheckThrottleStatus()
+    {
+
+      var throttleDuration = TimeSpan.FromSeconds(30);
+      var maximumCommands = 100;
 
-		}
+      if (_NextReset == null)
+      {
+        _NextReset = DateTime.UtcNow.Add(throttleDuration);
+      }
+      else if (_NextReset < DateTime.UtcNow)
+      {
+        _NextReset = DateTime.UtcNow.Add(throttleDuration);
+      }
 
-		private TimeSpan? CheckThrottleStatus()
-		{
+      // TODO: FInish checking and enforcing the chat throttling
 
-			var throttleDuration = TimeSpan.FromSeconds(30);
-			var maximumCommands = 100;
+      return null;
 
-			if (_NextReset == null)
-			{
-				_NextReset = DateTime.UtcNow.Add(throttleDuration);
-			} else if (_NextReset < DateTime.UtcNow)
-			{
-				_NextReset = DateTime.UtcNow.Add(throttleDuration);
-			}
 
-			// TODO: FInish checking and enforcing the chat throttling
+    }
 
-			return null;
+    /// <summary>
+    /// Public async interface to post messages to channel
+    /// </summary>
+    /// <param name="message"></param>
+    public async Task PostMessageAsync(string message)
+    {
 
+      var fullMessage = $":{Settings.ChatBotName}!{Settings.ChatBotName}@{Settings.ChatBotName}.tmi.twitch.tv PRIVMSG #{Settings.ChannelName} :{message}";
 
-		}
+      await SendMessageAsync(fullMessage);
 
-		/// <summary>
-		/// Public async interface to post messages to channel
-		/// </summary>
-		/// <param name="message"></param>
-		public void PostMessage(string message)
-		{
+    }
 
-			var fullMessage = $":{Settings.ChatBotName}!{Settings.ChatBotName}@{Settings.ChatBotName}.tmi.twitch.tv PRIVMSG #{Settings.ChannelName} :{message}";
+    public Task WhisperMessageAsync(string message, string userName)
+    {
+      if (string.IsNullOrWhiteSpace(userName))
+        throw new ArgumentException(nameof(userName), "Missing username");
+      return localMethod();
 
-			SendMessage(fullMessage);
+      async Task localMethod()
+      {
+        var fullMessage = $":{Settings.ChatBotName}!{Settings.ChatBotName}@{Settings.ChatBotName}.tmi.twitch.tv PRIVMSG #jtv :/w {userName} {message}";
+        await SendMessageAsync(fullMessage);
+      }
 
-		}
+    }
 
-		public void WhisperMessage(string message, string userName)
-		{
+    private async Task ReceiveMessagesOnThread()
+    {
 
-			var fullMessage = $":{Settings.ChatBotName}!{Settings.ChatBotName}@{Settings.ChatBotName}.tmi.twitch.tv PRIVMSG #jtv :/w {userName} {message}";
-			SendMessage(fullMessage);
+      var lastMessageReceivedTimestamp = DateTime.Now;
+      var errorPeriod = TimeSpan.FromSeconds(60);
+      await Task.Delay(1).ConfigureAwait(continueOnCapturedContext: false);
 
-		}
+      while (true)
+      {
+        if (DateTime.Now.Subtract(lastMessageReceivedTimestamp) > errorPeriod)
+        {
+          Logger.LogError($"Haven't received a message in {errorPeriod.TotalSeconds} seconds");
+          lastMessageReceivedTimestamp = DateTime.Now;
+        }
 
-		private void ReceiveMessagesOnThread()
-		{
+        if (_Shutdown.IsCancellationRequested)
+        {
+          break;
+        }
 
-			var lastMessageReceivedTimestamp = DateTime.Now;
-			var errorPeriod = TimeSpan.FromSeconds(60);
+        if (_TcpClient.Connected && _TcpClient.Available > 0)
+        {
 
-			while (true)
-			{
+          var msg = await ReadMessageAsync();
+          if (string.IsNullOrEmpty(msg))
+          {
+            continue;
+          }
 
-				Thread.Sleep(50);
+          lastMessageReceivedTimestamp = DateTime.Now;
+          Logger.LogTrace($"> {msg}");
 
-				if (DateTime.Now.Subtract(lastMessageReceivedTimestamp) > errorPeriod)
-				{
-					Logger.LogError($"Haven't received a message in {errorPeriod.TotalSeconds} seconds");
-					lastMessageReceivedTimestamp = DateTime.Now;
-				}
+          // Handle the Twitch keep-alive
+          if (msg.StartsWith("PING"))
+          {
+            Logger.LogWarning("Received PING from Twitch... sending PONG");
+            await SendMessageAsync($"PONG :{msg.Split(':')[1]}");
+            continue;
+          }
 
-				if (_Shutdown.IsCancellationRequested)
-				{
-					break;
-				}
+          ProcessMessage(msg);
 
-				if (_TcpClient.Connected && _TcpClient.Available > 0)
-				{
+        }
+        else if (!_TcpClient.Connected)
+        {
+          // Reconnect
+          Logger.LogWarning("Disconnected from Twitch.. Reconnecting in 2 seconds");
+          await Task.Delay(2000);
+          this.Init();
+          return;
+        }
 
-					var msg = ReadMessage();
-					if (string.IsNullOrEmpty(msg))
-					{
-						continue;
-					}
+      }
 
-					lastMessageReceivedTimestamp = DateTime.Now;
-					Logger.LogTrace($"> {msg}");
+      Logger.LogWarning("Exiting ReceiveMessages Loop");
 
-					// Handle the Twitch keep-alive
-					if (msg.StartsWith("PING"))
-					{
-						Logger.LogWarning("Received PING from Twitch... sending PONG");
-						SendMessage($"PONG :{msg.Split(':')[1]}");
-						continue;
-					}
+    }
 
-					ProcessMessage(msg);
+    private void ProcessMessage(string msg)
+    {
 
-				} else if (!_TcpClient.Connected)
-				{
-					// Reconnect
-					Logger.LogWarning("Disconnected from Twitch.. Reconnecting in 2 seconds");
-					Thread.Sleep(2000);
-					this.Init();
-					return;
-				}
+      // Logger.LogTrace("Processing message: " + msg);
 
-			}
+      var userName = "";
+      var message = "";
 
-			Logger.LogWarning("Exiting ReceiveMessages Loop");
+      userName = ChatClient.reUserName.Match(msg).Groups[1].Value;
 
-		}
+      if (!string.IsNullOrEmpty(userName) && msg.Contains($" JOIN #{ChannelName}"))
+      {
+        UserJoined?.Invoke(this, new ChatUserJoinedEventArgs { UserName = userName });
+      }
 
-		private void ProcessMessage(string msg)
-		{
+      // Review messages sent to the channel
+      if (reChatMessage.IsMatch(msg))
+      {
 
-			// Logger.LogTrace("Processing message: " + msg);
+        message = ChatClient.reChatMessage.Match(msg).Groups[1].Value;
+        Logger.LogTrace($"Message received from '{userName}': {message}");
+        NewMessage?.Invoke(this, new NewMessageEventArgs
+        {
+          UserName = userName,
+          Message = message
+        });
 
-			var userName = "";
-			var message = "";
+      }
+      else if (reWhisperMessage.IsMatch(msg))
+      {
 
-			userName = ChatClient.reUserName.Match(msg).Groups[1].Value;
+        message = ChatClient.reWhisperMessage.Match(msg).Groups[1].Value;
+        Logger.LogTrace($"Whisper received from '{userName}': {message}");
 
-			if (!string.IsNullOrEmpty(userName) && msg.Contains($" JOIN #{ChannelName}"))
-			{
-				UserJoined?.Invoke(this, new ChatUserJoinedEventArgs { UserName = userName });
-			}
+        NewMessage?.Invoke(this, new NewMessageEventArgs
+        {
+          UserName = userName,
+          Message = message,
+          IsWhisper = true
+        });
 
-			// Review messages sent to the channel
-			if (reChatMessage.IsMatch(msg))
-			{
+      }
 
-				message = ChatClient.reChatMessage.Match(msg).Groups[1].Value;
-				Logger.LogTrace($"Message received from '{userName}': {message}");
-				NewMessage?.Invoke(this, new NewMessageEventArgs
-				{
-					UserName = userName,
-					Message = message
-				});
+    }
 
-			} else if (reWhisperMessage.IsMatch(msg))
-			{
+    private async Task<string> ReadMessageAsync()
+    {
 
-				message = ChatClient.reWhisperMessage.Match(msg).Groups[1].Value;
-				Logger.LogTrace($"Whisper received from '{userName}': {message}");
+      string message = null;
 
-				NewMessage?.Invoke(this, new NewMessageEventArgs
-				{
-					UserName = userName,
-					Message = message,
-					IsWhisper = true
-				});
+      try
+      {
+        message = await inputStream.ReadLineAsync();
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError("Error reading messages: " + ex);
+      }
 
-			}
+      return message ?? "";
 
-		}
+    }
 
-		private string ReadMessage()
-		{
+    #region IDisposable Support
+    private bool disposedValue = false; // To detect redundant calls
+    private Thread _ReceiveMessagesThread;
 
-			string message = null;
+    protected virtual void Dispose(bool disposing)
+    {
 
-			try
-			{
-				message = inputStream.ReadLine();
-			} catch (Exception ex)
-			{
-				Logger.LogError("Error reading messages: " + ex);
-			}
+      Logger.LogWarning("Disposing of ChatClient");
 
-			return message ?? "";
+      if (!disposedValue)
+      {
+        if (disposing)
+        {
+          _Shutdown.Cancel();
+        }
 
-		}
+        _TcpClient.Dispose();
+        disposedValue = true;
+      }
+    }
 
-		#region IDisposable Support
-		private bool disposedValue = false; // To detect redundant calls
-		private Thread _ReceiveMessagesThread;
+    // This code added to correctly implement the disposable pattern.
+    public void Dispose()
+    {
+      Dispose(true);
+      GC.SuppressFinalize(this);
+    }
+    #endregion
+  }
 
-		protected virtual void Dispose(bool disposing)
-		{
+  public static class BufferHelpers
+  {
 
-			Logger.LogWarning("Disposing of ChatClient");
+    public static ArraySegment<byte> ToBuffer(this string text)
+    {
 
-			if (!disposedValue)
-			{
-				if (disposing)
-				{
-					_Shutdown.Cancel();
-				}
+      return Encoding.UTF8.GetBytes(text);
 
-				_TcpClient.Dispose();
-				disposedValue = true;
-			}
-		}
+    }
 
-		// This code added to correctly implement the disposable pattern.
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-		#endregion
-	}
-
-	public static class BufferHelpers {
-
-		public static ArraySegment<byte> ToBuffer(this string text)
-		{
-
-			return Encoding.UTF8.GetBytes(text);
-
-		}
-
-	}
+  }
 
 }

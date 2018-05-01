@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
@@ -13,7 +14,15 @@ namespace Fritz.Chatbot.Commands
 
 		public async Task Execute(string userName, string fullCommandText)
 		{
-			await ChatService.SendWhisperAsync(userName, "pong");
+			var thisTask = ChatService.SendWhisperAsync(userName, "pong");
+			
+			try {
+				await thisTask;
+			} catch (Exception ex) { // the first of the InnerExcpetion
+				var howManyExceptions = thisTask.Exception.InnerExceptions[0];
+			}
+
+
 		}
 	}
 

@@ -217,17 +217,19 @@ namespace Fritz.StreamTools.Services
 			return Task.CompletedTask;
 		}
 
-		public Task<bool> SendMessageAsync(string message)
+		public async Task<bool> SendMessageAsync(string message)
 		{
-			_ChatClient.PostMessage(message);
-			return Task.FromResult(true);
+
+			await _ChatClient.PostMessageAsync(message);
+			return true;
+			
 		}
 
-		public Task<bool> SendWhisperAsync(string userName, string message)
+		public async Task<bool> SendWhisperAsync(string userName, string message)
 		{
 
-			_ChatClient.WhisperMessage(message, userName);
-			return Task.FromResult(true);
+			await _ChatClient.WhisperMessageAsync(message, userName);
+			return true;
 
 		}
 

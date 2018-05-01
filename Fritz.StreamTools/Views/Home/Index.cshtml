@@ -26,10 +26,15 @@
 	<div class="col-md-4">
 		<h4>Follower Goal</h4>
 		<iframe src="/followers/goal/100/Goal?FillBackgroundColor=%23800080,%2300ff00,%23ff8000&FillBackgroundColorBlend=1,1,1&EmptyBackgroundColor=%23cccccc&EmptyFontColor=%23000000&FillFontColor=%23ffffff&fontName=Carter%20One&width=280&CurrentValue=95" scrolling="no"></iframe>
-		<br/>
+		<br />
 		<a asp-controller="Followers" asp-action="Goal">/Followers/Goal</a>
 	</div>
-	
+
+	<div class="col-md-4">
+		<h4>GitHub Information</h4>
+		<a asp-controller="GitHub" asp-action="ContributorsInformation">/GitHub/ContributorsInformation</a>
+		<a class="btn btn-secondary" asp-controller="GitHub" asp-action="GitHubConfiguration">Configure</a>
+	</div>
 </div>
 
 @section styles {

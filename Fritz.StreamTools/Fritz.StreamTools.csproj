@@ -16,6 +16,7 @@
 		<PackageReference Include="Bundgaard.MixerLib" Version="0.1.53" />
 		<PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0-preview1-final" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-preview1-final" />
+		<PackageReference Include="Octokit" Version="0.29.0" />
 		<PackageReference Include="System.IO.Abstractions" Version="2.1.0.178" />
 		<PackageReference Include="TwitchLib" Version="1.6.1" />
 	</ItemGroup>

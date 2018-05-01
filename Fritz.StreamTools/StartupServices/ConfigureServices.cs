@@ -25,6 +25,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<RundownRepository>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
+			services.Configure<GitHubInformationConfiguration>(configuration.GetSection("GitHubInformation"));
 			services.AddStreamingServices(configuration);
 			services.AddSingleton<FollowerClient>();
 			services.AddAspNetFeatures();

@@ -38,7 +38,7 @@ namespace Fritz.StreamTools.Services
 
 		public int CurrentViewerCount => _numberOfViewers;
 
-		public TimeSpan? Uptime => null;
+		public ValueTask<TimeSpan?> Uptime() => new ValueTask<TimeSpan?>((TimeSpan?)null);
 
 		public event EventHandler<ServiceUpdatedEventArgs> Updated;
 

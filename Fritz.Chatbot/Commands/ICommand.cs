@@ -10,7 +10,11 @@ namespace Fritz.Chatbot.Commands
 
 		string Name { get; }
 
-		Task Execute(params string[] args);
+		string Description { get; }
+
+		// Could this be string userName, string command??
+
+		Task Execute(string userName, string fullCommandText);
 
 	}
 

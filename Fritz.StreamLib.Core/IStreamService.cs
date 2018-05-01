@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Fritz.StreamLib.Core
 {
@@ -12,7 +13,7 @@ namespace Fritz.StreamLib.Core
 
 		int CurrentViewerCount { get; }
 
-		TimeSpan? Uptime { get; }
+		ValueTask<TimeSpan?> Uptime();
 
 		/// <summary>
 		/// Event raised when the number of Followers or Viewers changes

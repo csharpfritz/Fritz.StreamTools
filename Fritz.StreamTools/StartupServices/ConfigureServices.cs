@@ -100,8 +100,14 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="services"></param>
 		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
-			services.AddSignalR();
-			services.AddSingleton<FollowerHub>();
+			services.AddSignalR(options =>
+			{
+
+				options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+
+			}).AddJsonProtocol();
+
+			//services.AddSingleton<FollowerHub>();
 			services.AddMvc();
 		}
 

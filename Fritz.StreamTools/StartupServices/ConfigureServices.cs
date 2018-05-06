@@ -1,22 +1,19 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.TagHelpers;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MixerLib;
+using Octokit;
 
 namespace Fritz.StreamTools.StartupServices
 {
-	public static class ConfigureServices
+  public static class ConfigureServices
 	{
 		public static void Execute(
 			IServiceCollection services,
@@ -25,7 +22,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<RundownRepository>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
-			services.Configure<GitHubInformationConfiguration>(configuration.GetSection("GitHubInformation"));
+			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddStreamingServices(configuration);
 			services.AddSingleton<FollowerClient>();
 			services.AddAspNetFeatures();
@@ -34,6 +31,8 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
 			services.AddSingleton<IHostedService, FritzBot>();
+
+			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services,

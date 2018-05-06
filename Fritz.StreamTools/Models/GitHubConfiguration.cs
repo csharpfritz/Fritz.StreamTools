@@ -1,35 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Fritz.StreamTools.Models
 {
-	public class GitHubInformation
-	{
-		public GitHubInformation()
-		{
-			TopWeekContributors = new List<GitHubContributor>();
-			TopMonthContributors = new List<GitHubContributor>();
-			TopEverContributors = new List<GitHubContributor>();
-		}
-
-		public List<GitHubContributor> TopWeekContributors { get; private set; }
-		public List<GitHubContributor> TopMonthContributors { get; private set; }
-		public List<GitHubContributor> TopEverContributors { get; private set; }
-	}
-
-	public class GitHubInformationConfiguration
+  public class GitHubConfiguration
   {
-		public string RepositoryName { get; private set; }
-		public string RepositoryOwner { get; private set; }
+		[Required]
+		[Display(Name = "Repository Owner")]
+		[Remote(action: "VerifyUser", controller: "GitHub")]
+		public string RepositoryOwner { get; set; }
 
-		internal void LoadDefaultSettings(GitHubInformationConfiguration configuration)
-		{
-			RepositoryName = configuration.RepositoryName;
-			RepositoryOwner = configuration.RepositoryOwner;
-		}
-  }
-
-	public class GitHubContributor
-  {
-		public string Author { get; set; }
+		[Required]
+		[Display(Name = "Repository Name")]
+		[Remote(action: "VerifyRepository", controller: "GitHub", AdditionalFields = nameof(RepositoryOwner))]
+		public string RepositoryName { get; set; }
   }
 }

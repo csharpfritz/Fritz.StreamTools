@@ -37,9 +37,14 @@ namespace Fritz.StreamTools.StartupServices
 
 		private static void AddStreamingServices(this IServiceCollection services,
 			IConfiguration configuration)
-		{		
-			services.AddStreamService(configuration, 
-				(c, l) => new TwitchService(c, l),																	// Factory
+		{
+
+			services.Configure<Twitch.ConfigurationSettings>(configuration.GetSection("StreamServices:Twitch"));
+
+			var provider = services.BuildServiceProvider();
+
+			services.AddStreamService<TwitchService>(configuration,
+				(c, l) => new TwitchService(c, l, provider.GetService<Fritz.Twitch.Proxy>(), provider.GetService<Fritz.Twitch.ChatClient>()),
 				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
 			services.AddStreamService(configuration, 
 				(c, l) => new MixerService(c, l),                                   // Factory
@@ -59,10 +64,10 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="configuration">Application Configuration to use to populate our service</param>
 		/// <param name="factory">Callback method that defines how to instantiate the service</param>
 		/// <param name="isDisabled">Callback test to determine whether to disable the service</param>
-		private static void AddStreamService<TStreamService>(this IServiceCollection services, 
+		private static void AddStreamService<TStreamService>(this IServiceCollection services,
 			IConfiguration configuration,
-			Func<IConfiguration, ILoggerFactory, TStreamService> factory, 
-			Func<IConfiguration, bool> isDisabled) 
+			Func<IConfiguration, ILoggerFactory, TStreamService> factory,
+			Func<IConfiguration, bool> isDisabled)
 			where TStreamService : class, IStreamService
 		{
 
@@ -74,13 +79,14 @@ namespace Fritz.StreamTools.StartupServices
 
 			// Configure and grab a logger so that we can log information
 			// about the creation of the services
-			var provider = services.BuildServiceProvider();		// Build a 'temporary' instance of the DI container
+			var provider = services.BuildServiceProvider();   // Build a 'temporary' instance of the DI container
 			var loggerFactory = provider.GetService<ILoggerFactory>();
 
 			var service = factory(configuration, loggerFactory);
-			
+
 			services.AddSingleton(service as IHostedService);
 			services.AddSingleton(service as IStreamService);
+			services.AddSingleton(service);
 
 			if (service is IChatService chatService)
 			{
@@ -94,8 +100,14 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="services"></param>
 		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
-			services.AddSignalR();
-			services.AddSingleton<FollowerHub>();
+			services.AddSignalR(options =>
+			{
+
+				options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+
+			}).AddJsonProtocol();
+
+			//services.AddSingleton<FollowerHub>();
 			services.AddMvc();
 		}
 

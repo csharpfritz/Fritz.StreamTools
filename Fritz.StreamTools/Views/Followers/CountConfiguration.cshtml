@@ -17,16 +17,16 @@
 <div class="row">
 	<div class="col-md-6 mb-3 form-group">
 		<label asp-for="CurrentValue"></label>
-		<input class="form-control" type="number" asp-for="CurrentValue" />
+		<input class="form-control" type="number" asp-for="CurrentValue" value="40" />
 	</div>
-    <div class="col-md-6 mb-3 form-inline">
+	<div class="col-md-6 mb-3 form-inline">
 		<label asp-for="BackgroundColor"></label>
 		&nbsp;
 		<input type="color" asp-for="BackgroundColor" value="#CCCCCC" />
 	</div>
 </div>
 
-	
+
 <div class="row">
 
 	<div class="col-md-4 mb-3 form-inline">
@@ -47,7 +47,7 @@
 
 @section scripts {
 
-	<script>
+<script>
 		const ConfigurationModel = {
 			CurrentValue: "@nameof(Model.CurrentValue)",
 			BackgroundColor: "@nameof(Model.BackgroundColor)",
@@ -56,9 +56,9 @@
 
         var log = function (message, params) {
             @if (HostingEnvironment.IsDevelopment())
-            {
-                <text>console.log(message, params);</text>
-            }
+	{
+<text>console.log(message, params);</text>
+}
         };
 
 		(function () {
@@ -72,33 +72,25 @@
 
 
 		function InitPreview() {
-	const quickPreviewButton = "preview";
-	const quickPreviewTextBoxes = ["preview", 
-		ConfigurationModel.CurrentValue,
-		ConfigurationModel.BackgroundColor,
-		ConfigurationModel.FontColor];
+			const quickPreviewButton = "preview";
+			const quickPreviewTextBoxes = ["preview",
+				ConfigurationModel.CurrentValue,
+				ConfigurationModel.BackgroundColor,
+				ConfigurationModel.FontColor];
 
-	for (var tb of quickPreviewTextBoxes) {
-		document.getElementById(tb).onchange = loadPreview;
-	}
+			for (var tb of quickPreviewTextBoxes) {
+				document.getElementById(tb).onchange = loadPreview;
+			}
 
-	document.getElementById(quickPreviewButton).onclick = loadPreview;
+			document.getElementById(quickPreviewButton).onclick = loadPreview;
 
-
-}
+		}
 
 
 function loadPreview() {
 
 	const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
-	//const fontName = document.getElementById(ConfigurationModel.FontName).value;
 
-	/**
-	if (supportedFonts.length > 0 && filterFontList(supportedFonts, fontName, filterExactMatchOperation).length !== 1) {
-		alert('Font not supported by Google Fonts');
-		return;
-	}
-	**/
 
 	var urlTemplate = "/followers/count?";
 	urlTemplate += `${ConfigurationModel.BackgroundColor}=${escape(document.getElementById(ConfigurationModel.BackgroundColor).value)}`;
@@ -114,10 +106,10 @@ function loadPreview() {
 
 }
 
-					
 
 
 
-	</script>
+
+</script>
 
 }

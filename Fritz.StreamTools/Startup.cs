@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
+using Fritz.Twitch;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,8 @@ namespace Fritz.StreamTools
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+
+			services.AddTwitchClient();
 
 			StartupServices.ConfigureServices.Execute(services, Configuration);
 			

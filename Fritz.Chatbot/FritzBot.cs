@@ -129,18 +129,19 @@ namespace Fritz.StreamTools.Services
 
 	  private async Task Chat_ChatMessage(object sender, ChatMessageEventArgs e)
 	  {
-			// message is empty OR message doesn't start with ! AND doesn't end with ?
+			var userKey = $"{e.ServiceName}:{e.UserName}";
+			ChatUserInfo user;
+			if (!_activeUsers.TryGetValue(userKey, out user))
+				user = new ChatUserInfo();
 
+			// message is empty OR message doesn't start with ! AND doesn't end with ?
 			if (e.Message.EndsWith("?"))
 			{
 
 				_logger.LogInformation($"Handling question: \"{e.Message}\" from {e.UserName} on {e.ServiceName}");
 
-				var azureUserKey = $"{e.ServiceName}:{e.UserName}";
-				if (!_activeUsers.TryGetValue(azureUserKey, out var azureUser))
-					azureUser = new ChatUserInfo();
 
-				if (CommandsTooFast(e, azureUser, "qna")) return;
+				if (CommandsTooFast("qna")) return;
 				await HandleAzureQuestion(e.Message, e.UserName, sender as IChatService);
 				return;
 			}
@@ -157,12 +158,8 @@ namespace Fritz.StreamTools.Services
 				return;
 
 
-			var userKey = $"{e.ServiceName}:{e.UserName}";
-			if (!_activeUsers.TryGetValue(userKey, out var user))
-				user = new ChatUserInfo();
-
 			// Ignore if the normal user is sending commands to fast
-			if (CommandsTooFast(e, user, segments[0])) return;
+			if (CommandsTooFast(segments[0])) return;
 
 			_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
 
@@ -181,7 +178,25 @@ namespace Fritz.StreamTools.Services
 			// Remember last command time
 			user.LastCommandTime = DateTime.UtcNow;
 			_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+
+			bool CommandsTooFast(string namedCommand)
+			{
+
+				if (!e.IsModerator && !e.IsOwner)
+				{
+					if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
+					{
+						_logger.LogWarning($"Ignoring command {namedCommand} from {e.UserName} on {e.ServiceName}. Cooldown active");
+						return true;
+					}
+				}
+
+				return false;
+			}
+
 		}
+
+
 
 		private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
 		{
@@ -190,20 +205,6 @@ namespace Fritz.StreamTools.Services
 			return;
 		}
 
-		private bool CommandsTooFast(ChatMessageEventArgs args, ChatUserInfo user, string namedCommand)
-		{
-
-			if (!args.IsModerator && !args.IsOwner)
-			{
-				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
-				{
-					_logger.LogWarning($"Ignoring command {namedCommand} from {args.UserName} on {args.ServiceName}. Cooldown active");
-					return true;
-				}
-			}
-
-			return false;
-		}
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
 

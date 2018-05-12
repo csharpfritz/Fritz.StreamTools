@@ -46,14 +46,14 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddStreamService<TwitchService>(configuration,
 				(c, l) => new TwitchService(c, l, provider.GetService<Fritz.Twitch.Proxy>(), provider.GetService<Fritz.Twitch.ChatClient>()),
 				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
-			services.AddStreamService(configuration, 
+			services.AddStreamService(configuration,
 				(c, l) => new MixerService(c, l),                                   // Factory
 				c => string.IsNullOrEmpty(c["StreamServices:Mixer:Channel"]));			// Test to disable
-			services.AddStreamService(configuration, 
+			services.AddStreamService(configuration,
 				(c, l) => new FakeService(c, l),                                                          // Factory
 				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
-			
-			services.AddSingleton<StreamService>();	
+
+			services.AddSingleton<StreamService>();
 		}
 
 		/// <summary>
@@ -100,8 +100,14 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="services"></param>
 		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
-			services.AddSignalR();
-			services.AddSingleton<FollowerHub>();
+			services.AddSignalR(options =>
+			{
+
+				options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+
+			}).AddJsonProtocol();
+
+			//services.AddSingleton<FollowerHub>();
 			services.AddMvc();
 		}
 

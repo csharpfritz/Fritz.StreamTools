@@ -12,6 +12,6 @@
 				"merge-stream": "^1.0.1"
 		},
 		"dependencies": {
-				"@aspnet/signalr": "^1.0.0-preview2-30285"
+				"@aspnet/signalr": "1.0.0-rc1-update1"
 		}
 }

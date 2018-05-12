@@ -15,7 +15,7 @@ var isLoadingFromStorage = false;
 
 	function onload() {
 
-		isLoadingFromStorage = true; 
+		isLoadingFromStorage = true;
 
 		const bgArray = new Array();
 
@@ -71,7 +71,7 @@ var isLoadingFromStorage = false;
 
 		$('[data-toggle="tooltip"]').tooltip();
 
-		isLoadingFromStorage = false; 
+		isLoadingFromStorage = false;
 
 	}
 
@@ -230,7 +230,7 @@ function renumberColors() {
 function colourIsLight (r, g, b) {
 
 	// Counting the perceptive luminance
-	// human eye favors green color... 
+	// human eye favors green color...
 	var a = 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 	console.log(a);
 	return (a < 0.5);
@@ -251,7 +251,7 @@ function ConfigureDefaultFontColors() {
 			var inspectColor = this.getAttribute("data-background");
 			var inspectRgb = hexToRgb(document.getElementById(inspectColor).value.replace("#", ""));
 			var newFontColor = colourIsLight(inspectRgb[0], inspectRgb[1], inspectRgb[2]) ? "#000000" : "#FFFFFF";
-			
+
 			targetColorEl.value = newFontColor;
 			loadPreview();
 

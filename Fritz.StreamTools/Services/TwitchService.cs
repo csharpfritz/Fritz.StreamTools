@@ -212,6 +212,7 @@ namespace Fritz.StreamTools.Services
 		{
 
 			Proxy.Dispose();
+			_ChatClient.Dispose();
 
 			return Task.CompletedTask;
 		}

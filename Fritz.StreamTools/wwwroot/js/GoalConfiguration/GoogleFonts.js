@@ -44,7 +44,7 @@
 		localStorage.setItem('supportedFonts', JSON.stringify(supportedFonts));
 		updateFontList(filterFontList(supportedFonts));
   }
-	
+
   function requestGoogleFonts() {
 		log('Requesting fonts list from google fonts api');
 

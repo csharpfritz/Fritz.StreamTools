@@ -7,6 +7,7 @@ using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.TagHelpers;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -108,7 +109,8 @@ namespace Fritz.StreamTools.StartupServices
 			}).AddJsonProtocol();
 
 			//services.AddSingleton<FollowerHub>();
-			services.AddMvc();
+			services.AddMvc()
+				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 		}
 
 	}

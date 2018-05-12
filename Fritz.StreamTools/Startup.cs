@@ -31,7 +31,7 @@ namespace Fritz.StreamTools
 			services.AddTwitchClient();
 
 			StartupServices.ConfigureServices.Execute(services, Configuration);
-			
+
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,12 +40,14 @@ namespace Fritz.StreamTools
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
-				app.UseBrowserLink();
 			}
 			else
 			{
 				app.UseExceptionHandler("/Error");
 			}
+
+			app.UseHsts();
+			app.UseHttpsRedirection();
 
 			app.UseStaticFiles();
 

@@ -35,7 +35,7 @@ namespace Fritz.StreamTools.Hubs
 				// Join the group(s) the user has specified in the 'groups' query-string
 				// NOTE: SignalR will automatically take care of removing the client from the group(s) when they disconnect
 				foreach (var groupName in groupNames.Split(','))
-					await Groups.AddAsync(Context.ConnectionId, groupName.ToLowerInvariant());
+					await Groups.AddToGroupAsync(Context.ConnectionId, groupName.ToLowerInvariant());
 			}
 
 			await base.OnConnectedAsync();

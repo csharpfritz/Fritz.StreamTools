@@ -131,7 +131,7 @@ namespace Fritz.StreamTools.Controllers
 		public IActionResult GoalConfigurationAction()
 		{
 
-			ViewBag.GoogleFontsApiKey = ""; // AppConfig["GoogleFontsApi:Key"] ?? "";
+			ViewBag.GoogleFontsApiKey = AppConfig["GoogleFontsApi:Key"] ?? "";
 			return View("GoalConfiguration");
 
 		}

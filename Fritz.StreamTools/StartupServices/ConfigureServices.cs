@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MixerLib;
+using Octokit;
 
 namespace Fritz.StreamTools.StartupServices
 {
@@ -27,6 +28,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
 			services.AddStreamingServices(configuration);
+			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddSingleton<FollowerClient>();
 			services.AddAspNetFeatures();
 
@@ -34,6 +36,8 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
 			services.AddSingleton<IHostedService, FritzBot>();
+			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services,

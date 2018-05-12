@@ -1,0 +1,34 @@
+﻿@model GitHubInformation
+
+<h2>Top week:</h2>
+<ol>
+	@foreach (var item in Model.TopWeekContributors)
+	{
+		<li>
+				@Html.DisplayFor(modelItem => item.Author)
+				@Html.DisplayFor(modelItem => item.Commits)
+		</li>
+	}
+</ol>
+
+<h2>Top month:</h2>
+<ol>
+	@foreach (var item in Model.TopMonthContributors)
+	{
+		<li>
+				@Html.DisplayFor(modelItem => item.Author)
+				@Html.DisplayFor(modelItem => item.Commits)
+		</li>
+	}
+</ol>
+
+<h2>Top ever:</h2>
+<ol>
+	@foreach (var item in Model.TopEverContributors)
+	{
+		<li>
+				@Html.DisplayFor(modelItem => item.Author)
+				@Html.DisplayFor(modelItem => item.Commits)
+		</li>
+	}
+</ol>

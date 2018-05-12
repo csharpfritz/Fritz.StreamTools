@@ -28,7 +28,7 @@ function baseFontsAdapter() {
 
 function googleFontsAdapter(setter) {
 	//Reference for the HTTP in vanilla JS https://www.sitepoint.com/guide-vanilla-ajax-without-jquery
-	let api = 'https://www.googleapis.com/webfonts/v1/webfonts?key=' + GoogleFontsApiKey;
+	const api = `https://www.googleapis.com/webfonts/v1/webfonts?key=${GoogleFontsApiKey}`;
 
 	if (!GoogleFontsApiKey) {
 		setter([{
@@ -235,22 +235,12 @@ function googleFontsAdapter(setter) {
 		return;
 	}
 
-	let xhr = new XMLHttpRequest();
-	xhr.open('GET', api);
-	xhr.send(null);
+  const request = new Request(api);
 
-	log('Calling google fonts api');
-
-	xhr.onreadystatechange = function () {
-		let DONE = 4; // readyState 4 means the request is done.
-		let OK = 200; // status 200 is a successful return.
-		if (xhr.readyState === DONE) {
-			if (xhr.status === OK)
-				setter(JSON.parse(xhr.responseText).items); // 'This is the returned text.'
-			else
-				log('Error: ' + xhr.status); // An error occurred during the request.
-		}
-	}
+  fetch(request)
+	.then(response => response.json())
+	.then(responseData => setter(responseData.items))
+	.catch(error => log(`Error: ${error}`));
 }
 
 function setSupportedFonts(fonts) {

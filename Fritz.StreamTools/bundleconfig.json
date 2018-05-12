@@ -35,5 +35,16 @@
     "minify": {
       "enabled": false
     }
+	},
+	{
+    "outputFileName": "wwwroot/lib/jquery.js",
+    "inputFiles": [
+      "node_modules/jquery/dist/jquery.js",
+      "node_modules/jquery-validation/dist/jquery.validate.js",
+      "node_modules/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.js"
+      ],
+    "minify": {
+      "enabled": false
+    }
   }
 ]

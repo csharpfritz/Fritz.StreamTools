@@ -1,265 +1,71 @@
-var supportedFonts = [];
+(function (window) {
+  'use strict';
 
-function InitGoogleFonts() {
+  window.fontsModule = {
+		initModule: initModulePublic,
+		getSupportedFonts: getSupportedFontsPublic,
+		setSupportedFonts: setSupportedFontsPublic
+  };
 
-	if (GoogleFontsApiKey !== '' && supportedFonts.length === 0) {
+  let googleFontsApiKey = '';
+  let supportedFonts = [];
 
-		googleFontsAdapter(setSupportedFontsFromApi);
-	} else if (GoogleFontsApiKey === '') {
+  const defaultFonts = [ 'Arial', 'Helvetica', 'Times New Roman', 'Times', 'Courier New' ];
 
-		log('Setting base fonts');
-		setSupportedFontsFromApi(baseFontsAdapter());
-
-	}
-
-}
-
-function baseFontsAdapter() {
-
-	return [
-			{ 'family': 'Arial' },
-			{ 'family': 'Helvetica' },
-			{ 'family': 'Times New Roman' },
-			{ 'family': 'Times' },
-			{ 'family': 'Courier New' }
-	];
-
-}
-
-function googleFontsAdapter(setter) {
-	//Reference for the HTTP in vanilla JS https://www.sitepoint.com/guide-vanilla-ajax-without-jquery
-	let api = 'https://www.googleapis.com/webfonts/v1/webfonts?key=' + GoogleFontsApiKey;
-
-	if (!GoogleFontsApiKey) {
-		setter([{
-			'family': 'Abel'
-		}, {
-			'family': 'Abril Fatface'
-		}, {
-			'family': 'Acme'
-		}, {
-			'family': 'Alegreya'
-		}, {
-			'family': 'Alex Brush'
-		}, {
-			'family': 'Amaranth'
-		}, {
-			'family': 'Amatic SC'
-		}, {
-			'family': 'Anton'
-		}, {
-			'family': 'Arbutus Slab'
-		}, {
-			'family': 'Architects Daughter'
-		}, {
-			'family': 'Archivo'
-		}, {
-			'family': 'Archivo Black'
-		}, {
-			'family': 'Arima Madurai'
-		}, {
-			'family': 'Asap'
-		}, {
-			'family': 'Bad Script'
-		}, {
-			'family': 'Baloo Bhaina'
-		}, {
-			'family': 'Bangers'
-		}, {
-			'family': 'Berkshire Swash'
-		}, {
-			'family': 'Bitter'
-		}, {
-			'family': 'Boogaloo'
-		}, {
-			'family': 'Bree Serif'
-		}, {
-			'family': 'Bungee Shade'
-		}, {
-			'family': 'Cantata One'
-		}, {
-			'family': 'Catamaran'
-		}, {
-			'family': 'Caveat'
-		}, {
-			'family': 'Caveat Brush'
-		}, {
-			'family': 'Ceviche One'
-		}, {
-			'family': 'Chewy'
-		}, {
-			'family': 'Contrail One'
-		}, {
-			'family': 'Crete Round'
-		}, {
-			'family': 'Dancing Script'
-		}, {
-			'family': 'Exo 2'
-		}, {
-			'family': 'Fascinate'
-		}, {
-			'family': 'Francois One'
-		}, {
-			'family': 'Freckle Face'
-		}, {
-			'family': 'Fredoka One'
-		}, {
-			'family': 'Gloria Hallelujah'
-		}, {
-			'family': 'Gochi Hand'
-		}, {
-			'family': 'Great Vibes'
-		}, {
-			'family': 'Handlee'
-		}, {
-			'family': 'Inconsolata'
-		}, {
-			'family': 'Indie Flower'
-		}, {
-			'family': 'Kaushan Script'
-		}, {
-			'family': 'Lalezar'
-		}, {
-			'family': 'Lato'
-		}, {
-			'family': 'Libre Baskerville'
-		}, {
-			'family': 'Life Savers'
-		}, {
-			'family': 'Lobster'
-		}, {
-			'family': 'Lora'
-		}, {
-			'family': 'Luckiest Guy'
-		}, {
-			'family': 'Marcellus SC'
-		}, {
-			'family': 'Merriweather'
-		}, {
-			'family': 'Merriweather Sans'
-		}, {
-			'family': 'Monoton'
-		}, {
-			'family': 'Montserrat'
-		}, {
-			'family': 'News Cycle'
-		}, {
-			'family': 'Nothing You Could Do'
-		}, {
-			'family': 'Noto Serif'
-		}, {
-			'family': 'Oleo Script Swash Caps'
-		}, {
-			'family': 'Open Sans'
-		}, {
-			'family': 'Open Sans Condensed'
-		}, {
-			'family': 'Oranienbaum'
-		}, {
-			'family': 'Oswald'
-		}, {
-			'family': 'PT Sans'
-		}, {
-			'family': 'PT Sans Narrow'
-		}, {
-			'family': 'PT Serif'
-		}, {
-			'family': 'Pacifico'
-		}, {
-			'family': 'Patrick Hand'
-		}, {
-			'family': 'Peralta'
-		}, {
-			'family': 'Permanent Marker'
-		}, {
-			'family': 'Philosopher'
-		}, {
-			'family': 'Play'
-		}, {
-			'family': 'Playfair Display'
-		}, {
-			'family': 'Playfair Display SC'
-		}, {
-			'family': 'Poiret One'
-		}, {
-			'family': 'Press Start 2P'
-		}, {
-			'family': 'Prosto One'
-		}, {
-			'family': 'Quattrocento'
-		}, {
-			'family': 'Questrial'
-		}, {
-			'family': 'Quicksand'
-		}, {
-			'family': 'Raleway'
-		}, {
-			'family': 'Rancho'
-		}, {
-			'family': 'Righteous'
-		}, {
-			'family': 'Roboto'
-		}, {
-			'family': 'Roboto Condensed'
-		}, {
-			'family': 'Roboto Slab'
-		}, {
-			'family': 'Rubik'
-		}, {
-			'family': 'Rye'
-		}, {
-			'family': 'Satisfy'
-		}, {
-			'family': 'Shadows Into Light'
-		}, {
-			'family': 'Shojumaru'
-		}, {
-			'family': 'Sigmar One'
-		}, {
-			'family': 'Skranji'
-		}, {
-			'family': 'Slabo 27px'
-		}, {
-			'family': 'Special Elite'
-		}, {
-			'family': 'Tinos'
-		}, {
-			'family': 'Ultra'
-		}, {
-			'family': 'UnifrakturMaguntia'
-		}, {
-			'family': 'VT323'
-		}, {
-			'family': 'Yanone Kaffeesatz'
-		}]);
-		return;
-	}
-
-	let xhr = new XMLHttpRequest();
-	xhr.open('GET', api);
-	xhr.send(null);
-
-	log('Calling google fonts api');
-
-	xhr.onreadystatechange = function () {
-		let DONE = 4; // readyState 4 means the request is done.
-		let OK = 200; // status 200 is a successful return.
-		if (xhr.readyState === DONE) {
-			if (xhr.status === OK)
-				setter(JSON.parse(xhr.responseText).items); // 'This is the returned text.'
-			else
-				log('Error: ' + xhr.status); // An error occurred during the request.
+  function initModulePublic(moduleConfig) {
+		if (!moduleConfig.googleFontsApiKey) {
+			log('No Google Fonts Api key provided');
+		} else {
+			googleFontsApiKey = moduleConfig.googleFontsApiKey;
 		}
-	}
-}
 
-function setSupportedFonts(fonts) {
-	localStorage.setItem('supportedFonts', JSON.stringify(supportedFonts));
-	updateFontList(filterFontList(supportedFonts));
-}
+		const cachedFonts = JSON.parse(localStorage.getItem('supportedFonts'));
 
-function setSupportedFontsFromApi(fonts) {
-	supportedFonts = fonts.map((v) => v.family);
-	setSupportedFonts(supportedFonts);
-}
+		if (cachedFonts && Array.isArray(cachedFonts)) {
+			log(`Setting [${cachedFonts.length}] supported fonts from local storage`);
 
+			supportedFonts = cachedFonts;
+		  updateFontList(filterFontList(supportedFonts));
+		} else if (googleFontsApiKey) {
+			requestGoogleFonts();
+
+		} else {
+			useDefaultFonts();
+		}
+  }
+
+  function getSupportedFontsPublic() {
+		return supportedFonts;
+  }
+
+  function setSupportedFontsPublic(fonts) {
+		supportedFonts = fonts;
+
+		localStorage.setItem('supportedFonts', JSON.stringify(supportedFonts));
+		updateFontList(filterFontList(supportedFonts));
+  }
+
+  function requestGoogleFonts() {
+		log('Requesting fonts list from google fonts api');
+
+	  const requestUrl = `https://www.googleapis.com/webfonts/v1/webfonts?key=${googleFontsApiKey}`;
+
+	  const request = new Request(requestUrl);
+
+	  fetch(request)
+		.then(response => response.json())
+		.then(responseData => responseData.items.map(v => v.family))
+		.then(fonts => setSupportedFontsPublic(fonts))
+		.catch(error => {
+		  log('Error requesting google fonts', error);
+
+		  useDefaultFonts();
+		});
+  }
+
+  function useDefaultFonts() {
+		log('Falling back to default fonts', defaultFonts);
+
+		setSupportedFontsPublic(defaultFonts);
+  }
+}(window));

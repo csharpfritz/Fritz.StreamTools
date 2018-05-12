@@ -94,8 +94,6 @@
 
 @section scripts {
 		<script>
-			const GoogleFontsApiKey = '@ViewBag.GoogleFontsApiKey';	
-
 			const ConfigurationModel = {
 				Caption: "@nameof(Model.Caption)",
 				Goal: "@nameof(Model.Goal)",
@@ -125,6 +123,18 @@
 		<environment exclude="Development">
 			<script src="/js/GoalConfiguration.min.js" asp-append-version="true"></script>
 		</environment>
+
+		<script>
+			(function (window) {
+				'use strict';
+
+				const moduleConfig = {
+					googleFontsApiKey: '@ViewBag.GoogleFontsApiKey'
+				};
+
+				window.fontsModule.initModule(moduleConfig);
+			}(window))
+		</script>
 	}
 
 @section styles {

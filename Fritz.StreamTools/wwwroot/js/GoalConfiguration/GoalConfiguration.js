@@ -1,7 +1,9 @@
 var isLoadingFromStorage = false;
 
-(function () {
-	'use strict'; //
+(function (window) {
+  'use strict';
+
+  const fontsModule = window.fontsModule;
 
 	document.getElementById('fontsPanel').style.display = 'none';
 
@@ -21,13 +23,9 @@ var isLoadingFromStorage = false;
 			var key = localStorage.key(i);
 			const item = localStorage.getItem(key);
 
+			// Handled in GoogleFonts.js
 			if (key === 'supportedFonts') {
-
-				log("setting supported fonts from local storage");
-				const fonts = JSON.parse(item);
-				setSupportedFonts(fonts);
 				continue;
-
 			}
 
 			log(key, item);
@@ -69,8 +67,6 @@ var isLoadingFromStorage = false;
 
 		}
 
-		InitGoogleFonts();
-
 		ConfigureDefaultFontColors();
 
 		$('[data-toggle="tooltip"]').tooltip();
@@ -79,24 +75,26 @@ var isLoadingFromStorage = false;
 
 	}
 
-})();
+})(window);
 
 
 function saveValues() {
+	// Prevent cached fonts from being cleared
+  const cachedFonts = JSON.parse(localStorage.getItem('supportedFonts'));
 
 	localStorage.clear();
 
-	const elements = Array.from(document.getElementsByTagName("input"));
+  const elements = Array.from(document.getElementsByTagName("input"));
+
 	for (let el of elements) {
 
 		log(`Saving value: ${el.id}: ${el.value}`);
 
 		localStorage.setItem(el.id, el.value);
 
-	}
+  }
 
-	localStorage.setItem('supportedFonts', JSON.stringify(supportedFonts));
-
+  localStorage.setItem('supportedFonts', JSON.stringify(cachedFonts));
 }
 
 // retrieve the supported font names from google api
@@ -178,8 +176,8 @@ document.getElementById(ConfigurationModel.FontName).onkeyup = function (d) {
 			d.keyCode > 90)
 	)
 		return;
-	document.getElementById('fontsPanel').style.display = '';
-	updateFontList(filterFontList(supportedFonts, this.value));
+  document.getElementById('fontsPanel').style.display = '';
+  updateFontList(filterFontList(window.fontsModule.getSupportedFonts(), this.value));
 
 };
 
@@ -247,7 +245,7 @@ function ConfigureDefaultFontColors() {
 		var thisButton = document.getElementById(button);
 		thisButton.onclick = function (event) {
 
-			event.preventDefault()
+		  event.preventDefault();
 
 			var targetColorEl = document.getElementById(this.getAttribute("data-target"));
 			var inspectColor = this.getAttribute("data-background");

@@ -105,6 +105,9 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="services"></param>
 		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
+
+			services.AddMemoryCache();
+
 			services.AddSignalR(options =>
 			{
 

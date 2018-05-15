@@ -1,6 +1,52 @@
 ﻿@model GitHubInformation
+@{
+	Layout = null;
+}
+
+<html>
+
+<head>
+
+	<style>
+
+		#content {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-items: center;
+		}
+
+		#content div {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			white-space:nowrap;
+		}
+
+		h2, ol, li, span {
+			float: left;
+			margin-left: 3px;
+			display: inline!important;
+			font-size: 12pt;
+			white-space: nowrap;
+		}
+
+		.clear {
+			clear: left;
+			display: block;
+		}
+
+	</style>
+
+</head>
+<body>
+
+<div id="content">
 
 <h2>Top week:</h2>
+@if (Model.TopWeekContributors.Count() == 0) {
+	<span>No contributors this week</span>
+} else {
 <ol>
 	@foreach (var item in Model.TopWeekContributors)
 	{
@@ -10,6 +56,7 @@
 		</li>
 	}
 </ol>
+}
 
 <h2>Top month:</h2>
 <ol>
@@ -22,7 +69,7 @@
 	}
 </ol>
 
-<h2>Top ever:</h2>
+<h2>Top All Time:</h2>
 <ol>
 	@foreach (var item in Model.TopEverContributors)
 	{
@@ -32,3 +79,8 @@
 		</li>
 	}
 </ol>
+
+</div>
+
+</body>
+</html>

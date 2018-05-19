@@ -14,5 +14,8 @@ namespace Fritz.StreamTools.Models
 		[Display(Name = "Repository Name")]
 		[Remote(action: "VerifyRepository", controller: "GitHub", AdditionalFields = nameof(RepositoryOwner))]
 		public string RepositoryName { get; set; }
+
+		public string DisplayMode {get;set;} = "h-scroll";
+
   }
 }

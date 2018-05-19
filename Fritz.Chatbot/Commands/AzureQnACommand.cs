@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Helpers;
+using Fritz.ChatBot.Helpers;
 using Fritz.StreamLib.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -66,7 +67,7 @@ namespace Fritz.Chatbot.Commands
 		{
 		  responseString = await client.UploadStringTaskAsync(builder.Uri, postBody).OrTimeout();
 		}
-		catch (TimeoutException)
+		catch (TimeoutException) 
 		{
 		  Logger.LogWarning($"Azure Services did not respond in time to question '{query}'");
 		  ChatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();
@@ -96,15 +97,12 @@ namespace Fritz.Chatbot.Commands
 		}
 
 	  }
-	  catch (Exception ex)
+	  catch (Exception ex) when (Logger.LogAndSwallow("asking knowledgebase", ex))
 	  {
-
-		Logger.LogWarning($"Exception while asking knowledgebase: '{ex.Message}'");
 
 	  }
 
 	}
-
 
 	public async Task Retrain()
 	{

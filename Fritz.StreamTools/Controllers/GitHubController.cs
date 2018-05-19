@@ -7,22 +7,27 @@ using System.Linq;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using LazyCache;
+using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools.Controllers
 {
   public class GitHubController : Controller
 	{
 		public GitHubController(
-			IMemoryCache cache,
+			IAppCache cache,
 			GitHubClient githubClient,
+			ILogger<GitHubController> logger,
 			IOptions<GitHubConfiguration> githubConfiguration)
 		{
 			this.Cache = cache;
+			this.Logger = logger;
 			_gitHubClient = githubClient;
 			_gitHubConfiguration = githubConfiguration.Value;
 		}
 
-    public IMemoryCache Cache { get; }
+    public IAppCache Cache { get; }
+    public ILogger<GitHubController> Logger { get; }
 
     private readonly GitHubClient _gitHubClient;
 		private readonly GitHubConfiguration _gitHubConfiguration;
@@ -31,9 +36,11 @@ namespace Fritz.StreamTools.Controllers
 		{
 			var model = new GitHubInformation();
 
-			model = await Cache.GetOrCreateAsync<GitHubInformation>("GitHubData", async (x) => {
+			model = await Cache.GetOrAddAsync<GitHubInformation>("GitHubData", async (x) => {
 
 				x.AbsoluteExpiration = DateTime.Now.AddMinutes(5);
+
+				Logger.LogWarning("Fetching data from GitHub");
 
 				var repository =
 					await _gitHubClient.Repository.Get(_gitHubConfiguration.RepositoryOwner, _gitHubConfiguration.RepositoryName);

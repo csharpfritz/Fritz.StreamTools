@@ -47,38 +47,32 @@
 @if (Model.TopWeekContributors.Count() == 0) {
 	<span>No contributors this week</span>
 } else {
-<ol>
+
 	@foreach (var item in Model.TopWeekContributors)
 	{
-		<li>
-				@Html.DisplayFor(modelItem => item.Author)
-				@Html.DisplayFor(modelItem => item.Commits)
-		</li>
+		<span>@Html.DisplayFor(modelItem => item.Author)</span>
+		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
 	}
-</ol>
+
 }
 
 <h2>Top month:</h2>
-<ol>
+
 	@foreach (var item in Model.TopMonthContributors)
 	{
-		<li>
-				@Html.DisplayFor(modelItem => item.Author)
-				@Html.DisplayFor(modelItem => item.Commits)
-		</li>
+		<span>@Html.DisplayFor(modelItem => item.Author)</span>
+		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
 	}
-</ol>
+
 
 <h2>Top All Time:</h2>
-<ol>
+
 	@foreach (var item in Model.TopEverContributors)
 	{
-		<li>
-				@Html.DisplayFor(modelItem => item.Author)
-				@Html.DisplayFor(modelItem => item.Commits)
-		</li>
+		<span>@Html.DisplayFor(modelItem => item.Author)</span>
+		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
 	}
-</ol>
+
 
 </div>
 

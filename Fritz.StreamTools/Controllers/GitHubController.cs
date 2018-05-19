@@ -83,7 +83,7 @@ namespace Fritz.StreamTools.Controllers
 
 			});
 
-			return View(model);
+			return View($"contributor_{_gitHubConfiguration.DisplayMode}", model);
 
 		}
 

@@ -1,0 +1,6 @@
+@model List<GitHubContributor>
+
+@foreach (var item in Model)
+{
+	<text>@item.Author @item.Commits </text>
+}

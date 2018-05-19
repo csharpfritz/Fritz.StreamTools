@@ -14,6 +14,7 @@
 	<ItemGroup>
 		<PackageReference Include="BuildBundlerMinifier" Version="2.5.357" />
 		<PackageReference Include="Bundgaard.MixerLib" Version="0.1.53" />
+		<PackageReference Include="LazyCache.AspNetCore" Version="2.0.0-beta03" />
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.1.1" />
 		<PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.0-rc1-final" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-rc1-final" />

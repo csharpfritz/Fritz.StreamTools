@@ -49,7 +49,7 @@ namespace Fritz.StreamTools.Controllers
 				var lastMonth = DateTimeOffset.Now.AddMonths(-1);
 
 				model.TopEverContributors.AddRange(
-								contributors.Where(c => c.Total > 0)
+								contributors.Where(c => c.Total > 0 && c.Author.Login != _gitHubConfiguration.ExcludeUser)
 														.OrderByDescending(c => c.Total)
 														.Take(5)
 														.Select(c => new GitHubContributor() {
@@ -65,7 +65,7 @@ namespace Fritz.StreamTools.Controllers
 																					Commits = c.Weeks.Where(w => w.Week >= lastMonth)
 																														.Sum(e => e.Commits)
 														})
-														.Where(c => c.Commits > 0)
+														.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
 														.OrderByDescending(c => c.Commits)
 														.Take(5));
 
@@ -75,13 +75,15 @@ namespace Fritz.StreamTools.Controllers
 																								Author = c.Author.Login,
 																								Commits = c.Weeks.Last().Commits
 														})
-														.Where(c => c.Commits > 0)
+														.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
 														.OrderByDescending(c => c.Commits)
 														.Take(5));
 
 				return model;
 
 			});
+
+			ViewBag.Configuration = _gitHubConfiguration;
 
 			return View($"contributor_{_gitHubConfiguration.DisplayMode}", model);
 

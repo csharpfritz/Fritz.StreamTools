@@ -1,13 +1,13 @@
 @model GitHubInformation
 @{
 	Layout = null;
+	var Config = ViewBag.Configuration as GitHubConfiguration;
 }
 
 <html>
 
 <head>
 
-	@** Style design by our friend @programwithdan **@
 	<style>
 
 		body { margin: 5px 0px; }
@@ -18,38 +18,22 @@
 			overflow: hidden;
 			position: absolute;
 			padding: 10px 0px;
-			color: #000;
-			width:100%;
+			color: @(Config.TextColor);
+			background-color: @(Config.BackgroundColor);
+			width: @(Config.Width)px;
 		}
 
-		.marquee > span {
-			display: inline-block;
-			padding-left: 100%;
-			animation: marquee 40s linear infinite;
-			background-color: lime; border: 1px solid red;
+		.marquee * {
+			font-family: @(Config.Font);
+			font-size: @(Config.FontSizePt)pt;
 		}
 
-		.marquee span:nth-child(1) {
-  			animation-delay: 0s;
-		}
-
-		.marquee span:nth-child(2) {
-			animation-delay: 2s;
-		}
-
-		.marquee span:nth-child(3) {
-			animation-delay: 4s;
-		}
-
-		@@keyframes marquee {
-			0% {
-				transform: translate(0, 0);
+		.marquee u {
+			@if (Config.CaptionBold) {
+				@:font-weight: bold;
 			}
-			100% {
-				transform: translate(-100%, 0);
-			}
+			color: @(Config.CaptionColor)!important;
 		}
-
 
 	</style>
 
@@ -58,16 +42,13 @@
 
 <p class="marquee">
 
-	<span class="scrollContent">
-
-
 		<span id="topWeek">
 		<u>Top week:</u>
 		@if (Model.TopWeekContributors.Count() == 0) {
 			@:No contributors this week
 		} else {
 
-			@Html.Partial("_ContributorTickerSegment", Model.TopWeekContributors)
+			@await Html.PartialAsync("_ContributorTickerSegment", Model.TopWeekContributors)
 
 		}
 		</span>
@@ -76,7 +57,7 @@
 
 		<u>Top month:</u>
 
-		@Html.Partial("_ContributorTickerSegment", Model.TopMonthContributors)
+		@await Html.PartialAsync("_ContributorTickerSegment", Model.TopMonthContributors)
 
 		</span>
 
@@ -84,22 +65,23 @@
 
 		<u>Top All Time:</u>
 
-		@Html.Partial("_ContributorTickerSegment", Model.TopEverContributors)
+		@await Html.PartialAsync("_ContributorTickerSegment", Model.TopEverContributors)
 
 		</span>
 
-	</span>
-
 </p>
 
+<script type='text/javascript' src='/lib/jquery.js'></script>
+<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.4.0/jquery.marquee.min.js'></script>
 <script type="text/javascript">
 
 (function() {
-/**
-	var target = document.querySelector(".scrollContent");
-	var newTicker = document.getElementById("ticker_1").cloneNode(true);
-	target.appendChild(newTicker);
-**/
+
+	$(".marquee").marquee({
+		duplicated: true,
+		duration: @(Config.SpeedMs)
+	});
+
 }());
 
 

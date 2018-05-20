@@ -22,10 +22,23 @@
 			width:100%;
 		}
 
-		.marquee span {
+		.marquee > span {
 			display: inline-block;
 			padding-left: 100%;
 			animation: marquee 40s linear infinite;
+			background-color: lime; border: 1px solid red;
+		}
+
+		.marquee span:nth-child(1) {
+  			animation-delay: 0s;
+		}
+
+		.marquee span:nth-child(2) {
+			animation-delay: 2s;
+		}
+
+		.marquee span:nth-child(3) {
+			animation-delay: 4s;
 		}
 
 		@@keyframes marquee {
@@ -45,28 +58,52 @@
 
 <p class="marquee">
 
-	<span>
+	<span class="scrollContent">
 
+
+		<span id="topWeek">
 		<u>Top week:</u>
-@if (Model.TopWeekContributors.Count() == 0) {
-	@:No contributors this week
-} else {
+		@if (Model.TopWeekContributors.Count() == 0) {
+			@:No contributors this week
+		} else {
 
-	@Html.Partial("_ContributorTickerSegment", Model.TopWeekContributors)
+			@Html.Partial("_ContributorTickerSegment", Model.TopWeekContributors)
 
-}
+		}
+		</span>
 
-<u>Top month:</u>
+		<span id="topMonth">
 
-@Html.Partial("_ContributorTickerSegment", Model.TopMonthContributors)
+		<u>Top month:</u>
 
-<u>Top All Time:</u>
+		@Html.Partial("_ContributorTickerSegment", Model.TopMonthContributors)
 
-@Html.Partial("_ContributorTickerSegment", Model.TopEverContributors)
+		</span>
+
+		<span id="topAllTime">
+
+		<u>Top All Time:</u>
+
+		@Html.Partial("_ContributorTickerSegment", Model.TopEverContributors)
+
+		</span>
 
 	</span>
 
 </p>
+
+<script type="text/javascript">
+
+(function() {
+/**
+	var target = document.querySelector(".scrollContent");
+	var newTicker = document.getElementById("ticker_1").cloneNode(true);
+	target.appendChild(newTicker);
+**/
+}());
+
+
+</script>
 
 </body>
 </html>

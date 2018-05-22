@@ -42,6 +42,7 @@
 			const reducer = (accumulator, currentValue) => accumulator + parseInt(currentValue.textContent, 10);
 
 			var hub = new StreamHub();
+			var totalEl = document.getElementById("totalCount");
 
 			hub.onViewers = (service, count) => {
 
@@ -49,7 +50,10 @@
 
 				var currentCounts = document.getElementsByClassName("serviceCount");
 				var elArray = Array.from(currentCounts);
-				document.getElementById("totalCount").textContent = elArray.reduce(reducer, 0);
+
+				if (totalEl) {
+					totalEl.textContent = elArray.reduce(reducer, 0);
+				}
 
 			}
 

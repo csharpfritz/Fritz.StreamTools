@@ -11,6 +11,8 @@ namespace Fritz.StreamTools.Models
 			TopEverContributors = new List<GitHubContributor>();
 		}
 
+		public string Repository { get; set; }
+
 		public List<GitHubContributor> TopWeekContributors { get; private set; }
 		public List<GitHubContributor> TopMonthContributors { get; private set; }
 		public List<GitHubContributor> TopEverContributors { get; private set; }

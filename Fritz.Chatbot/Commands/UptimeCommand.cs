@@ -14,7 +14,11 @@ namespace Fritz.Chatbot.Commands
 
 		public string Description => "Report how long the stream has been on the air";
 
-		public async Task Execute(string userName, string fullCommandText)
+    public int Order => 100;
+
+    public bool CanExecute(string userName, string fullCommandText) => true;
+
+    public async Task Execute(string userName, string fullCommandText)
 		{
 
 

@@ -16,13 +16,17 @@ namespace Fritz.Chatbot.Commands
 
 		public string Description => "Get information about the functionality available on this channel";
 
-		public async Task Execute(string userName, string fullCommandText)
+    public int Order => 100;
+
+    public bool CanExecute(string userName, string fullCommandText) => true;
+
+    public async Task Execute(string userName, string fullCommandText)
 		{
 
 			if (fullCommandText == "!help")
 			{
 
-				var availableCommands = String.Join(" ", FritzBot._CommandRegistry.Select((k) => $"!{k.Key}"));
+				var availableCommands = String.Join(" ", FritzBot._CommandRegistry.Where(k => k.Key.StartsWith("!")).Select((k) => $"!{k.Key}"));
 
 				await ChatService.SendMessageAsync($"Supported commands: {availableCommands}");
 				return;

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,6 @@ namespace Fritz.StreamTools.Services
 				IConfiguration _config;
 				ILogger _logger;
 				internal IChatService[] _chatServices;
-				private AzureQnACommand _qnaCommand;
 				readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
 				internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
 
@@ -73,26 +73,30 @@ namespace Fritz.StreamTools.Services
 
 						foreach (var type in commandTypes)
 						{
-								if (type.Name == "ICommand") continue;
-								var cmd = Activator.CreateInstance(type) as ICommand;
-								_CommandRegistry.Add(cmd.Name, cmd);
+							if (type.Name == "ICommand") continue;
+							ICommand cmd = CreateCommand(type);
+							var cmdName = !string.IsNullOrEmpty(cmd.Name) ? $"!{cmd.Name}" : type.Name;
+							_CommandRegistry.Add(cmd.Name, cmd);
 						}
 
-						// Handle Q&A separately
-						_CommandRegistry.Remove("qna");
-			_CommandRegistry.Remove("ImageDescriptor");
+    }
 
-						_qnaCommand = new AzureQnACommand()
-						{
-								Configuration = _config,
-								Logger = _logger
-						};
+    private ICommand CreateCommand(Type type)
+    {
 
-				}
+			var configConstructor = type.GetConstructor(BindingFlags.CreateInstance | BindingFlags.Public, null, new Type[] {typeof(IConfiguration)}, null);
 
-				#region IHostedService
+			if (configConstructor != null) {
+	      return Activator.CreateInstance(type, this._config) as ICommand;
+			}
 
-				public Task StartAsync(CancellationToken cancellationToken)
+			return Activator.CreateInstance(type) as ICommand;
+
+    }
+
+    #region IHostedService
+
+    public Task StartAsync(CancellationToken cancellationToken)
 				{
 						foreach (var chat in _chatServices)
 						{
@@ -132,73 +136,64 @@ namespace Fritz.StreamTools.Services
 
 				private async Task Chat_ChatMessage(object sender, ChatMessageEventArgs e)
 				{
+
+					// TODO: Add queue processing to ensure only one instance of a command is executing at a time
+
 						var userKey = $"{e.ServiceName}:{e.UserName}";
 						ChatUserInfo user;
 						if (!_activeUsers.TryGetValue(userKey, out user))
 								user = new ChatUserInfo();
 
-						// message is empty OR message doesn't start with ! AND doesn't end with ?
-						if (e.Message.EndsWith("?"))
-						{
-
-								_logger.LogInformation($"Handling question: \"{e.Message}\" from {e.UserName} on {e.ServiceName}");
-
-
-								if (CommandsTooFast("qna")) return;
-								await HandleAzureQuestion(e.Message, e.UserName, sender as IChatService);
-								return;
-						}
-
-						// Check for image processing
-						var imageCheckPattern = @"http(s)?:?(\/\/[^""']*\.(?:png|jpg|jpeg|gif))";
-						var r = new Regex(imageCheckPattern, RegexOptions.IgnoreCase);
-
-						// Match the regular expression pattern against a text string.
-						var imageCheck = r.Match(e.Message);
-						if (imageCheck.Captures.Count > 0)
-						{
-				//cal the new comand
-				var imageDescCommand = new ImageDescriptorCommand(_config);
-				imageDescCommand.ChatService = sender as IChatService;
-				await imageDescCommand.Execute(e.UserName, imageCheck.Captures[0].Value);
-				return;
-
-						}
-
-						if (string.IsNullOrEmpty(e.Message) || (e.Message[0] != COMMAND_PREFIX & !e.Message.EndsWith("?")))
-								return; // e.Message.StartsWith(...) did not work for some reason ?!?
-						var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-						if (segments.Length == 0)
-								return;
-
 						var chatService = sender as IChatService;
-						Debug.Assert(chatService != null);
-						if (!chatService.IsAuthenticated)
-								return;
 
+						foreach (var cmd in _CommandRegistry.Values.OrderBy(k => k.Order)) {
 
-						// Ignore if the normal user is sending commands to fast
-						if (CommandsTooFast(segments[0])) return;
+							if (cmd.CanExecute(e.UserName, e.Message)) {
 
-						_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
+								// Ignore if the normal user is sending commands to fast
+								if (CommandsTooFast(cmd.Name)) return;
 
-						// Handle commands
-						ICommand cmd = null;
-						if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd))
-						{
+								// Do we want to do this on every run through the loop?
 								cmd.ChatService = chatService;
 								await cmd.Execute(e.UserName, e.Message);
-						}
-						else
-						{
 
-								await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
+								// Remember last command time
+								user.LastCommandTime = DateTime.UtcNow;
+								_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+
 								return;
+							}
+
 						}
 
-						// Remember last command time
-						user.LastCommandTime = DateTime.UtcNow;
-						_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+						await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
+
+						return;
+
+						// if (string.IsNullOrEmpty(e.Message) || (e.Message[0] != COMMAND_PREFIX & !e.Message.EndsWith("?")))
+						// 		return; // e.Message.StartsWith(...) did not work for some reason ?!?
+						// var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+						// if (segments.Length == 0)
+						// 		return;
+
+						// var chatService = sender as IChatService;
+						// Debug.Assert(chatService != null);
+						// if (!chatService.IsAuthenticated)
+						// 		return;
+
+
+						// 					_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
+
+						// // Handle commands
+						// ICommand cmd = null;
+						// if (_CommandRegistry.TryGetValue("!" + segments[0].ToLowerInvariant(), out cmd))
+						// {
+						// 		cmd.ChatService = chatService;
+						// 		await cmd.Execute(e.UserName, e.Message);
+						// }
+						// else
+						// {
+
 
 						bool CommandsTooFast(string namedCommand)
 						{
@@ -219,12 +214,12 @@ namespace Fritz.StreamTools.Services
 
 
 
-				private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
-				{
-						_qnaCommand.ChatService = chatService;
-						await _qnaCommand.Execute(userName, message);
-						return;
-				}
+				// private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
+				// {
+				// 		_qnaCommand.ChatService = chatService;
+				// 		await _qnaCommand.Execute(userName, message);
+				// 		return;
+				// }
 
 
 				private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");

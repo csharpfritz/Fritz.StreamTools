@@ -15,7 +15,11 @@ namespace Fritz.Chatbot.Commands
 
 		public string Description => "Outputs the URL of Jeff's Github Repository";
 
-		public async Task Execute(string userName, string fullCommandText)
+    public int Order => 100;
+
+    public bool CanExecute(string userName, string fullCommandText) => true;
+
+    public async Task Execute(string userName, string fullCommandText)
 		{
 			await ChatService.SendMessageAsync("Jeff's Github repository can by found here: https://github.com/csharpfritz/");
 		}

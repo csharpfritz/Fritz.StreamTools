@@ -22,7 +22,7 @@ namespace Fritz.Chatbot.Commands
 
 	public ILogger Logger { get; set; }
 
-	public string Name => "qna";
+	public string Name => "";
 
 	public string AzureKey => Configuration["AzureServices:QnASubscriptionKey"];
 
@@ -30,11 +30,22 @@ namespace Fritz.Chatbot.Commands
 
 	public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
 
-	public async Task Execute(string userName, string fullCommandText)
+    public int Order => 1;
+
+    public bool CanExecute(string userName, string fullCommandText)
+    {
+
+			return fullCommandText.EndsWith("?");
+
+    }
+
+    public async Task Execute(string userName, string fullCommandText)
 	{
 
 	  // Exit now if we don't know how to connect to Azure
 	  if (string.IsNullOrEmpty(AzureKey)) return;
+
+		Logger.LogInformation($"Handling question: \"{fullCommandText}\" from {userName}");
 
 	  await Query(userName, fullCommandText);
 
@@ -67,7 +78,7 @@ namespace Fritz.Chatbot.Commands
 		{
 		  responseString = await client.UploadStringTaskAsync(builder.Uri, postBody).OrTimeout();
 		}
-		catch (TimeoutException) 
+		catch (TimeoutException)
 		{
 		  Logger.LogWarning($"Azure Services did not respond in time to question '{query}'");
 		  ChatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();

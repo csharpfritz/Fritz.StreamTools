@@ -12,6 +12,11 @@ namespace Fritz.Chatbot.Commands
 
 		string Description { get; }
 
+		bool CanExecute(string userName, string fullCommandText);
+
+		int Order { get;}
+
+
 		// Could this be string userName, string command??
 
 		Task Execute(string userName, string fullCommandText);

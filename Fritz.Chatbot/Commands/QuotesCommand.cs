@@ -32,7 +32,9 @@ namespace Fritz.Chatbot.Commands
 
 		public string Description => "Return a random quote to the chat room";
 
-		public async Task Execute(string userName, string fullCommandText)
+    public int Order => 100;
+
+    public async Task Execute(string userName, string fullCommandText)
 		{
 
 			if (_quotes == null) return;
@@ -41,5 +43,7 @@ namespace Fritz.Chatbot.Commands
 
 		}
 
-	}
+    public bool CanExecute(string userName, string fullCommandText) => true;
+
+  }
 }

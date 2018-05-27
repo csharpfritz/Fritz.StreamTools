@@ -35,8 +35,9 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
-			services.AddSingleton<IHostedService, FritzBot>();
+			services.AddScoped<IHostedService, FritzBot>();
 			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+	  	FritzBot.RegisterCommands(services);
 
 			services.AddLazyCache();
 

@@ -5,42 +5,48 @@ using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class HelpCommand : ICommand
+	public class HelpCommand : CommandBase
 	{
-		public IChatService ChatService { get; set; }
+		private readonly IServiceProvider _serviceProvider;
 
-		public string Name => "help";
-
-		public string Description => "Get information about the functionality available on this channel";
-
-    public int Order => 100;
-
-    public bool CanExecute(string userName, string fullCommandText) => true;
-
-    public async Task Execute(string userName, string fullCommandText)
+		public HelpCommand(IServiceProvider serviceProvider)
 		{
+			_serviceProvider = serviceProvider;
+		}
+
+		override public string Name => "help";
+
+		override public string Description => "Get information about the functionality available on this channel";
+
+		override public int Order => 100;
+
+		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		{
+
+			var commands = _serviceProvider.GetServices<ICommand>();
 
 			if (fullCommandText == "!help")
 			{
 
-				var availableCommands = String.Join(" ", FritzBot._CommandRegistry.Where(k => k.Key.StartsWith("!")).Select((k) => $"!{k.Key}"));
+				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Name)).Select(c => $"!{c.Name.ToLower()}"));
 
-				await ChatService.SendMessageAsync($"Supported commands: {availableCommands}");
+				await chatService.SendMessageAsync($"Supported commands: {availableCommands}");
 				return;
 			}
 
 			var commandToHelpWith = fullCommandText.Replace("!help ", "");
-			var cmd = FritzBot._CommandRegistry[commandToHelpWith.ToLowerInvariant()];
+			var cmd = commands.FirstOrDefault(c => c.Name.Equals(commandToHelpWith, StringComparison.InvariantCultureIgnoreCase));
 			if (cmd == null)
 			{
-				await ChatService.SendMessageAsync("Unknown command to provide help with.");
+				await chatService.SendMessageAsync("Unknown command to provide help with.");
 				return;
 			}
 
-			await ChatService.SendMessageAsync($"{commandToHelpWith}: {cmd.Description}");
+			await chatService.SendMessageAsync($"{commandToHelpWith}: {cmd.Description}");
 
 		}
 

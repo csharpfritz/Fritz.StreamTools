@@ -8,13 +8,12 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class QuotesCommand : ICommand
+	public class QuotesCommand : CommandBase
 	{
 
 		const string QUOTES_FILENAME = "SampleQuotes.txt";
 		internal string[] _quotes;
 		private readonly Random _random = new Random();
-
 
 		public QuotesCommand()
 		{
@@ -26,24 +25,20 @@ namespace Fritz.Chatbot.Commands
 
 		}
 
-		public IChatService ChatService { get; set; }
+		override public string Name => "quote";
 
-		public string Name => "quote";
+		override public string Description => "Return a random quote to the chat room";
 
-		public string Description => "Return a random quote to the chat room";
+		override public int Order => 100;
 
-    public int Order => 100;
-
-    public async Task Execute(string userName, string fullCommandText)
+		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 
 			if (_quotes == null) return;
 
-			await ChatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
+			await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
 
 		}
 
-    public bool CanExecute(string userName, string fullCommandText) => true;
-
-  }
+	}
 }

@@ -3,21 +3,17 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class PingCommand : ICommand
+	public class PingCommand : CommandBase
 	{
-		public IChatService ChatService { get; set; }
+		override public string Name => "ping";
 
-		public string Name => "ping";
+		override public string Description => "Receive a quick acknowledgement from the bot through a whisper";
 
-		public string Description => "Receive a quick acknowledgement from the bot through a whisper";
+		override public int Order => 100;
 
-    public int Order => 100;
-
-    public bool CanExecute(string userName, string fullCommandText) => true;
-
-    public async Task Execute(string userName, string fullCommandText)
+		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
-			await ChatService.SendWhisperAsync(userName, "pong");
+			await chatService.SendWhisperAsync(userName, "pong");
 		}
 	}
 

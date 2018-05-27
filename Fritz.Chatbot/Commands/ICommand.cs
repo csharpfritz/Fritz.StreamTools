@@ -1,12 +1,10 @@
-﻿using Fritz.StreamLib.Core;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
 	public interface ICommand
 	{
-
-		IChatService ChatService { get; set; }
 
 		string Name { get; }
 
@@ -14,12 +12,11 @@ namespace Fritz.Chatbot.Commands
 
 		bool CanExecute(string userName, string fullCommandText);
 
-		int Order { get;}
-
+		int Order { get; }
 
 		// Could this be string userName, string command??
 
-		Task Execute(string userName, string fullCommandText);
+		Task Execute(IChatService chatService, string userName, string fullCommandText);
 
 	}
 

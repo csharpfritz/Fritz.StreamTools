@@ -6,23 +6,18 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class UptimeCommand : ICommand
+	public class UptimeCommand : CommandBase
 	{
-		public IChatService ChatService { get; set; }
+		override public string Name => "uptime";
 
-		public string Name => "uptime";
+		override public string Description => "Report how long the stream has been on the air";
 
-		public string Description => "Report how long the stream has been on the air";
+		override public int Order => 100;
 
-    public int Order => 100;
-
-    public bool CanExecute(string userName, string fullCommandText) => true;
-
-    public async Task Execute(string userName, string fullCommandText)
+		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 
-
-			if (!(ChatService is IStreamService svc))
+			if (!(chatService is IStreamService svc))
 			{
 				return;
 			}
@@ -30,11 +25,11 @@ namespace Fritz.Chatbot.Commands
 			var uptime = await svc.Uptime();
 			if (uptime.HasValue)
 			{
-				await ChatService.SendMessageAsync($"The stream has been up for {uptime.Value.ToString(@"hh\:mm\:ss")}");
+				await chatService.SendMessageAsync($"The stream has been up for {uptime.Value.ToString(@"hh\:mm\:ss")}");
 			}
 			else
 			{
-				await ChatService.SendMessageAsync("Stream is offline");
+				await chatService.SendMessageAsync("Stream is offline");
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-@model GitHubInformation
+@model GitHubInformation[]
 @{
 	Layout = null;
 	var Config = ViewBag.Configuration as GitHubConfiguration;
@@ -28,7 +28,7 @@
 			font-size: @(Config.FontSizePt)pt;
 		}
 
-		.marquee u {
+		.marquee u, b {
 			@if (Config.CaptionBold) {
 				@:font-weight: bold;
 			}
@@ -42,13 +42,21 @@
 
 <p class="marquee">
 
-		<span id="topWeek">
-		<u>Top week:</u>
-		@if (Model.TopWeekContributors.Count() == 0) {
-			@:No contributors this week
-		} else {
+	@foreach (var repo in Model)
+	{
 
-			@await Html.PartialAsync("_ContributorTickerSegment", Model.TopWeekContributors)
+		<b>@repo.Repository</b>
+
+	<span id="topWeek">
+		<u>Top week:</u>
+		@if (repo.TopWeekContributors.Count() == 0)
+		{
+			@:No contributors this week
+		}
+		else
+		{
+
+			@await Html.PartialAsync("_ContributorTickerSegment", repo.TopWeekContributors)
 
 		}
 		</span>
@@ -57,7 +65,7 @@
 
 		<u>Top month:</u>
 
-		@await Html.PartialAsync("_ContributorTickerSegment", Model.TopMonthContributors)
+		@await Html.PartialAsync("_ContributorTickerSegment", repo.TopMonthContributors)
 
 		</span>
 
@@ -65,9 +73,11 @@
 
 		<u>Top All Time:</u>
 
-		@await Html.PartialAsync("_ContributorTickerSegment", Model.TopEverContributors)
+		@await Html.PartialAsync("_ContributorTickerSegment", repo.TopEverContributors)
 
 		</span>
+
+	}
 
 </p>
 

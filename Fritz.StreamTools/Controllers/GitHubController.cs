@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using LazyCache;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Fritz.StreamTools.Controllers
 {
@@ -34,58 +35,74 @@ namespace Fritz.StreamTools.Controllers
 
 		public async Task<IActionResult> ContributorsInformation()
 		{
-			var model = new GitHubInformation();
+			var outModel = new List<GitHubInformation>();
 
-			model = await Cache.GetOrAddAsync<GitHubInformation>("GitHubData", async (x) => {
+			outModel = await Cache.GetOrAddAsync<List<GitHubInformation>>("GitHubData", async (x) => {
 
 				x.AbsoluteExpiration = DateTime.Now.AddMinutes(5);
 
 				Logger.LogWarning("Fetching data from GitHub");
 
-				var repository =
-					await _gitHubClient.Repository.Get(_gitHubConfiguration.RepositoryOwner, _gitHubConfiguration.RepositoryName);
-				var contributors =
-					await _gitHubClient.Repository.Statistics.GetContributors(repository.Id);
-				var lastMonth = DateTimeOffset.Now.AddMonths(-1);
+				var repositories = _gitHubConfiguration.RepositoryCsv.Split(',');
 
-				model.TopEverContributors.AddRange(
-								contributors.Where(c => c.Total > 0 && c.Author.Login != _gitHubConfiguration.ExcludeUser)
-														.OrderByDescending(c => c.Total)
-														.Take(5)
-														.Select(c => new GitHubContributor() {
-																					Author = c.Author.Login,
-																					Commits = c.Total
-														}));
+				foreach (var repo in repositories)
+				{
 
-				model.TopMonthContributors.AddRange(
-								contributors.OrderByDescending(c => c.Weeks.Where(w => w.Week >= lastMonth)
-																														.Sum(e => e.Commits))
-														.Select(c => new GitHubContributor {
-																					Author = c.Author.Login,
-																					Commits = c.Weeks.Where(w => w.Week >= lastMonth)
-																														.Sum(e => e.Commits)
-														})
-														.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
-														.OrderByDescending(c => c.Commits)
-														.Take(5));
+					var thisRepo = repo.Split('/')[1];
+					var thisUser = repo.Split('/')[0];
+					var model = new GitHubInformation() { Repository = thisRepo };
 
-				model.TopWeekContributors.AddRange(
-								contributors.Where(c => c.Weeks.Last().Commits > 0)
-														.Select(c => new GitHubContributor {
-																								Author = c.Author.Login,
-																								Commits = c.Weeks.Last().Commits
-														})
-														.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
-														.OrderByDescending(c => c.Commits)
-														.Take(5));
+					var repository =
+						await _gitHubClient.Repository.Get(thisUser, thisRepo);
+					var contributors =
+						await _gitHubClient.Repository.Statistics.GetContributors(repository.Id);
+					var lastMonth = DateTimeOffset.Now.AddMonths(-1);
 
-				return model;
+					model.TopEverContributors.AddRange(
+									contributors.Where(c => c.Total > 0 && c.Author.Login != _gitHubConfiguration.ExcludeUser)
+															.OrderByDescending(c => c.Total)
+															.Take(5)
+															.Select(c => new GitHubContributor()
+															{
+																Author = c.Author.Login,
+																Commits = c.Total
+															}));
+
+					model.TopMonthContributors.AddRange(
+									contributors.OrderByDescending(c => c.Weeks.Where(w => w.Week >= lastMonth)
+																															.Sum(e => e.Commits))
+															.Select(c => new GitHubContributor
+															{
+																Author = c.Author.Login,
+																Commits = c.Weeks.Where(w => w.Week >= lastMonth)
+																															.Sum(e => e.Commits)
+															})
+															.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
+															.OrderByDescending(c => c.Commits)
+															.Take(5));
+
+					model.TopWeekContributors.AddRange(
+									contributors.Where(c => c.Weeks.Last().Commits > 0)
+															.Select(c => new GitHubContributor
+															{
+																Author = c.Author.Login,
+																Commits = c.Weeks.Last().Commits
+															})
+															.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
+															.OrderByDescending(c => c.Commits)
+															.Take(5));
+
+					outModel.Add(model);
+
+				}
+
+				return outModel;
 
 			});
 
 			ViewBag.Configuration = _gitHubConfiguration;
 
-			return View($"contributor_{_gitHubConfiguration.DisplayMode}", model);
+			return View($"contributor_{_gitHubConfiguration.DisplayMode}", outModel.ToArray());
 
 		}
 

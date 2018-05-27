@@ -38,6 +38,8 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<IHostedService, FritzBot>();
 			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
 
+			services.AddLazyCache();
+
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services,
@@ -105,6 +107,7 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="services"></param>
 		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
+
 			services.AddSignalR(options =>
 			{
 

@@ -1,0 +1,91 @@
+@model GitHubInformation
+@{
+	Layout = null;
+	var Config = ViewBag.Configuration as GitHubConfiguration;
+}
+
+<html>
+
+<head>
+
+	<style>
+
+		body { margin: 5px 0px; }
+
+		.marquee {
+			margin: 0 auto;
+			white-space: nowrap;
+			overflow: hidden;
+			position: absolute;
+			padding: 10px 0px;
+			color: @(Config.TextColor);
+			background-color: @(Config.BackgroundColor);
+			width: @(Config.Width)px;
+		}
+
+		.marquee * {
+			font-family: @(Config.Font);
+			font-size: @(Config.FontSizePt)pt;
+		}
+
+		.marquee u {
+			@if (Config.CaptionBold) {
+				@:font-weight: bold;
+			}
+			color: @(Config.CaptionColor)!important;
+		}
+
+	</style>
+
+</head>
+<body>
+
+<p class="marquee">
+
+		<span id="topWeek">
+		<u>Top week:</u>
+		@if (Model.TopWeekContributors.Count() == 0) {
+			@:No contributors this week
+		} else {
+
+			@await Html.PartialAsync("_ContributorTickerSegment", Model.TopWeekContributors)
+
+		}
+		</span>
+
+		<span id="topMonth">
+
+		<u>Top month:</u>
+
+		@await Html.PartialAsync("_ContributorTickerSegment", Model.TopMonthContributors)
+
+		</span>
+
+		<span id="topAllTime">
+
+		<u>Top All Time:</u>
+
+		@await Html.PartialAsync("_ContributorTickerSegment", Model.TopEverContributors)
+
+		</span>
+
+</p>
+
+<script type='text/javascript' src='/lib/jquery.js'></script>
+<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.4.0/jquery.marquee.min.js'></script>
+<script type="text/javascript">
+
+(function() {
+
+	$(".marquee").marquee({
+		duplicated: true,
+		duration: @(Config.SpeedMs)
+	});
+
+}());
+
+
+</script>
+
+</body>
+</html>

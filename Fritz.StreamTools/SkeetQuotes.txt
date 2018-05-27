@@ -2,5 +2,18 @@
 Jon Skeet can divide by zero.
 When Jon Skeet's code fails to compile the compiler apologises.
 Jon Skeet has already written a book about C# 5.0. It’s currently sealed up. In three years, Anders Hejlsberg is going to open the book to see if the language design team got it right.
-Jon Skeet can stop an infinite loop just by thinking about it
-Jon Skeet doesn't need a debugger, he just stares down the bug until the code confesses
+Jon Skeet can stop an infinite loop just by thinking about it.
+Jon Skeet doesn't need a debugger, he just stares down the bug until the code confesses.
+Jon Skeet's addition operator doesn't commute; it teleports to where he needs it to be.
+Anonymous methods and anonymous types are really all called Jon Skeet. They just don't like to boast.
+Jon Skeet's code doesn't follow a coding convention. It is the coding convention.
+Jon Skeet doesn't have performance bottlenecks. He just makes the universe wait its turn.
+Jon Skeet coded his last project entirely in Microsoft Paint, just for the challenge.
+Jon Skeet does not use exceptions when programming. He has not been able to identify any of his code that is not exceptional.
+Jon Skeet does not use revision control software. None of his code has ever needed revision.
+When you search for "guru" on Google it says "Did you mean Jon Skeet?"
+Jon Skeet can recite π. Backwards.
+When Jon Skeet points to null, null quakes in fear.
+When Jon gives a method an argument, the method loses.
+When Jon pushes a value onto a stack, it stays pushed.
+When invoking one of Jon's callbacks, the runtime adds "please".

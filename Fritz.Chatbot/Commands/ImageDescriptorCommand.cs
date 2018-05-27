@@ -36,6 +36,8 @@ namespace Fritz.Chatbot.Commands
 
 			// Match the regular expression pattern against a text string.
 			var imageCheck = r.Match(fullCommandText);
+			if (imageCheck.Captures.Count == 0)
+				return false;
 			this.ImageUrl = imageCheck.Captures[0].Value;
 			return (imageCheck.Captures.Count > 0);
 		}
@@ -55,6 +57,7 @@ namespace Fritz.Chatbot.Commands
 			var content = new StringContent(body, Encoding.UTF8, "application/json");
 
 			var apiResponse = await client.PostAsync(uri, content);
+			apiResponse.EnsureSuccessStatusCode();
 			var result = await apiResponse.Content.ReadAsStringAsync();
 			apiResponse.Dispose();
 

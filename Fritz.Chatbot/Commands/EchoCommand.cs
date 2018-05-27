@@ -13,8 +13,6 @@ namespace Fritz.Chatbot.Commands
 
 		override public string Description => "Repeat the text that was requested by the echo command";
 
-		override public int Order => 100;
-
 		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 

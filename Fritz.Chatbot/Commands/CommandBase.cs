@@ -12,7 +12,7 @@ public abstract class CommandBase : ICommand
 
 	abstract public string Description { get; }
 
-	virtual public int Order => 0;
+	virtual public int Order => 100;
 
 	virtual public bool CanExecute(string userName, string fullCommandText)
 	{

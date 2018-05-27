@@ -73,22 +73,27 @@ namespace Fritz.StreamTools.Services
 
 		private async Task StartTwitchMonitoring()
 		{
+			try
+			{
+				_ChatClient.Connected += (c, args) => Logger.LogInformation("Now connected to Twitch Chat");
+				_ChatClient.NewMessage += _ChatClient_NewMessage;
+				_ChatClient.UserJoined += _ChatClient_UserJoined;
+				_ChatClient.Init();
 
-			_ChatClient.Connected += (c, args) => Logger.LogInformation("Now connected to Twitch Chat");
-			_ChatClient.NewMessage += _ChatClient_NewMessage;
-			_ChatClient.UserJoined += _ChatClient_UserJoined;
-			_ChatClient.Init();
+				_CurrentFollowerCount = await Proxy.GetFollowerCountAsync();
+				Proxy.NewFollowers += Proxy_NewFollowers;
+				Proxy.WatchFollowers(10000);
 
-			_CurrentFollowerCount = await Proxy.GetFollowerCountAsync();
-			Proxy.NewFollowers += Proxy_NewFollowers;
-			Proxy.WatchFollowers(10000);
+				_CurrentViewerCount = await Proxy.GetViewerCountAsync();
+				Proxy.NewViewers += Proxy_NewViewers;
+				Proxy.WatchViewers();
 
-			_CurrentViewerCount = await Proxy.GetViewerCountAsync();
-			Proxy.NewViewers += Proxy_NewViewers;
-			Proxy.WatchViewers();
-
-			Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
-
+				Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
+			}
+			catch (Exception ex)
+			{
+				Logger.LogWarning("StartTwitchMonitoring failed: " + ex.Message);
+			}
 		}
 
 		private void _ChatClient_UserJoined(object sender, ChatUserJoinedEventArgs e)

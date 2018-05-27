@@ -16,19 +16,24 @@ namespace Fritz.Chatbot.Commands
 	public class AzureQnACommand : ICommand
 	{
 
-		public IConfiguration Configuration { get; set; }
-
 		public ILogger Logger { get; set; }
 
 		public string Name => "";
 
-		public string AzureKey => Configuration["AzureServices:QnASubscriptionKey"];
+		public string AzureKey => _configuration["AzureServices:QnASubscriptionKey"];
 
-		public string KnowledgebaseId => Configuration["FritzBot:QnAKnowledgeBaseId"];
+		public string KnowledgebaseId => _configuration["FritzBot:QnAKnowledgeBaseId"];
 
 		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
 
 		public int Order => 1;
+
+	private readonly IConfiguration _configuration;
+
+	public AzureQnACommand(IConfiguration configuration)
+	{
+	  _configuration = configuration;
+	}
 
 		public bool CanExecute (string userName, string fullCommandText)
 		{

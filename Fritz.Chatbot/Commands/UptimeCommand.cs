@@ -12,8 +12,6 @@ namespace Fritz.Chatbot.Commands
 
 		override public string Description => "Report how long the stream has been on the air";
 
-		override public int Order => 100;
-
 		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 

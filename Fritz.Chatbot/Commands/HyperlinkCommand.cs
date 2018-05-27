@@ -14,7 +14,7 @@ namespace Fritz.Chatbot.Commands
 
 		override public string Description => "";
 
-		override public int Order => 5;
+		override public int Order => 1000;
 
 		override public bool CanExecute(string userName, string fullCommandText)
 		{

@@ -9,8 +9,6 @@ namespace Fritz.Chatbot.Commands
 
 		override public string Description => "Receive a quick acknowledgement from the bot through a whisper";
 
-		override public int Order => 100;
-
 		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 			await chatService.SendWhisperAsync(userName, "pong");

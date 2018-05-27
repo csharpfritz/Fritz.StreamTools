@@ -29,8 +29,6 @@ namespace Fritz.Chatbot.Commands
 		override public string Name => "skeet";
 		override public string Description => "Return a random quote about Jon Skeet to the chat room";
 
-		override public int Order => 100;
-
 		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 			if (_quotes == null) return;

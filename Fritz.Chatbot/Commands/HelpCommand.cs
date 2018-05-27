@@ -22,8 +22,6 @@ namespace Fritz.Chatbot.Commands
 
 		override public string Description => "Get information about the functionality available on this channel";
 
-		override public int Order => 100;
-
 		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,7 +65,7 @@ namespace Fritz.StreamTools.Services
 		/// </summary>
 		public static void RegisterCommands(IServiceCollection services)
 		{
-			var commandTypes = typeof(FritzBot).Assembly.GetTypes().Where(t => t.GetInterfaces().Contains(typeof(ICommand)));
+			var commandTypes = typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(ICommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass);
 			foreach (var type in commandTypes)
 				services.AddSingleton(typeof(ICommand), type);
 		}

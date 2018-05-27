@@ -56,7 +56,7 @@ namespace Fritz.Chatbot.Commands
 
 			var apiResponse = await client.PostAsync(uri, content);
 			var result = await apiResponse.Content.ReadAsStringAsync();
-
+			apiResponse.EnsureSuccessStatusCode();
 			var visionDescription = JsonConvert.DeserializeObject<VisionDescription>(result);
 
 			if (visionDescription.adult.isAdultContent)

@@ -21,6 +21,8 @@ namespace Fritz.StreamTools.Services
 		IConfiguration _config;
 		ILogger _logger;
 		internal IChatService[] _chatServices;
+		private IBasicCommand[] _basicCommands;
+		private IExtendedCommand[] _extendedCommands;
 		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>(); // Could use IMemoryCache for this ???
 		private readonly IServiceProvider _serviceProvider;
 
@@ -45,9 +47,11 @@ namespace Fritz.StreamTools.Services
 
 			ConfigureCommandCooldown(config);
 
-		}
+		  _basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
+		  _extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
+	}
 
-		private void ConfigureCommandCooldown(IConfiguration config)
+	private void ConfigureCommandCooldown(IConfiguration config)
 		{
 			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
 			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
@@ -132,7 +136,9 @@ namespace Fritz.StreamTools.Services
 
 			async ValueTask HandleExtendedCommands()
 			{
-				foreach (var cmd in _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order))
+				Debug.Assert(_extendedCommands != null);
+
+				foreach (var cmd in _extendedCommands)
 				{
 					if (cmd.CanExecute(e.UserName, e.Message))
 					{
@@ -153,8 +159,9 @@ namespace Fritz.StreamTools.Services
 
 			async ValueTask<bool> HandleBasicCommands()
 			{
-				// NOTE: Return true if the command was found
+				// NOTE: Returns true if the command was found
 
+				Debug.Assert(_basicCommands != null);
 				Debug.Assert(!string.IsNullOrEmpty(e.Message) && e.Message[0] == '!');
 
 				var trigger = e.Message.AsMemory(1);
@@ -166,7 +173,7 @@ namespace Fritz.StreamTools.Services
 					trigger = trigger.Slice(0, n);
 				}
 
-				foreach (var cmd in _serviceProvider.GetServices<IBasicCommand>())
+				foreach (var cmd in _basicCommands)
 				{
 					if(trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
 					{

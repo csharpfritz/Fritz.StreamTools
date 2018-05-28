@@ -6,13 +6,13 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class UptimeCommand : CommandBase
+	public class UptimeCommand : IBasicCommand
 	{
-		override public string Name => "uptime";
+		public string Trigger => "uptime";
 
-		override public string Description => "Report how long the stream has been on the air";
+		public string Description => "Report how long the stream has been on the air";
 
-		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
 
 			if (!(chatService is IStreamService svc))

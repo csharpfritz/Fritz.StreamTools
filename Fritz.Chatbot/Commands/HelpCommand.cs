@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class HelpCommand : CommandBase
+	public class HelpCommand : IBasicCommand
 	{
 		private readonly IServiceProvider _serviceProvider;
 
@@ -18,33 +18,31 @@ namespace Fritz.Chatbot.Commands
 			_serviceProvider = serviceProvider;
 		}
 
-		override public string Name => "help";
+		public string Trigger => "help";
 
-		override public string Description => "Get information about the functionality available on this channel";
+		public string Description => "Get information about the functionality available on this channel";
 
-		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
 
-			var commands = _serviceProvider.GetServices<ICommand>();
+			var commands = _serviceProvider.GetServices<IBasicCommand>();
 
-			if (fullCommandText == "!help")
+			if (rhs.IsEmpty)
 			{
-
-				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Name)).Select(c => $"!{c.Name.ToLower()}"));
+				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Trigger)).Select(c => $"!{c.Trigger.ToLower()}"));
 
 				await chatService.SendMessageAsync($"Supported commands: {availableCommands}");
 				return;
 			}
 
-			var commandToHelpWith = fullCommandText.Replace("!help ", "");
-			var cmd = commands.FirstOrDefault(c => c.Name.Equals(commandToHelpWith, StringComparison.InvariantCultureIgnoreCase));
+			var cmd = commands.FirstOrDefault(c => rhs.Span.Equals(c.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase));
 			if (cmd == null)
 			{
 				await chatService.SendMessageAsync("Unknown command to provide help with.");
 				return;
 			}
 
-			await chatService.SendMessageAsync($"{commandToHelpWith}: {cmd.Description}");
+			await chatService.SendMessageAsync($"{rhs}: {cmd.Description}");
 
 		}
 

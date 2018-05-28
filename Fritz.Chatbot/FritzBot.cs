@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Commands;
@@ -19,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Fritz.StreamTools.Services
 {
 
-	public class FritzBot : IHostedService
+  public class FritzBot : IHostedService
 	{
 
 		public const string CONFIGURATION_ROOT = "FritzBot";
@@ -60,14 +55,15 @@ namespace Fritz.StreamTools.Services
 		}
 
 		/// <summary>
-		/// Register all classes derived from ICommand singletons in DI
-		/// NOTE: ICommand derived classes should never store any states!
+		/// Register all classes derived from IBasicCommand & IExtendedCommand as singletons in DI
 		/// </summary>
 		public static void RegisterCommands(IServiceCollection services)
 		{
-			var commandTypes = typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(ICommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass);
-			foreach (var type in commandTypes)
-				services.AddSingleton(typeof(ICommand), type);
+			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IBasicCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+				services.AddSingleton(typeof(IBasicCommand), type);
+
+			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IExtendedCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+				services.AddSingleton(typeof(IExtendedCommand), type);
 		}
 
 		#region IHostedService
@@ -101,7 +97,7 @@ namespace Fritz.StreamTools.Services
 			// async void as Event callback
 			try
 			{
-				await Chat_ChatMessage(sender, e);
+				await ProcessChatMessage(sender, e);
 			}
 			catch (Exception ex)
 			{
@@ -110,7 +106,7 @@ namespace Fritz.StreamTools.Services
 			}
 		}
 
-		private async Task Chat_ChatMessage(object sender, ChatMessageEventArgs e)
+		private async Task ProcessChatMessage(object sender, ChatMessageEventArgs e)
 		{
 
 			// TODO: Add queue processing to ensure only one instance of a command is executing at a time
@@ -122,61 +118,68 @@ namespace Fritz.StreamTools.Services
 
 			var chatService = sender as IChatService;
 
-			foreach (var cmd in _serviceProvider.GetServices<ICommand>().OrderBy(k => k.Order))
+			await HandleExtendedCommands();
+
+			if(e.Message.FirstOrDefault() == '!')
 			{
-
-				if (cmd.CanExecute(e.UserName, e.Message))
+				if (!await HandleBasicCommands())
 				{
-
-					// Ignore if the normal user is sending commands to fast
-					if (CommandsTooFast(cmd.Name)) return;
-
-					await cmd.Execute(chatService, e.UserName, e.Message);
-
-					// Remember last command time
-					user.LastCommandTime = DateTime.UtcNow;
-					_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
-
-					return;
+					await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
 				}
-
 			}
 
-			await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
+			return;		// Only local functions below
 
-			return;
-
-			// if (string.IsNullOrEmpty(e.Message) || (e.Message[0] != COMMAND_PREFIX & !e.Message.EndsWith("?")))
-			// 		return; // e.Message.StartsWith(...) did not work for some reason ?!?
-			// var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-			// if (segments.Length == 0)
-			// 		return;
-
-			// var chatService = sender as IChatService;
-			// Debug.Assert(chatService != null);
-			// if (!chatService.IsAuthenticated)
-			// 		return;
-
-			// 					_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
-
-			// // Handle commands
-			// ICommand cmd = null;
-			// if (_CommandRegistry.TryGetValue("!" + segments[0].ToLowerInvariant(), out cmd))
-			// {
-			// 		cmd.ChatService = chatService;
-			// 		await cmd.Execute(e.UserName, e.Message);
-			// }
-			// else
-			// {
-
-			bool CommandsTooFast(string namedCommand)
+			async ValueTask HandleExtendedCommands()
 			{
-
-				if (!e.IsModerator && !e.IsOwner)
+				foreach (var cmd in _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order))
 				{
-					if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
+					if (cmd.CanExecute(e.UserName, e.Message))
 					{
-						_logger.LogWarning($"Ignoring command {namedCommand} from {e.UserName} on {e.ServiceName}. Cooldown active");
+						// Ignore if the normal user is sending commands to fast
+						if (!string.IsNullOrEmpty(cmd.Name) && CommandsTooFast(cmd.Name))
+						 return;
+
+						await cmd.Execute(chatService, e.UserName, e.Message);
+
+						// Remember last command time
+						user.LastCommandTime = DateTime.UtcNow;
+						_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+
+						return;
+					}
+				}
+			}
+
+			async ValueTask<bool> HandleBasicCommands()
+			{
+				// NOTE: Return true if the command was found
+
+				Debug.Assert(!string.IsNullOrEmpty(e.Message) && e.Message[0] == '!');
+
+				var trigger = e.Message.AsMemory(1);
+				var rhs = ReadOnlyMemory<char>.Empty;
+				int n = trigger.Span.IndexOf(' ');
+				if (n != -1)
+				{
+					rhs = trigger.Slice(n + 1);
+					trigger = trigger.Slice(0, n);
+				}
+
+				foreach (var cmd in _serviceProvider.GetServices<IBasicCommand>())
+				{
+					if(trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
+					{
+						// Ignore if the normal user is sending commands to fast
+						if (CommandsTooFast(trigger.Span))
+							return true;
+
+						await cmd.Execute(chatService, e.UserName, rhs);
+
+						// Remember last command time
+						user.LastCommandTime = DateTime.UtcNow;
+						_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+
 						return true;
 					}
 				}
@@ -184,6 +187,20 @@ namespace Fritz.StreamTools.Services
 				return false;
 			}
 
+			bool CommandsTooFast(ReadOnlySpan<char> namedCommand)
+			{
+
+				if (!e.IsModerator && !e.IsOwner)
+				{
+					if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
+					{
+						_logger.LogWarning($"Ignoring command {namedCommand.ToString()} from {e.UserName} on {e.ServiceName}. Cooldown active");
+						return true;
+					}
+				}
+
+				return false;
+			}
 		}
 
 		// private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)

@@ -4,19 +4,19 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class HyperlinkCommand : CommandBase
+	public class HyperlinkCommand : IExtendedCommand
 	{
 
 		private const string HttpCheckPattern = @"http(s)?:?";
 		private static readonly Regex reCheck = new Regex(HttpCheckPattern, RegexOptions.IgnoreCase);
 
-		override public string Name => "";
+		public string Name => null;	// No throtteling, so null here!
 
-		override public string Description => "";
+		public string Description => "";
 
-		override public int Order => 1000;
+		public int Order => 1000;
 
-		override public bool CanExecute(string userName, string fullCommandText)
+		public bool CanExecute(string userName, string fullCommandText)
 		{
 
 			// Match the regular expression pattern against a text string.
@@ -24,7 +24,7 @@ namespace Fritz.Chatbot.Commands
 
 		}
 
-		override public Task Execute(IChatService chatService, string userName, string fullCommandText)
+		public Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 
 			// Use HttpClient to request URL

@@ -13,26 +13,26 @@ using Newtonsoft.Json;
 namespace Fritz.Chatbot.Commands
 {
 
-	public class AzureQnACommand : ICommand
+	public class AzureQnACommand : IExtendedCommand
 	{
-
-		public ILogger Logger { get; set; }
-
-		public string Name => "";
 
 		public string AzureKey => _configuration["AzureServices:QnASubscriptionKey"];
 
 		public string KnowledgebaseId => _configuration["FritzBot:QnAKnowledgeBaseId"];
+
+		public string Name => "AzureQnA";
 
 		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
 
 		public int Order => 1;
 
 	private readonly IConfiguration _configuration;
+	private readonly ILogger<AzureQnACommand> _logger;
 
-	public AzureQnACommand(IConfiguration configuration)
+	public AzureQnACommand(IConfiguration configuration, ILogger<AzureQnACommand> logger)
 	{
 	  _configuration = configuration;
+	  _logger = logger;
 	}
 
 		public bool CanExecute (string userName, string fullCommandText)
@@ -48,7 +48,7 @@ namespace Fritz.Chatbot.Commands
 			// Exit now if we don't know how to connect to Azure
 			if (string.IsNullOrEmpty (AzureKey)) return;
 
-			Logger.LogInformation ($"Handling question: \"{fullCommandText}\" from {userName}");
+			_logger.LogInformation ($"Handling question: \"{fullCommandText}\" from {userName}");
 
 			await Query (chatService, userName, fullCommandText);
 
@@ -83,7 +83,7 @@ namespace Fritz.Chatbot.Commands
 				}
 				catch (TimeoutException)
 				{
-					Logger.LogWarning ($"Azure Services did not respond in time to question '{query}'");
+					_logger.LogWarning ($"Azure Services did not respond in time to question '{query}'");
 					chatService.SendMessageAsync ($"Unable to answer the question '{query}' at this time").Forget ();
 					return;
 				}
@@ -107,11 +107,11 @@ namespace Fritz.Chatbot.Commands
 				}
 				else
 				{
-					Logger.LogInformation ($"Unable to find suitable answer to {userName}'s question: {query}");
+					_logger.LogInformation ($"Unable to find suitable answer to {userName}'s question: {query}");
 				}
 
 			}
-			catch (Exception ex) when (Logger.LogAndSwallow ("asking knowledgebase", ex))
+			catch (Exception ex) when (_logger.LogAndSwallow ("asking knowledgebase", ex))
 			{
 
 			}

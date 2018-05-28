@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class ImageDescriptorCommand : CommandBase
+	public class ImageDescriptorCommand : IExtendedCommand
 	{
 		private readonly string _AzureUrl;
 		private readonly string _AzureApiKey;
@@ -23,13 +23,13 @@ namespace Fritz.Chatbot.Commands
 			_AzureApiKey = config["FritzBot:VisionApiKey"];
 		}
 
-		override public string Name => "";
+		public string Name => "Image";
 
-		override public string Description => "Inspect images and report to the chat room what they contain using Vision API";
+		public string Description => "Inspect images and report to the chat room what they contain using Vision API";
 
-		override public int Order => 10;
+		public int Order => 10;
 
-		override public bool CanExecute(string userName, string fullCommandText)
+		public bool CanExecute(string userName, string fullCommandText)
 		{
 			var imageCheckPattern = @"http(s)?:?(\/\/[^""']*\.(?:png|jpg|jpeg|gif))";
 			var r = new Regex(imageCheckPattern, RegexOptions.IgnoreCase);
@@ -43,7 +43,7 @@ namespace Fritz.Chatbot.Commands
 		}
 
 		/// param name="fullCommandText" (this is the URL of the image we already found)
-		override public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 
 			// TODO: Pull from ASP.NET Core Dependency Injection

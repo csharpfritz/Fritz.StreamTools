@@ -3,7 +3,7 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public interface ICommand
+	public interface IExtendedCommand
 	{
 
 		string Name { get; }

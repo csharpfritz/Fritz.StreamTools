@@ -17,88 +17,26 @@ namespace Fritz.StreamTools.Controllers
 	{
 		public GitHubController(
 			IAppCache cache,
-			GitHubClient githubClient,
+			GitHubRepository repository,
 			ILogger<GitHubController> logger,
 			IOptions<GitHubConfiguration> githubConfiguration)
 		{
 			this.Cache = cache;
 			this.Logger = logger;
-			_gitHubClient = githubClient;
+			_gitHubRepository = repository;
 			_gitHubConfiguration = githubConfiguration.Value;
 		}
 
     public IAppCache Cache { get; }
     public ILogger<GitHubController> Logger { get; }
 
-    private readonly GitHubClient _gitHubClient;
+		private readonly GitHubRepository _gitHubRepository;
+
 		private readonly GitHubConfiguration _gitHubConfiguration;
 
 		public async Task<IActionResult> ContributorsInformation()
 		{
-			var outModel = new List<GitHubInformation>();
-
-			outModel = await Cache.GetOrAddAsync<List<GitHubInformation>>("GitHubData", async (x) => {
-
-				x.AbsoluteExpiration = DateTime.Now.AddMinutes(5);
-
-				Logger.LogWarning("Fetching data from GitHub");
-
-				var repositories = _gitHubConfiguration.RepositoryCsv.Split(',');
-
-				foreach (var repo in repositories)
-				{
-
-					var thisRepo = repo.Split('/')[1];
-					var thisUser = repo.Split('/')[0];
-					var model = new GitHubInformation() { Repository = thisRepo };
-
-					var repository =
-						await _gitHubClient.Repository.Get(thisUser, thisRepo);
-					var contributors =
-						await _gitHubClient.Repository.Statistics.GetContributors(repository.Id);
-					var lastMonth = DateTimeOffset.Now.AddMonths(-1);
-
-					model.TopEverContributors.AddRange(
-									contributors.Where(c => c.Total > 0 && c.Author.Login != _gitHubConfiguration.ExcludeUser)
-															.OrderByDescending(c => c.Total)
-															.Take(5)
-															.Select(c => new GitHubContributor()
-															{
-																Author = c.Author.Login,
-																Commits = c.Total
-															}));
-
-					model.TopMonthContributors.AddRange(
-									contributors.OrderByDescending(c => c.Weeks.Where(w => w.Week >= lastMonth)
-																															.Sum(e => e.Commits))
-															.Select(c => new GitHubContributor
-															{
-																Author = c.Author.Login,
-																Commits = c.Weeks.Where(w => w.Week >= lastMonth)
-																															.Sum(e => e.Commits)
-															})
-															.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
-															.OrderByDescending(c => c.Commits)
-															.Take(5));
-
-					model.TopWeekContributors.AddRange(
-									contributors.Where(c => c.Weeks.Last().Commits > 0)
-															.Select(c => new GitHubContributor
-															{
-																Author = c.Author.Login,
-																Commits = c.Weeks.Last().Commits
-															})
-															.Where(c => c.Commits > 0 && c.Author != _gitHubConfiguration.ExcludeUser)
-															.OrderByDescending(c => c.Commits)
-															.Take(5));
-
-					outModel.Add(model);
-
-				}
-
-				return outModel;
-
-			});
+			var outModel = await _gitHubRepository.GetRecentContributors(_gitHubConfiguration.RepositoryCsv);
 
 			ViewBag.Configuration = _gitHubConfiguration;
 
@@ -130,7 +68,7 @@ namespace Fritz.StreamTools.Controllers
 			try
 			{
 				var user
-					= await _gitHubClient.User.Get(repositoryOwner);
+					= await _gitHubRepository.Client.User.Get(repositoryOwner);
 			}
 			catch (NotFoundException)
 			{
@@ -150,7 +88,7 @@ namespace Fritz.StreamTools.Controllers
 			try
 			{
 				var repository =
-					await _gitHubClient.Repository.Get(repositoryOwner, repositoryName);
+					await _gitHubRepository.Client.Repository.Get(repositoryOwner, repositoryName);
 			}
 			catch (NotFoundException)
 			{

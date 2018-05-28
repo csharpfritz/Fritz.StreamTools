@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Models;
 
 namespace Fritz.StreamTools.Hubs
 {
@@ -13,18 +14,22 @@ namespace Fritz.StreamTools.Hubs
 	public class FollowerHub : Hub
 	{
 		public StreamService StreamService { get; }
+		public GitHubService GitHubService { get; }
 		public FollowerClient FollowerClient { get; }
 
 		public FollowerHub(
 			StreamService streamService,
+			GitHubService gitHubService,
 			FollowerClient client
 			)
 		{
 
 			this.StreamService = streamService;
+			this.GitHubService = gitHubService;
 			this.FollowerClient = client;
 
 			StreamService.Updated += StreamService_Updated;
+			GitHubService.Updated += Git_Updated;
 		}
 
 		public override async Task OnConnectedAsync()
@@ -53,6 +58,13 @@ namespace Fritz.StreamTools.Hubs
 				this.FollowerClient.UpdateViewers(e.ServiceName, e.NewViewers.Value);
 			}
 		}
+
+		private void Git_Updated(object sender, GitHubUpdatedEventArgs e)
+		{
+			this.FollowerClient.UpdateGitHub(e.Contributors);
+		}
+
+
 	}
 
 }

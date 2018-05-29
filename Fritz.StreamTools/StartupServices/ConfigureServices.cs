@@ -23,26 +23,40 @@ namespace Fritz.StreamTools.StartupServices
 		public static void Execute(
 			IServiceCollection services,
 			IConfiguration configuration)
-		{
-			services.AddSingleton<RundownRepository>();
-			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
-			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
-			services.AddStreamingServices(configuration);
-			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
-			services.AddSingleton<FollowerClient>();
-			services.AddAspNetFeatures();
+    {
+      services.AddSingleton<RundownRepository>();
+      services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
+      services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
+      services.AddStreamingServices(configuration);
+      services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
+      services.AddSingleton<FollowerClient>();
+      services.AddAspNetFeatures();
 
-			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
-			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
+      services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
+      services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
-			services.AddSingleton<IHostedService, FritzBot>();
-			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+      services.AddSingleton<IHostedService, FritzBot>();
 
-			services.AddLazyCache();
 
-		}
+      services.AddLazyCache();
 
-		private static void AddStreamingServices(this IServiceCollection services,
+      RegisterGitHubServices(services);
+
+    }
+
+    private static void RegisterGitHubServices(IServiceCollection services)
+    {
+      services.AddScoped<GitHubRepository>();
+      services.AddSingleton<GitHubService>();
+      services.AddSingleton(new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+
+			var provider = services.BuildServiceProvider();
+			var svc = provider.GetService<GitHubService>();
+			services.AddSingleton(svc as IHostedService);
+
+    }
+
+    private static void AddStreamingServices(this IServiceCollection services,
 			IConfiguration configuration)
 		{
 
@@ -115,7 +129,6 @@ namespace Fritz.StreamTools.StartupServices
 
 			}).AddJsonProtocol();
 
-			//services.AddSingleton<FollowerHub>();
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 

@@ -1,5 +1,6 @@
 ﻿using LazyCache;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Octokit;
 using System;
 using System.Collections.Generic;
@@ -12,12 +13,12 @@ namespace Fritz.StreamTools.Models
 	public class GitHubRepository
 	{
 
-		public GitHubRepository(GitHubClient client, GitHubConfiguration config,
+		public GitHubRepository(GitHubClient client, IOptions<GitHubConfiguration> config,
 		IAppCache appCache,
 		ILogger<GitHubRepository> logger)
 		{
 			this.AppCache = appCache;
-			this.Configuration = config;
+			this.Configuration = config.Value;
 			this.Logger = logger;
 			this.Client = client;
 		}

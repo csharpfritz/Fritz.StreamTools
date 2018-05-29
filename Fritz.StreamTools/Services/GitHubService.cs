@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.Services
 {
@@ -11,10 +12,10 @@ namespace Fritz.StreamTools.Services
 
 				private DateTime _LastUpdate = DateTime.MinValue;
 
-				public GitHubService(GitHubRepository repo, GitHubConfiguration config)
+				public GitHubService(GitHubRepository repo, IOptions<GitHubConfiguration> config)
 				{
 					this.Repository = repo;
-					this.Configuration = config;
+					this.Configuration = config.Value;
 				}
 
         public GitHubRepository Repository { get; private set; }

@@ -5,45 +5,43 @@ using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class HelpCommand : ICommand
+	public class HelpCommand : IBasicCommand
 	{
-		public IChatService ChatService { get; set; }
-
-		public string Name => "help";
-
+		public string Trigger => "help";
 		public string Description => "Get information about the functionality available on this channel";
+		public TimeSpan? Cooldown => null;
 
-    public int Order => 100;
+		private readonly IServiceProvider _serviceProvider;
 
-    public bool CanExecute(string userName, string fullCommandText) => true;
-
-    public async Task Execute(string userName, string fullCommandText)
+		public HelpCommand(IServiceProvider serviceProvider)
 		{
-
-			if (fullCommandText == "!help")
-			{
-
-				var availableCommands = String.Join(" ", FritzBot._CommandRegistry.Where(k => k.Key.StartsWith("!")).Select((k) => $"!{k.Key}"));
-
-				await ChatService.SendMessageAsync($"Supported commands: {availableCommands}");
-				return;
-			}
-
-			var commandToHelpWith = fullCommandText.Replace("!help ", "");
-			var cmd = FritzBot._CommandRegistry[commandToHelpWith.ToLowerInvariant()];
-			if (cmd == null)
-			{
-				await ChatService.SendMessageAsync("Unknown command to provide help with.");
-				return;
-			}
-
-			await ChatService.SendMessageAsync($"{commandToHelpWith}: {cmd.Description}");
-
+			_serviceProvider = serviceProvider;
 		}
 
-	}
+		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
+		{
+			var commands = _serviceProvider.GetServices<IBasicCommand>();
 
+			if (rhs.IsEmpty)
+			{
+				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Trigger)).Select(c => $"!{c.Trigger.ToLower()}"));
+
+				await chatService.SendMessageAsync($"Supported commands: {availableCommands}");
+				return;
+			}
+
+			var cmd = commands.FirstOrDefault(c => rhs.Span.Equals(c.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase));
+			if (cmd == null)
+			{
+				await chatService.SendMessageAsync("Unknown command to provide help with.");
+				return;
+			}
+
+			await chatService.SendMessageAsync($"{rhs}: {cmd.Description}");
+		}
+	}
 }

@@ -7,21 +7,15 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class GitHubCommand : ICommand
+	public class GitHubCommand : IBasicCommand
 	{
-		public IChatService ChatService { get; set; }
-
-		public string Name => "github";
-
+		public string Trigger => "github";
 		public string Description => "Outputs the URL of Jeff's Github Repository";
+		public TimeSpan? Cooldown => null;
 
-    public int Order => 100;
-
-    public bool CanExecute(string userName, string fullCommandText) => true;
-
-    public async Task Execute(string userName, string fullCommandText)
+		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
-			await ChatService.SendMessageAsync("Jeff's Github repository can by found here: https://github.com/csharpfritz/");
+			await chatService.SendMessageAsync("Jeff's Github repository can by found here: https://github.com/csharpfritz/");
 		}
 	}
 }

@@ -59,20 +59,20 @@ namespace Test.Chatbot
 
 	}
 
-	[Fact]
-	public void ShouldRegisterCommands()
-	{
+	// [Fact]
+	// public void ShouldRegisterCommands()
+	// {
 
-	  // Arrange
+	//   // Arrange
 
-	  // Act
-	  var sut = new FritzBot();
-	  sut.Initialize(_Config, null, _LoggerFactory);
+	//   // Act
+	//   var sut = new FritzBot();
+	//   sut.Initialize(_Config, null, _LoggerFactory);
 
-	  // Assert
-	  Assert.NotEmpty(FritzBot._CommandRegistry);
+	//   // Assert
+	//   Assert.NotEmpty(FritzBot._CommandRegistry);
 
-	}
+	// }
 
 		 protected static void CallSync(Action target)
     {
@@ -80,7 +80,7 @@ namespace Test.Chatbot
         task.RunSynchronously();
     }
 
-	
+
   }
 
 }

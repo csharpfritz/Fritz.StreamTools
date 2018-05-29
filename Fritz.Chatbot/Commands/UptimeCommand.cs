@@ -9,8 +9,8 @@ namespace Fritz.Chatbot.Commands
 	public class UptimeCommand : IBasicCommand
 	{
 		public string Trigger => "uptime";
-
 		public string Description => "Report how long the stream has been on the air";
+		public TimeSpan? Cooldown => TimeSpan.FromMinutes(1);
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{

@@ -8,6 +8,7 @@ namespace Fritz.Chatbot.Commands
 	{
 		public string Trigger => "ping";
 		public string Description => "Receive a quick acknowledgement from the bot through a whisper";
+		public TimeSpan? Cooldown => null;
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{

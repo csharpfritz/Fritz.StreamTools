@@ -11,6 +11,7 @@ namespace Fritz.Chatbot.Commands
 	{
 		public string Trigger => "github";
 		public string Description => "Outputs the URL of Jeff's Github Repository";
+		public TimeSpan? Cooldown => null;
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{

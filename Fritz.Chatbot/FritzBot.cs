@@ -25,6 +25,7 @@ namespace Fritz.StreamTools.Services
 		private IExtendedCommand[] _extendedCommands;
 		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>(); // Could use IMemoryCache for this ???
 		private readonly IServiceProvider _serviceProvider;
+		readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
 
 		public TimeSpan CooldownTime { get; private set; }
 
@@ -140,29 +141,6 @@ namespace Fritz.StreamTools.Services
 
 			return; // Only local functions below
 
-			async ValueTask HandleExtendedCommands()
-			{
-				Debug.Assert(_extendedCommands != null);
-
-				foreach (var cmd in _extendedCommands)
-				{
-					if (cmd.CanExecute(e.UserName, e.Message))
-					{
-						// Ignore if the normal user is sending commands to fast
-						if (!string.IsNullOrEmpty(cmd.Name) && CommandsTooFast(cmd.Name))
-							return;
-
-						await cmd.Execute(chatService, e.UserName, e.Message);
-
-						// Remember last command time
-						user.LastCommandTime = DateTime.UtcNow;
-						_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
-
-						return;
-					}
-				}
-			}
-
 			async ValueTask<bool> HandleBasicCommands()
 			{
 				// NOTE: Returns true if the command was found
@@ -181,18 +159,17 @@ namespace Fritz.StreamTools.Services
 
 				foreach (var cmd in _basicCommands)
 				{
+					Debug.Assert(!string.IsNullOrEmpty(cmd.Trigger));
+
 					if (trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
 					{
-						// Ignore if the normal user is sending commands to fast
-						if (CommandsTooFast(trigger.Span))
+						// Ignore if the normal user is sending commands to fast, or command is in cooldown
+						if (CommandsTooFast(cmd.Trigger, cmd.Cooldown))
 							return true;
 
 						await cmd.Execute(chatService, e.UserName, rhs);
 
-						// Remember last command time
-						user.LastCommandTime = DateTime.UtcNow;
-						_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
-
+						RegisterExecute(cmd.Trigger);
 						return true;
 					}
 				}
@@ -200,19 +177,68 @@ namespace Fritz.StreamTools.Services
 				return false;
 			}
 
-			bool CommandsTooFast(ReadOnlySpan<char> namedCommand)
+			async ValueTask HandleExtendedCommands()
 			{
+				Debug.Assert(_extendedCommands != null);
 
-				if (!e.IsModerator && !e.IsOwner)
+				foreach (var cmd in _extendedCommands)
 				{
-					if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
+					Debug.Assert(!string.IsNullOrEmpty(cmd.Name));
+
+					if (cmd.CanExecute(e.UserName, e.Message))
 					{
-						_logger.LogWarning($"Ignoring command {namedCommand.ToString()} from {e.UserName} on {e.ServiceName}. Cooldown active");
+						// Ignore if the normal user is sending commands to fast, or command is in cooldown
+						if (CommandsTooFast(cmd.Name, cmd.Cooldown))
+							return;
+
+						await cmd.Execute(chatService, e.UserName, e.Message);
+
+						RegisterExecute(cmd.Name);
+						return;
+					}
+				}
+			}
+
+			bool CommandsTooFast(string namedCommand, TimeSpan? cooldown = null)
+			{
+				Debug.Assert(user != null);
+
+#if !DEBUG
+				if (e.IsModerator || e.IsOwner)
+					return false;
+#endif
+
+				// Check per user cooldown
+				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
+				{
+					_logger.LogWarning("Ignoring command {0} from {1} on {2}. Cooldown active", namedCommand, e.UserName, e.ServiceName);
+					return true;
+				}
+
+				// Check per command cooldown
+				if (_commandExecutedTimeMap.TryGetValue(namedCommand, out var dt))
+				{
+					var now = DateTime.UtcNow;
+					if (now - dt < cooldown.GetValueOrDefault())
+					{
+						var remain = cooldown.GetValueOrDefault() - (now - dt);
+						_logger.LogWarning("Ignoring command {0} from {1} on {2}. In cooldown for {3} more secs", namedCommand, e.UserName, e.ServiceName,
+							(int) remain.TotalSeconds);
 						return true;
 					}
 				}
 
 				return false;
+			}
+
+			void RegisterExecute(string command)
+			{
+				Debug.Assert(user != null);
+
+				// Remember last command time
+				user.LastCommandTime = DateTime.UtcNow;
+				_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
+				_commandExecutedTimeMap[command] = DateTime.UtcNow;
 			}
 		}
 

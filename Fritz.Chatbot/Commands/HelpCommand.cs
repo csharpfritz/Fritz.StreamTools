@@ -13,6 +13,7 @@ namespace Fritz.Chatbot.Commands
 	{
 		public string Trigger => "help";
 		public string Description => "Get information about the functionality available on this channel";
+		public TimeSpan? Cooldown => null;
 
 		private readonly IServiceProvider _serviceProvider;
 

@@ -11,6 +11,7 @@ namespace Fritz.Chatbot.Commands
 	{
 		public string Trigger => "echo";
 		public string Description => "Repeat the text that was requested by the echo command";
+		public TimeSpan? Cooldown => null;
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{

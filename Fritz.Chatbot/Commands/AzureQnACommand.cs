@@ -20,6 +20,7 @@ namespace Fritz.Chatbot.Commands
 		public string Name => "AzureQnA";
 		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
 		public int Order => 1;
+		public TimeSpan? Cooldown => null;
 
 		private readonly IConfiguration _configuration;
 		private readonly ILogger<AzureQnACommand> _logger;

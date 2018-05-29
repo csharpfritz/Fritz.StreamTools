@@ -16,6 +16,7 @@ namespace Fritz.Chatbot.Commands
 		private readonly string _AzureUrl;
 		private readonly string _AzureApiKey;
 		private string ImageUrl;
+		public TimeSpan? Cooldown => null;
 
 		public ImageDescriptorCommand(IConfiguration config)
 		{

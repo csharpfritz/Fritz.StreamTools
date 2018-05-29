@@ -14,6 +14,7 @@ namespace Fritz.Chatbot.Commands
 		const string QUOTES_FILENAME = "SampleQuotes.txt";
 		internal string[] _quotes;
 		private readonly Random _random = new Random();
+		public TimeSpan? Cooldown => null;
 
 		public QuotesCommand()
 		{

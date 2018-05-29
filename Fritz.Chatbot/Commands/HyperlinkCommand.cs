@@ -1,3 +1,4 @@
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
@@ -9,6 +10,7 @@ namespace Fritz.Chatbot.Commands
 		public string Name => "HyperLink";
 		public string Description => "";
 		public int Order => 1000; // Last!
+		public TimeSpan? Cooldown => null;
 
 		private const string HttpCheckPattern = @"http(s)?:?";
 		private static readonly Regex reCheck = new Regex(HttpCheckPattern, RegexOptions.IgnoreCase);

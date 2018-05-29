@@ -20,6 +20,12 @@ namespace Fritz.Chatbot.Commands
 		string Description { get; }
 
 		/// <summary>
+		/// Cooldown for this command, or null
+		/// </summary>
+		/// <returns></returns>
+		TimeSpan? Cooldown { get; }
+
+		/// <summary>
 		/// Execute the command.
 		/// </summary>
 		/// <param name="chatService">The chatservice to use</param>

@@ -6,12 +6,12 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-
 	public class SkeetCommand : IBasicCommand
 	{
 		const string QUOTES_FILENAME = "SkeetQuotes.txt";
 		internal string[] _quotes;
 		private readonly Random _random = new Random();
+		public TimeSpan? Cooldown => null;
 
 		public SkeetCommand()
 		{
@@ -35,5 +35,4 @@ namespace Fritz.Chatbot.Commands
 			await chatService.SendMessageAsync(_quotes[_random.Next(_quotes.Length)]);
 		}
 	}
-
 }

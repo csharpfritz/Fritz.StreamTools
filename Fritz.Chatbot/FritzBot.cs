@@ -169,7 +169,7 @@ namespace Fritz.StreamTools.Services
 
 						await cmd.Execute(chatService, e.UserName, rhs);
 
-						RegisterExecute(cmd.Trigger);
+						AfterExecute(cmd.Trigger);
 						return true;
 					}
 				}
@@ -195,7 +195,7 @@ namespace Fritz.StreamTools.Services
 
 						await cmd.Execute(chatService, e.UserName, e.Message);
 
-						RegisterExecute(cmd.Name);
+						AfterExecute(cmd.Name);
 						return cmd.Final;
 					}
 				}
@@ -235,13 +235,12 @@ namespace Fritz.StreamTools.Services
 				return false;
 			}
 
-			void RegisterExecute(string command)
+			void AfterExecute(string command)
 			{
 				Debug.Assert(user != null);
 
 				// Remember last command time
 				user.LastCommandTime = DateTime.UtcNow;
-				_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
 				_commandExecutedTimeMap[command] = DateTime.UtcNow;
 			}
 		}

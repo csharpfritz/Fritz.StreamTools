@@ -13,6 +13,11 @@ namespace Fritz.Chatbot.Commands
 {
 	public class ImageDescriptorCommand : IExtendedCommand
 	{
+		public string Name => "Image";
+		public string Description => "Inspect images and report to the chat room what they contain using Vision API";
+		public int Order => 10;
+		public bool Final => false;
+
 		private readonly string _AzureUrl;
 		private readonly string _AzureApiKey;
 		private string ImageUrl;
@@ -23,12 +28,6 @@ namespace Fritz.Chatbot.Commands
 			_AzureUrl = config["FritzBot:VisionApiBaseUrl"];
 			_AzureApiKey = config["FritzBot:VisionApiKey"];
 		}
-
-		public string Name => "Image";
-
-		public string Description => "Inspect images and report to the chat room what they contain using Vision API";
-
-		public int Order => 10;
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{

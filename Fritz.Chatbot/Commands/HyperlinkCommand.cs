@@ -9,7 +9,9 @@ namespace Fritz.Chatbot.Commands
 	{
 		public string Name => "HyperLink";
 		public string Description => "";
-		public int Order => 1000; // Last!
+		public int Order => 2;
+		public bool Final => false;
+
 		public TimeSpan? Cooldown => null;
 
 		private const string HttpCheckPattern = @"http(s)?:?";

@@ -123,13 +123,13 @@ namespace Fritz.StreamTools.Services
 			// TODO: Add queue processing to ensure only one instance of a command is executing at a time
 
 			var userKey = $"{e.ServiceName}:{e.UserName}";
-			ChatUserInfo user;
-			if (!_activeUsers.TryGetValue(userKey, out user))
-				user = new ChatUserInfo();
+			var user = _activeUsers.AddOrUpdate(userKey, new ChatUserInfo(), (_, u) => u);
 
 			var chatService = sender as IChatService;
 
-			await HandleExtendedCommands();
+			var final = await HandleExtendedCommands();
+			if (final)
+				return;
 
 			if (e.Message.FirstOrDefault() == '!')
 			{
@@ -177,8 +177,10 @@ namespace Fritz.StreamTools.Services
 				return false;
 			}
 
-			async ValueTask HandleExtendedCommands()
+			async ValueTask<bool> HandleExtendedCommands()
 			{
+				// NOTE: Returns true if no other commands should be run
+
 				Debug.Assert(_extendedCommands != null);
 
 				foreach (var cmd in _extendedCommands)
@@ -189,14 +191,16 @@ namespace Fritz.StreamTools.Services
 					{
 						// Ignore if the normal user is sending commands to fast, or command is in cooldown
 						if (CommandsTooFast(cmd.Name, cmd.Cooldown))
-							return;
+							return false;
 
 						await cmd.Execute(chatService, e.UserName, e.Message);
 
 						RegisterExecute(cmd.Name);
-						return;
+						return cmd.Final;
 					}
 				}
+
+				return false;
 			}
 
 			bool CommandsTooFast(string namedCommand, TimeSpan? cooldown = null)

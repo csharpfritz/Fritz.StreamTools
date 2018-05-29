@@ -17,9 +17,11 @@ namespace Fritz.Chatbot.Commands
 	{
 		public string AzureKey => _configuration["AzureServices:QnASubscriptionKey"];
 		public string KnowledgebaseId => _configuration["FritzBot:QnAKnowledgeBaseId"];
+
 		public string Name => "AzureQnA";
 		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
 		public int Order => 1;
+		public bool Final => true;
 		public TimeSpan? Cooldown => null;
 
 		private readonly IConfiguration _configuration;

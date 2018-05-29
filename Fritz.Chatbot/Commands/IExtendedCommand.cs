@@ -15,6 +15,11 @@ namespace Fritz.Chatbot.Commands
 		int Order { get; }
 
 		/// <summary>
+		/// If true, don't run other commands after this one
+		/// </summary>
+		bool Final { get; }
+
+		/// <summary>
 		/// Cooldown for this command, or null
 		/// </summary>
 		/// <returns></returns>

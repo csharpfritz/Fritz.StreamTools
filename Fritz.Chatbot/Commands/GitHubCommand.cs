@@ -10,7 +10,6 @@ namespace Fritz.Chatbot.Commands
 	public class GitHubCommand : IBasicCommand
 	{
 		public string Trigger => "github";
-
 		public string Description => "Outputs the URL of Jeff's Github Repository";
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)

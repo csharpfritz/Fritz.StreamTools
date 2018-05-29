@@ -4,10 +4,10 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-  /// <summary>
-  /// Simple keyword based command interface
-  /// </summary>
-  public interface IBasicCommand
+	/// <summary>
+	/// Simple keyword based command interface
+	/// </summary>
+	public interface IBasicCommand
 	{
 		/// <summary>
 		/// The command keyword

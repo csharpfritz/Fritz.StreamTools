@@ -6,15 +6,12 @@ namespace Fritz.Chatbot.Commands
 {
 	public class HyperlinkCommand : IExtendedCommand
 	{
+		public string Name => "HyperLink";
+		public string Description => "";
+		public int Order => 1000; // Last!
 
 		private const string HttpCheckPattern = @"http(s)?:?";
 		private static readonly Regex reCheck = new Regex(HttpCheckPattern, RegexOptions.IgnoreCase);
-
-		public string Name => null;	// No throtteling, so null here!
-
-		public string Description => "";
-
-		public int Order => 1000;
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{
@@ -39,5 +36,4 @@ namespace Fritz.Chatbot.Commands
 
 		}
 	}
-
 }

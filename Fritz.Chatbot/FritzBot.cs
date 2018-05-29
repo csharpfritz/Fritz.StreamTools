@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Fritz.StreamTools.Services
 {
 
-  public class FritzBot : IHostedService
+	public class FritzBot : IHostedService
 	{
 
 		public const string CONFIGURATION_ROOT = "FritzBot";
@@ -47,28 +47,34 @@ namespace Fritz.StreamTools.Services
 
 			ConfigureCommandCooldown(config);
 
-		  _basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
-		  _extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
-	}
+			_basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
+			_extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
+		}
 
-	private void ConfigureCommandCooldown(IConfiguration config)
+		private void ConfigureCommandCooldown(IConfiguration config)
 		{
 			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
 			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
 			_logger.LogInformation("Command cooldown set to {0}", CooldownTime);
 		}
 
+		#region Static stuff
+
 		/// <summary>
 		/// Register all classes derived from IBasicCommand & IExtendedCommand as singletons in DI
 		/// </summary>
 		public static void RegisterCommands(IServiceCollection services)
 		{
+			// Register basic commands
 			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IBasicCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
 				services.AddSingleton(typeof(IBasicCommand), type);
 
+			// Register extended commands
 			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IExtendedCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
 				services.AddSingleton(typeof(IExtendedCommand), type);
 		}
+
+		#endregion
 
 		#region IHostedService
 
@@ -124,7 +130,7 @@ namespace Fritz.StreamTools.Services
 
 			await HandleExtendedCommands();
 
-			if(e.Message.FirstOrDefault() == '!')
+			if (e.Message.FirstOrDefault() == '!')
 			{
 				if (!await HandleBasicCommands())
 				{
@@ -132,7 +138,7 @@ namespace Fritz.StreamTools.Services
 				}
 			}
 
-			return;		// Only local functions below
+			return; // Only local functions below
 
 			async ValueTask HandleExtendedCommands()
 			{
@@ -144,7 +150,7 @@ namespace Fritz.StreamTools.Services
 					{
 						// Ignore if the normal user is sending commands to fast
 						if (!string.IsNullOrEmpty(cmd.Name) && CommandsTooFast(cmd.Name))
-						 return;
+							return;
 
 						await cmd.Execute(chatService, e.UserName, e.Message);
 
@@ -175,7 +181,7 @@ namespace Fritz.StreamTools.Services
 
 				foreach (var cmd in _basicCommands)
 				{
-					if(trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
+					if (trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
 					{
 						// Ignore if the normal user is sending commands to fast
 						if (CommandsTooFast(trigger.Span))

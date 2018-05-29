@@ -11,6 +11,9 @@ namespace Fritz.Chatbot.Commands
 {
 	public class HelpCommand : IBasicCommand
 	{
+		public string Trigger => "help";
+		public string Description => "Get information about the functionality available on this channel";
+
 		private readonly IServiceProvider _serviceProvider;
 
 		public HelpCommand(IServiceProvider serviceProvider)
@@ -18,13 +21,8 @@ namespace Fritz.Chatbot.Commands
 			_serviceProvider = serviceProvider;
 		}
 
-		public string Trigger => "help";
-
-		public string Description => "Get information about the functionality available on this channel";
-
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
-
 			var commands = _serviceProvider.GetServices<IBasicCommand>();
 
 			if (rhs.IsEmpty)
@@ -43,9 +41,6 @@ namespace Fritz.Chatbot.Commands
 			}
 
 			await chatService.SendMessageAsync($"{rhs}: {cmd.Description}");
-
 		}
-
 	}
-
 }

@@ -7,7 +7,6 @@ namespace Fritz.Chatbot.Commands
 	public class PingCommand : IBasicCommand
 	{
 		public string Trigger => "ping";
-
 		public string Description => "Receive a quick acknowledgement from the bot through a whisper";
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
@@ -15,5 +14,4 @@ namespace Fritz.Chatbot.Commands
 			await chatService.SendWhisperAsync(userName, "pong");
 		}
 	}
-
 }

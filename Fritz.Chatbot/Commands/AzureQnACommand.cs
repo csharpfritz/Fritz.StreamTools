@@ -15,76 +15,66 @@ namespace Fritz.Chatbot.Commands
 
 	public class AzureQnACommand : IExtendedCommand
 	{
-
 		public string AzureKey => _configuration["AzureServices:QnASubscriptionKey"];
-
 		public string KnowledgebaseId => _configuration["FritzBot:QnAKnowledgeBaseId"];
-
 		public string Name => "AzureQnA";
-
 		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
-
 		public int Order => 1;
 
-	private readonly IConfiguration _configuration;
-	private readonly ILogger<AzureQnACommand> _logger;
+		private readonly IConfiguration _configuration;
+		private readonly ILogger<AzureQnACommand> _logger;
 
-	public AzureQnACommand(IConfiguration configuration, ILogger<AzureQnACommand> logger)
-	{
-	  _configuration = configuration;
-	  _logger = logger;
-	}
-
-		public bool CanExecute (string userName, string fullCommandText)
+		public AzureQnACommand(IConfiguration configuration, ILogger<AzureQnACommand> logger)
 		{
-
-			return fullCommandText.EndsWith ("?");
-
+			_configuration = configuration;
+			_logger = logger;
 		}
 
-		public async Task Execute (IChatService chatService, string userName, string fullCommandText)
+		public bool CanExecute(string userName, string fullCommandText)
 		{
+			return fullCommandText.EndsWith("?");
+		}
 
+		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		{
 			// Exit now if we don't know how to connect to Azure
-			if (string.IsNullOrEmpty (AzureKey)) return;
+			if (string.IsNullOrEmpty(AzureKey)) return;
 
-			_logger.LogInformation ($"Handling question: \"{fullCommandText}\" from {userName}");
+			_logger.LogInformation($"Handling question: \"{fullCommandText}\" from {userName}");
 
-			await Query (chatService, userName, fullCommandText);
-
+			await Query(chatService, userName, fullCommandText);
 		}
 
-		public async Task Query (IChatService chatService, string userName, string query)
+		public async Task Query(IChatService chatService, string userName, string query)
 		{
-
 			var responseString = string.Empty;
-			query = WebUtility.UrlEncode (query);
+			query = WebUtility.UrlEncode(query);
 
 			//Build the URI
-			var qnamakerUriBase = new Uri ("https://westus.api.cognitive.microsoft.com/qnamaker/v1.0");
-			var builder = new UriBuilder ($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}/generateAnswer");
+			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v1.0");
+			var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}/generateAnswer");
 
 			//Add the question as part of the body
 			var postBody = $"{{\"question\": \"{query}\"}}";
 
 			//Send the POST request
-			using (var client = new WebClient ())
+			using(var client = new WebClient())
 			{
 				//Set the encoding to UTF8
 				client.Encoding = System.Text.Encoding.UTF8;
 
 				//Add the subscription key header
-				client.Headers.Add ("Ocp-Apim-Subscription-Key", AzureKey);
-				client.Headers.Add ("Content-Type", "application/json");
+				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
+				client.Headers.Add("Content-Type", "application/json");
 
 				try
 				{
-					responseString = await client.UploadStringTaskAsync (builder.Uri, postBody).OrTimeout ();
+					responseString = await client.UploadStringTaskAsync(builder.Uri, postBody).OrTimeout();
 				}
 				catch (TimeoutException)
 				{
-					_logger.LogWarning ($"Azure Services did not respond in time to question '{query}'");
-					chatService.SendMessageAsync ($"Unable to answer the question '{query}' at this time").Forget ();
+					_logger.LogWarning($"Azure Services did not respond in time to question '{query}'");
+					chatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();
 					return;
 				}
 			}
@@ -92,56 +82,51 @@ namespace Fritz.Chatbot.Commands
 			QnAMakerResult response;
 			try
 			{
-				response = JsonConvert.DeserializeObject<QnAMakerResult> (responseString);
+				response = JsonConvert.DeserializeObject<QnAMakerResult>(responseString);
 
-				response.Answer = WebUtility.HtmlDecode (response.Answer).HandleMarkdownLinks ();
+				response.Answer = WebUtility.HtmlDecode(response.Answer).HandleMarkdownLinks();
 
 				if (response.Score > 50)
 				{
-					await chatService.SendMessageAsync (response.Answer);
+					await chatService.SendMessageAsync(response.Answer);
 				}
 				else if (response.Score > 30)
 				{
-					await chatService.SendMessageAsync ("I'm not certain, but perhaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
+					await chatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
 
 				}
 				else
 				{
-					_logger.LogInformation ($"Unable to find suitable answer to {userName}'s question: {query}");
+					_logger.LogInformation($"Unable to find suitable answer to {userName}'s question: {query}");
 				}
 
 			}
-			catch (Exception ex) when (_logger.LogAndSwallow ("asking knowledgebase", ex))
+			catch (Exception ex) when(_logger.LogAndSwallow("asking knowledgebase", ex))
 			{
 
 			}
-
 		}
 
-		public async Task Retrain ()
+		public async Task Retrain()
 		{
-
-			var qnamakerUriBase = new Uri ("https://westus.api.cognitive.microsoft.com/qnamaker/v2.0");
-			var builder = new UriBuilder ($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}");
+			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v2.0");
+			var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}");
 
 			//Send the POST request
-			using (var client = new WebClient ())
+			using(var client = new WebClient())
 			{
 				//Set the encoding to UTF8
 				client.Encoding = System.Text.Encoding.UTF8;
 
 				//Add the subscription key header
-				client.Headers.Add ("Ocp-Apim-Subscription-Key", AzureKey);
-				client.Headers.Add ("Content-Type", "application/json");
+				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
+				client.Headers.Add("Content-Type", "application/json");
 
 				//Add the question as part of the body
 				var postBody = $"{{\"add\": {{\"urls\": [\"https://github.com/csharpfritz/Fritz.LiveStream/wiki/Frequently-Asked-Questions\"]}} }}";
 
-				var responseString = await client.UploadStringTaskAsync (builder.Uri, "PATCH", postBody);
+				var responseString = await client.UploadStringTaskAsync(builder.Uri, "PATCH", postBody);
 			}
-
 		}
-
 	}
-
 }

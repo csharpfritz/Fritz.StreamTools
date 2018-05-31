@@ -10,6 +10,7 @@ using Microsoft.Extensions.Caching.Memory;
 using LazyCache;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using Services = Fritz.StreamTools.Services;
 
 namespace Fritz.StreamTools.Controllers
 {
@@ -18,19 +19,22 @@ namespace Fritz.StreamTools.Controllers
 		public GitHubController(
 			IAppCache cache,
 			GitHubRepository repository,
+			Services.GitHubClient client,
 			ILogger<GitHubController> logger,
 			IOptions<GitHubConfiguration> githubConfiguration)
 		{
 			this.Cache = cache;
 			this.Logger = logger;
+			this.Client = client;
 			_gitHubRepository = repository;
 			_gitHubConfiguration = githubConfiguration.Value;
 		}
 
     public IAppCache Cache { get; }
     public ILogger<GitHubController> Logger { get; }
+    public Services.GitHubClient Client { get; }
 
-		private readonly GitHubRepository _gitHubRepository;
+    private readonly GitHubRepository _gitHubRepository;
 
 		private readonly GitHubConfiguration _gitHubConfiguration;
 
@@ -47,6 +51,26 @@ namespace Fritz.StreamTools.Controllers
 		public IActionResult Configuration()
 		{
 			return View(_gitHubConfiguration);
+		}
+
+		public IActionResult Test(int value, string devName, string projectName) {
+
+			var testInfo = new [] {
+				new GitHubInformation {
+					Repository = projectName
+				}
+			};
+
+			testInfo[0].TopWeekContributors.Add(new GitHubContributor {
+				Author = devName,
+				Commits = value
+			});
+
+			Client.UpdateGitHub(testInfo);
+
+			return Json(testInfo);
+
+
 		}
 
 		[HttpPost]

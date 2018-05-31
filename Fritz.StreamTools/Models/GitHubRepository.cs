@@ -35,11 +35,12 @@ namespace Fritz.StreamTools.Models
 
 			return await AppCache.GetOrAddAsync<List<GitHubInformation>>("GitHubData", async (x) => {
 
-				x.AbsoluteExpiration = DateTime.Now.AddSeconds(45);
+				x.AbsoluteExpiration = DateTime.Now.AddMinutes(5);
 
 				Logger.LogWarning("Fetching data from GitHub");
 
 				var repositories = repositoryCsv.Split(',');
+				var lastMonth = DateTimeOffset.Now.AddMonths(-1);
 
 				foreach (var repo in repositories)
 				{
@@ -48,12 +49,19 @@ namespace Fritz.StreamTools.Models
 					var thisUser = repo.Split('/')[0];
 					var model = new GitHubInformation() { Repository = thisRepo };
 
-					var repository =
-						await Client.Repository.Get(thisUser, thisRepo);
-					var contributors =
-						await Client.Repository.Statistics.GetContributors(repository.Id);
-					var lastMonth = DateTimeOffset.Now.AddMonths(-1);
+					Repository repository;
+					IReadOnlyList<Contributor> contributors;
 
+					try {
+						repository =
+							await Client.Repository.Get(thisUser, thisRepo);
+						contributors =
+							await Client.Repository.Statistics.GetContributors(repository.Id);
+					}
+					catch (RateLimitExceededException) {
+						// do nothing... return empty collection
+						return outModel;
+					}
 					model.TopEverContributors.AddRange(
 									contributors.Where(c => c.Total > 0 && c.Author.Login != Configuration.ExcludeUser)
 															.OrderByDescending(c => c.Total)
@@ -100,15 +108,22 @@ namespace Fritz.StreamTools.Models
 
 		public async Task<DateTime> GetLastCommitTimestamp(string repositoryCsv) {
 
+			Logger.LogInformation($"Getting LastCommitTimestap for {repositoryCsv}");
+
 			var lastUpdates = new DateTime[] {};
 
 			var repositories = repositoryCsv.Split(',');
 			foreach (var r in repositories) {
 
+				Logger.LogInformation($"Getting GitHub last update information for {r}");
+
 				var userName = r.Split('/')[0];
 				var repoName = r.Split('/')[1];
 
-				lastUpdates.Append((await Client.Repository.Get(userName, repoName)).UpdatedAt.DateTime);
+				var updateInfo = (await Client.Repository.Get(userName, repoName));
+				Logger.LogInformation($"{r} last updated at: {updateInfo.UpdatedAt.UtcDateTime}");
+
+				lastUpdates = lastUpdates.Append(updateInfo.UpdatedAt.UtcDateTime).ToArray();
 
 			}
 

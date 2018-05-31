@@ -12,7 +12,7 @@
 
 		body { margin: 5px 0px; }
 
-		.marquee {
+		#marquee {
 			margin: 0 auto;
 			white-space: nowrap;
 			overflow: hidden;
@@ -23,12 +23,12 @@
 			width: @(Config.Width)px;
 		}
 
-		.marquee * {
+		#marquee * {
 			font-family: @(Config.Font);
 			font-size: @(Config.FontSizePt)pt;
 		}
 
-		.marquee u, b {
+		#marquee u, b {
 			@if (Config.CaptionBold) {
 				@:font-weight: bold;
 			}
@@ -40,7 +40,7 @@
 </head>
 <body>
 
-<p class="marquee">
+<p id="marquee">
 
 	@foreach (var repo in Model)
 	{
@@ -65,8 +65,11 @@
 
 		<u>Top month:</u>
 
-		@await Html.PartialAsync("_ContributorTickerSegment", repo.TopMonthContributors)
-
+		@if (repo.TopMonthContributors.Count() == 0) {
+			@:No contributors this month
+		} else {
+			@await Html.PartialAsync("_ContributorTickerSegment", repo.TopMonthContributors)
+		}
 		</span>
 
 		<span id="topAllTime">
@@ -81,16 +84,70 @@
 
 </p>
 
+<div id="projectTemplate" style="display: none;">
+
+	<b id="repositoryName"></b>
+
+	<span id="topWeek">
+		<u>Top week:</u>
+	</span>
+
+	<span id="topMonth">
+		<u>Top month:</u>
+	</span>
+
+	<span id="topAllTime">
+		<u>Top All Time:</u>
+	</span>
+
+</div>
+
 <script type='text/javascript' src='/lib/jquery.js'></script>
 <script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.4.0/jquery.marquee.min.js'></script>
+<script src="~/lib/signalr/signalr-client.js"></script>
+<script src="~/js/mcGitHubbub.js"></script>
 <script type="text/javascript">
 
 (function() {
 
-	$(".marquee").marquee({
+	$("#marquee").marquee({
 		duplicated: true,
 		duration: @(Config.SpeedMs)
 	});
+
+	var hub = new McGitHubbub();
+
+	hub.onUpdated = (contributors) => {
+
+			console.log(contributors);
+
+			for (var i=0; i<contributors.length; i++) {
+
+				var repositoryInformation = contributors[i];
+				var newNodes = document.getElementById("projectTemplate").cloneNode(true).childNodes;
+
+				// week -- 3
+				for (var weekContrib=0; weekContrib<repositoryInformation.topWeekContributors.length; weekContrib++) {
+						var newContrib = document.createElement("span");
+						newContrib.textContent = repositoryInformation.topWeekContributors[weekContrib].author + " " + repositoryInformation.topWeekContributors[weekContrib].commits;
+						newNodes[3].appendChild(newContrib);
+				}
+
+
+				newNodes[1].textContent = repositoryInformation.repository;
+
+				///  other node Configuration
+
+				var jsMarqueeArr = document.getElementsByClassName("js-marquee");
+				jsMarqueeArr[0].appendChild(newNodes[1]);
+				jsMarqueeArr[0].appendChild(newNodes[3]);
+
+			}
+
+	}
+
+	hub.start("github");
+
 
 }());
 

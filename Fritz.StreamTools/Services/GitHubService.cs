@@ -25,7 +25,7 @@ namespace Fritz.StreamTools.Services
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(async () => await MonitorUpdates(cancellationToken));
+            return MonitorUpdates(cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -38,16 +38,18 @@ namespace Fritz.StreamTools.Services
 
 						while (!cancellationToken.IsCancellationRequested) {
 
-							await Task.Delay(60 * 1000);
+
 
 							var lastUpdate = await Repository.GetLastCommitTimestamp(Configuration.RepositoryCsv);
 							if (lastUpdate <= this._LastUpdate) continue;
 
 							_LastUpdate = lastUpdate;
+
 							var newInfo = await Repository.GetRecentContributors(Configuration.RepositoryCsv);
 
 							if (Updated != null) Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
 
+							await Task.Delay(300 * 1000);
 
 						}
 

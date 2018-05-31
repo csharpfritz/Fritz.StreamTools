@@ -22,11 +22,23 @@ The project supports reading stream metrics from the following services:
 
 ## Contributing
 
-This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux, and Windows.  Download the [.NET SDK](https://dot.net) and grab a copy of [Visual Studio Code](https://code.visualstudio.com) to get started on any platform
+This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux, and Windows.  Download the [.NET SDK](https://dot.net) and grab a copy of [Visual Studio Code](https://code.visualstudio.com) to get started on any platform.
 
-### Configuration
+### How to contribute
+1. Open new issue or find some intresting,
+2. Fork repository,
+3. Create new branch in your fork from dev,
+4. Code something awesome,
+5. Create pull-request from your branch to our dev branch,
+6. In pull request write what you did and why, if it requires an explanation,
+7. (Optional) Answer questions or correct your code if needed,
+8. Celebrate that you are new Contributor :)
 
-#### Google Fonts Api
+[More about forking](https://guides.github.com/activities/forking/)
+
+## Configuration
+
+### Google Fonts Api
 
 To use your own Google Fonts Api key without modifying the `Fritz.StreamTools\appSettings.json` you can place your key in the `secrets.json` file in the [path appropriate for your OS](https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-2.1&tabs=visual-studio#how-the-secret-manager-tool-works).
 

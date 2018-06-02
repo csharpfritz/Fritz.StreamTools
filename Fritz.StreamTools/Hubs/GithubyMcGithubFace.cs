@@ -9,9 +9,9 @@ namespace Fritz.StreamTools.Hubs
 	public class GithubyMcGithubFace : BaseHub
 	{
 		public GitHubService GitHubService { get; }
-    public GitHubClient GitHubClient { get; }
+		public GitHubClient GitHubClient { get; }
 
-    public GithubyMcGithubFace(
+		public GithubyMcGithubFace(
 			GitHubService gitHubService,
 			GitHubClient client
 			)
@@ -24,12 +24,12 @@ namespace Fritz.StreamTools.Hubs
 
 		}
 
-    private void Git_Updated(object sender, GitHubUpdatedEventArgs e)
-    {
+		private void Git_Updated(object sender, GitHubUpdatedEventArgs e)
+		{
 
 			this.GitHubClient.UpdateGitHub(e.Contributors);
 
-    }
-  }
+		}
+	}
 
 }

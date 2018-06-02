@@ -23,41 +23,52 @@ namespace Fritz.StreamTools.StartupServices
 		public static void Execute(
 			IServiceCollection services,
 			IConfiguration configuration)
-    {
-      services.AddSingleton<RundownRepository>();
-      services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
-      services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
-      services.AddStreamingServices(configuration);
-      services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
-      services.AddSingleton<FollowerClient>();
-      services.AddAspNetFeatures();
+		{
 
-      services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
-      services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
+			Configuration = configuration;
 
-      services.AddSingleton<IHostedService, FritzBot>();
+			services.AddSingleton<RundownRepository>();
+			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
+			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
+			services.AddStreamingServices(configuration);
+			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
+			services.AddSingleton<FollowerClient>();
+			services.AddAspNetFeatures();
+
+			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
+			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
+
+			services.AddSingleton<IHostedService, FritzBot>();
 
 
-      services.AddLazyCache();
+			services.AddLazyCache();
 
-      RegisterGitHubServices(services);
+			RegisterGitHubServices(services, configuration);
 
-    }
+		}
 
-    private static void RegisterGitHubServices(IServiceCollection services)
-    {
-      services.AddScoped<GitHubRepository>();
+		public static IConfiguration Configuration { get; private set; }
+
+		private static void RegisterGitHubServices(IServiceCollection services, IConfiguration configuration)
+		{
+			services.AddScoped<GitHubRepository>();
 			services.AddTransient<Services.GitHubClient>();
-      services.AddSingleton<GitHubService>();
-      services.AddSingleton(new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+			services.AddSingleton<GitHubService>();
+
+
+			services.AddScoped(_ => {
+				var client = new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools"));
+				client.Credentials = new Credentials("csharpfritz",ConfigureServices.Configuration["GitHub:AuthenticationToken"]);
+				return client;
+			});
 
 			var provider = services.BuildServiceProvider();
 			var svc = provider.GetService<GitHubService>();
 			services.AddSingleton(svc as IHostedService);
 
-    }
+		}
 
-    private static void AddStreamingServices(this IServiceCollection services,
+		private static void AddStreamingServices(this IServiceCollection services,
 			IConfiguration configuration)
 		{
 

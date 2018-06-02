@@ -103,14 +103,17 @@
 </div>
 
 <script type='text/javascript' src='/lib/jquery.js'></script>
-<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.4.0/jquery.marquee.min.js'></script>
+<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.3.1/jquery.marquee.min.js'></script>
 <script src="~/lib/signalr/signalr-client.js"></script>
 <script src="~/js/mcGitHubbub.js"></script>
 <script type="text/javascript">
 
+	var $mq = $("#marquee");
+
 (function() {
 
-	$("#marquee").marquee({
+
+	$mq.marquee({
 		duplicated: true,
 		duration: @(Config.SpeedMs)
 	});
@@ -119,30 +122,21 @@
 
 	hub.onUpdated = (contributors) => {
 
-			console.log(contributors);
+		console.log(contributors);
 
-			for (var i=0; i<contributors.length; i++) {
+		$mq.marquee("destroy");
 
-				var repositoryInformation = contributors[i];
-				var newNodes = document.getElementById("projectTemplate").cloneNode(true).childNodes;
+		$("#marquee").html("-- Update Incoming --");
 
-				// week -- 3
-				for (var weekContrib=0; weekContrib<repositoryInformation.topWeekContributors.length; weekContrib++) {
-						var newContrib = document.createElement("span");
-						newContrib.textContent = repositoryInformation.topWeekContributors[weekContrib].author + " " + repositoryInformation.topWeekContributors[weekContrib].commits;
-						newNodes[3].appendChild(newContrib);
-				}
+		$("#marquee").load("/github/contributors #marquee", function () {
+
+				$("#marquee").marquee({
+					duplicated: true,
+					duration: @(Config.SpeedMs)
+				});
 
 
-				newNodes[1].textContent = repositoryInformation.repository;
-
-				///  other node Configuration
-
-				var jsMarqueeArr = document.getElementsByClassName("js-marquee");
-				jsMarqueeArr[0].appendChild(newNodes[1]);
-				jsMarqueeArr[0].appendChild(newNodes[3]);
-
-			}
+		});
 
 	}
 

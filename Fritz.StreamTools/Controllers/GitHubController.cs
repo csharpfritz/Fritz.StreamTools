@@ -14,7 +14,7 @@ using Services = Fritz.StreamTools.Services;
 
 namespace Fritz.StreamTools.Controllers
 {
-  public class GitHubController : Controller
+	public class GitHubController : Controller
 	{
 		public GitHubController(
 			IAppCache cache,
@@ -30,11 +30,11 @@ namespace Fritz.StreamTools.Controllers
 			_gitHubConfiguration = githubConfiguration.Value;
 		}
 
-    public IAppCache Cache { get; }
-    public ILogger<GitHubController> Logger { get; }
-    public Services.GitHubClient Client { get; }
+		public IAppCache Cache { get; }
+		public ILogger<GitHubController> Logger { get; }
+		public Services.GitHubClient Client { get; }
 
-    private readonly GitHubRepository _gitHubRepository;
+		private readonly GitHubRepository _gitHubRepository;
 
 		private readonly GitHubConfiguration _gitHubConfiguration;
 
@@ -52,6 +52,17 @@ namespace Fritz.StreamTools.Controllers
 		{
 			return View(_gitHubConfiguration);
 		}
+
+		[HttpGet("api/GitHub/Latest")]
+		public async Task<IActionResult> LatestChanges()
+		{
+
+			var outModel = await _gitHubRepository.GetLastCommitTimestamp(_gitHubConfiguration.RepositoryCsv);
+
+			return Ok(outModel);
+
+		}
+
 
 		public IActionResult Test(int value, string devName, string projectName) {
 
@@ -125,5 +136,5 @@ namespace Fritz.StreamTools.Controllers
 
 			return Json(true);
 		}
-  }
+	}
 }

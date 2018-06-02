@@ -49,14 +49,11 @@ namespace Fritz.StreamTools.Models
 					var thisUser = repo.Split('/')[0];
 					var model = new GitHubInformation() { Repository = thisRepo };
 
-					Repository repository;
 					IReadOnlyList<Contributor> contributors;
 
 					try {
-						repository =
-							await Client.Repository.Get(thisUser, thisRepo);
 						contributors =
-							await Client.Repository.Statistics.GetContributors(repository.Id);
+							await Client.Repository.Statistics.GetContributors(thisUser, thisRepo);
 					}
 					catch (RateLimitExceededException) {
 						// do nothing... return empty collection

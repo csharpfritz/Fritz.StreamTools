@@ -84,24 +84,6 @@
 
 </p>
 
-<div id="projectTemplate" style="display: none;">
-
-	<b id="repositoryName"></b>
-
-	<span id="topWeek">
-		<u>Top week:</u>
-	</span>
-
-	<span id="topMonth">
-		<u>Top month:</u>
-	</span>
-
-	<span id="topAllTime">
-		<u>Top All Time:</u>
-	</span>
-
-</div>
-
 <script type='text/javascript' src='/lib/jquery.js'></script>
 <script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.3.1/jquery.marquee.min.js'></script>
 <script src="~/lib/signalr/signalr-client.js"></script>
@@ -128,7 +110,7 @@
 
 		$("#marquee").html("-- Update Incoming --");
 
-		$("#marquee").load("/github/contributors #marquee", function () {
+		$("#marquee").load("/github/contributorsinformation #marquee>*", function () {
 
 				$("#marquee").marquee({
 					duplicated: true,

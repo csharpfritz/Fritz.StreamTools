@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
@@ -7,53 +9,71 @@ using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.Services
 {
-    public class GitHubService : IHostedService
-    {
+	public class GitHubService : IHostedService
+	{
 
-				private DateTime _LastUpdate = DateTime.MinValue;
+		private DateTime _LastUpdate = DateTime.MinValue;
 
-				public GitHubService(GitHubRepository repo, IOptions<GitHubConfiguration> config)
+		public GitHubService(IHttpClientFactory httpClientFactory)
+		{
+			this.HttpClient = httpClientFactory.CreateClient("GitHub");
+		}
+
+		public HttpClient HttpClient { get; }
+
+		public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
+
+		public Task StartAsync(CancellationToken cancellationToken)
+		{
+			return MonitorUpdates(cancellationToken);
+		}
+
+		public Task StopAsync(CancellationToken cancellationToken)
+		{
+			return Task.CompletedTask;
+		}
+
+		private async Task MonitorUpdates(CancellationToken cancellationToken)
+		{
+
+			var lastRequest = DateTime.Now;
+
+			while (!cancellationToken.IsCancellationRequested)
+			{
+
+				if (lastRequest.AddMinutes(1) > DateTime.Now) continue;
+
+				lastRequest = DateTime.Now;
+
+				var lastUpdate = await GetLastCommittedTimestamp();
+				if (lastUpdate > this._LastUpdate)
 				{
-					this.Repository = repo;
-					this.Configuration = config.Value;
+
+					_LastUpdate = lastUpdate;
+
+					var newInfo = new GitHubInformation[] { };
+
+					if (Updated != null) Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
+
 				}
+				await Task.Delay(500);
 
-        public GitHubRepository Repository { get; private set; }
-        public GitHubConfiguration Configuration { get; }
+			}
 
-				public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
+		}
 
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            return MonitorUpdates(cancellationToken);
-        }
+		private async Task<DateTime> GetLastCommittedTimestamp()
+		{
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-					return Task.CompletedTask;
-        }
+			var result = await this.HttpClient.GetAsync("https://localhost:5001/api/GitHub/Latest");
 
-        private async Task MonitorUpdates(CancellationToken cancellationToken)
-        {
+			// "2018-06-02T15:08:38Z"
+			var resultDate = await result.Content.ReadAsStringAsync();
 
-						while (!cancellationToken.IsCancellationRequested) {
+			return DateTime.ParseExact(resultDate, "MM/dd/yyyy HH:mm:ss", null);
 
 
+		}
 
-							var lastUpdate = await Repository.GetLastCommitTimestamp(Configuration.RepositoryCsv);
-							if (lastUpdate <= this._LastUpdate) continue;
-
-							_LastUpdate = lastUpdate;
-
-							var newInfo = await Repository.GetRecentContributors(Configuration.RepositoryCsv);
-
-							if (Updated != null) Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
-
-							await Task.Delay(300 * 1000);
-
-						}
-
-        }
-
-    }
+	}
 }

@@ -35,7 +35,7 @@ namespace Fritz.StreamTools.Models
 
 			return await AppCache.GetOrAddAsync<List<GitHubInformation>>("GitHubData", async (x) => {
 
-				x.AbsoluteExpiration = DateTime.Now.AddMinutes(5);
+				x.AbsoluteExpiration = DateTime.Now.AddMinutes(60);
 
 				Logger.LogWarning("Fetching data from GitHub");
 
@@ -103,28 +103,43 @@ namespace Fritz.StreamTools.Models
 
 		}
 
+		public static DateTime LastUpdate = DateTime.MinValue;
+
 		public async Task<DateTime> GetLastCommitTimestamp(string repositoryCsv) {
 
-			Logger.LogInformation($"Getting LastCommitTimestap for {repositoryCsv}");
+			return await AppCache.GetOrAddAsync("GitHubLastCommit", async x => 
+			{
 
-			var lastUpdates = new DateTime[] {};
+				x.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
 
-			var repositories = repositoryCsv.Split(',');
-			foreach (var r in repositories) {
+				Logger.LogInformation($"Getting LastCommitTimestap for {repositoryCsv}");
 
-				Logger.LogInformation($"Getting GitHub last update information for {r}");
+				var lastUpdates = new DateTime[] { };
 
-				var userName = r.Split('/')[0];
-				var repoName = r.Split('/')[1];
+				var repositories = repositoryCsv.Split(',');
+				foreach (var r in repositories)
+				{
 
-				var updateInfo = (await Client.Repository.Get(userName, repoName));
-				Logger.LogInformation($"{r} last updated at: {updateInfo.UpdatedAt.UtcDateTime}");
+					Logger.LogInformation($"Getting GitHub last update information for {r}");
 
-				lastUpdates = lastUpdates.Append(updateInfo.UpdatedAt.UtcDateTime).ToArray();
+					var userName = r.Split('/')[0];
+					var repoName = r.Split('/')[1];
 
-			}
+					var updateInfo = (await Client.Repository.Get(userName, repoName));
+					Logger.LogInformation($"{r} last updated at: {updateInfo.UpdatedAt.UtcDateTime}");
 
-			return lastUpdates.Max();
+					lastUpdates = lastUpdates.Append(updateInfo.UpdatedAt.UtcDateTime).ToArray();
+
+				}
+
+				if (LastUpdate < lastUpdates.Max())
+				{
+					AppCache.Remove("GitHubData");
+				}
+
+				return lastUpdates.Max();
+
+			});
 
 		}
 

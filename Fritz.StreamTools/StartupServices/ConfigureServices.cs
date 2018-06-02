@@ -58,8 +58,14 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddScoped(_ => {
 				var client = new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools"));
-				client.Credentials = new Credentials("csharpfritz",ConfigureServices.Configuration["GitHub:AuthenticationToken"]);
+				client.Credentials = new Credentials(Configuration["GitHub:User"], Configuration["GitHub:AuthenticationToken"]);
 				return client;
+			});
+
+			services.AddHttpClient("GitHub", c =>
+			{
+				c.BaseAddress = new Uri("https://localhost:5001");
+				c.DefaultRequestHeaders.Add("Accept", "applications/json");
 			});
 
 			var provider = services.BuildServiceProvider();

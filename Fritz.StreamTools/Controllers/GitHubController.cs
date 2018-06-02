@@ -59,6 +59,16 @@ namespace Fritz.StreamTools.Controllers
 
 			var outModel = await _gitHubRepository.GetLastCommitTimestamp(_gitHubConfiguration.RepositoryCsv);
 
+			return Ok(outModel.ToString("MM/dd/yyyy HH:mm:ss"));
+
+		}
+
+		[HttpGet("api/GitHub/Contributors")]
+		public async Task<IActionResult> GetContributors()
+		{
+
+			var outModel = await _gitHubRepository.GetRecentContributors(_gitHubConfiguration.RepositoryCsv);
+
 			return Ok(outModel);
 
 		}
@@ -76,6 +86,8 @@ namespace Fritz.StreamTools.Controllers
 				Author = devName,
 				Commits = value
 			});
+
+			GitHubRepository.LastUpdate = DateTime.MinValue;
 
 			Client.UpdateGitHub(testInfo);
 

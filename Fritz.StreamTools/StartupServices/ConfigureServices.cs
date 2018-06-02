@@ -24,6 +24,9 @@ namespace Fritz.StreamTools.StartupServices
 			IServiceCollection services,
 			IConfiguration configuration)
 		{
+
+			Configuration = configuration;
+
 			services.AddSingleton<RundownRepository>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
@@ -36,9 +39,38 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
 			services.AddSingleton<IHostedService, FritzBot>();
-			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+
 
 			services.AddLazyCache();
+
+			RegisterGitHubServices(services, configuration);
+
+		}
+
+		public static IConfiguration Configuration { get; private set; }
+
+		private static void RegisterGitHubServices(IServiceCollection services, IConfiguration configuration)
+		{
+			services.AddScoped<GitHubRepository>();
+			services.AddTransient<Services.GitHubClient>();
+			services.AddSingleton<GitHubService>();
+
+
+			services.AddScoped(_ => {
+				var client = new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools"));
+				client.Credentials = new Credentials(Configuration["GitHub:User"], Configuration["GitHub:AuthenticationToken"]);
+				return client;
+			});
+
+			services.AddHttpClient("GitHub", c =>
+			{
+				c.BaseAddress = new Uri("https://localhost:5001");
+				c.DefaultRequestHeaders.Add("Accept", "applications/json");
+			});
+
+			var provider = services.BuildServiceProvider();
+			var svc = provider.GetService<GitHubService>();
+			services.AddSingleton(svc as IHostedService);
 
 		}
 
@@ -115,7 +147,6 @@ namespace Fritz.StreamTools.StartupServices
 
 			}).AddJsonProtocol();
 
-			//services.AddSingleton<FollowerHub>();
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 

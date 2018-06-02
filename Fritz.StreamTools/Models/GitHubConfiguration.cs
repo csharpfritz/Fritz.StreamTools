@@ -17,6 +17,8 @@ namespace Fritz.StreamTools.Models
 
 		public string ExcludeUser { get; set;} = "csharpfritz";
 
+		public string RepositoryCsv { get; set; } = "csharpfritz/Fritz.StreamTools,csharpfritz/CoreWiki";
+
 		public string DisplayMode {get;set;} = "h-scroll";
 
 		public int Width { get; set; } = 600;

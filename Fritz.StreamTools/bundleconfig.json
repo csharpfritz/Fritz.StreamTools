@@ -1,50 +1,50 @@
 ﻿[
-  {
-    "outputFileName": "wwwroot/css/site.min.css",
-    "inputFiles": [
-      "wwwroot/css/site.css"
-    ]
-  },
-  {
-    "outputFileName": "wwwroot/js/site.min.js",
-    "inputFiles": [
-      "wwwroot/js/site.js"
-    ],
-    "minify": {
-      "enabled": false
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/js/GoalConfiguration.min.js",
-    "inputFiles": [
-      "wwwroot/js/GoalConfiguration/GoogleFonts.js",
-      "wwwroot/js/GoalConfiguration/Preview.js"
-      ,"wwwroot/js/GoalConfiguration/GoalConfiguration.js"
-    ],
-    "minify": {
-      "enabled": true
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/lib/signalr/signalr-client.js",
-    "inputFiles": [
-      "node_modules/@aspnet/signalr/dist/browser/signalr.min.js"
-    ],
-    "minify": {
-      "enabled": false
-    }
+	{
+		"outputFileName": "wwwroot/css/site.min.css",
+		"inputFiles": [
+			"wwwroot/css/site.css"
+		]
 	},
 	{
-    "outputFileName": "wwwroot/lib/jquery.js",
-    "inputFiles": [
-      "node_modules/jquery/dist/jquery.js",
-      "node_modules/jquery-validation/dist/jquery.validate.js",
-      "node_modules/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.js"
-      ],
-    "minify": {
-      "enabled": false
-    }
-  }
+		"outputFileName": "wwwroot/js/site.min.js",
+		"inputFiles": [
+			"wwwroot/js/site.js"
+		],
+		"minify": {
+			"enabled": false
+		},
+		"sourceMap": false
+	},
+	{
+		"outputFileName": "wwwroot/js/GoalConfiguration.min.js",
+		"inputFiles": [
+			"wwwroot/js/GoalConfiguration/GoogleFonts.js",
+			"wwwroot/js/GoalConfiguration/Preview.js"
+			,"wwwroot/js/GoalConfiguration/GoalConfiguration.js"
+		],
+		"minify": {
+			"enabled": true
+		},
+		"sourceMap": false
+	},
+	{
+		"outputFileName": "wwwroot/lib/signalr/signalr-client.js",
+		"inputFiles": [
+			"node_modules/@aspnet/signalr/dist/browser/signalr.min.js"
+		],
+		"minify": {
+			"enabled": false
+		}
+	},
+	{
+		"outputFileName": "wwwroot/lib/jquery.js",
+		"inputFiles": [
+			"node_modules/jquery/dist/jquery.js",
+			"node_modules/jquery-validation/dist/jquery.validate.js",
+			"node_modules/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.js"
+			],
+		"minify": {
+			"enabled": false
+		}
+	}
 ]

@@ -157,11 +157,11 @@ namespace Fritz.StreamTools.Services
 						var imageCheck = r.Match(e.Message);
 						if (imageCheck.Captures.Count > 0)
 						{
-				//cal the new comand
-				var imageDescCommand = new ImageDescriptorCommand(_config);
-				imageDescCommand.ChatService = sender as IChatService;
-				await imageDescCommand.Execute(e.UserName, imageCheck.Captures[0].Value);
-				return;
+							//cal the new comand
+							var imageDescCommand = new ImageDescriptorCommand(_config);
+							imageDescCommand.ChatService = sender as IChatService;
+							await imageDescCommand.Execute(e.UserName, imageCheck.Captures[0].Value);
+							return;
 
 						}
 

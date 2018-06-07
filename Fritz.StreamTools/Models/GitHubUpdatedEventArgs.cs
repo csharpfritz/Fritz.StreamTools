@@ -1,3 +1,4 @@
+using Fritz.Models;
 using System;
 using System.Collections.Generic;
 

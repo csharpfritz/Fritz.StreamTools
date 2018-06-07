@@ -11,6 +11,7 @@ using LazyCache;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using Services = Fritz.StreamTools.Services;
+using Fritz.Models;
 
 namespace Fritz.StreamTools.Controllers
 {
@@ -46,6 +47,13 @@ namespace Fritz.StreamTools.Controllers
 
 			return View($"contributor_{_gitHubConfiguration.DisplayMode}", outModel.ToArray());
 
+		}
+
+		public async Task<IActionResult> ContributorsInformationApi()
+		{
+				var model = await _gitHubRepository.GetRecentContributors(_gitHubConfiguration.RepositoryCsv);
+
+				return Ok(model);
 		}
 
 		public IActionResult Configuration()

@@ -1,4 +1,5 @@
-﻿using LazyCache;
+﻿using Fritz.Models;
+using LazyCache;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;

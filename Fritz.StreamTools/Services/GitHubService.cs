@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.Models;
 using Fritz.StreamTools.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;

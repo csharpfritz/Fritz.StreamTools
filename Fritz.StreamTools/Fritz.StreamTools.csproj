@@ -27,6 +27,7 @@
 		<None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
 		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
 		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />
+		<ProjectReference Include="..\..\Fritz.Models\Fritz.Models.csproj" />
 		<ProjectReference Include="..\Fritz.Chatbot\Fritz.Chatbot.csproj" />
 		<ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
 		<ProjectReference Include="..\Fritz.Twitch\Fritz.Twitch.csproj" />

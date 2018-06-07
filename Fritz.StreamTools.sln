@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Chatbot", "Fritz.Chat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Twitch", "Fritz.Twitch\Fritz.Twitch.csproj", "{28D6D34A-3F6E-40B3-B62A-20F90D281C7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.Models", "..\Fritz.Models\Fritz.Models.csproj", "{61288D3A-D435-4C13-B009-770C4185E3F5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.Models", "Fritz.Models\Fritz.Models.csproj", "{61288D3A-D435-4C13-B009-770C4185E3F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

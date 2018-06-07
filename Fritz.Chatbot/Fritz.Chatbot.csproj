@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Fritz.Models\Fritz.Models.csproj" />
+    <ProjectReference Include="..\Fritz.Models\Fritz.Models.csproj" />
     <ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
   </ItemGroup>
 

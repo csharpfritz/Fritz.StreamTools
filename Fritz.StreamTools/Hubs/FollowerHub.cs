@@ -11,7 +11,6 @@ using Fritz.StreamTools.Models;
 namespace Fritz.StreamTools.Hubs
 {
 
-	/// So named because @rachelAppel said so..
 	public class FollowerHub : BaseHub
 	{
 		public StreamService StreamService { get; }

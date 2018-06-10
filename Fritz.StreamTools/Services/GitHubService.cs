@@ -13,7 +13,7 @@ namespace Fritz.StreamTools.Services
 	public class GitHubService : IHostedService
 	{
 
-		private DateTime _LastUpdate = DateTime.MinValue;
+		public static DateTime LastUpdate = DateTime.MinValue;
 
 		public GitHubService(IServiceProvider services, ILogger<GitHubService> logger)
 		{
@@ -45,18 +45,15 @@ namespace Fritz.StreamTools.Services
 			{
 
 				var lastUpdate = await GetLastCommittedTimestamp();
-				if (lastUpdate > this._LastUpdate)
+				if (lastUpdate > LastUpdate)
 				{
 
-					_LastUpdate = lastUpdate;
+					LastUpdate = lastUpdate;
 
 					var newInfo = new GitHubInformation[] { };
 
-					if (Updated != null)
-					{
-						Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
-						Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
-					}
+					Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
+					Updated?.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
 
 				}
 				await Task.Delay(500);

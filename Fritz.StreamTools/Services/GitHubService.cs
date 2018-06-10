@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.Services
@@ -14,12 +15,14 @@ namespace Fritz.StreamTools.Services
 
 		private DateTime _LastUpdate = DateTime.MinValue;
 
-		public GitHubService(IServiceProvider services)
+		public GitHubService(IServiceProvider services, ILogger<GitHubService> logger)
 		{
 			this.Services = services;
+			this.Logger = logger;
 		}
 
 		public IServiceProvider Services { get; }
+		public ILogger<GitHubService> Logger { get; }
 
 		public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
 
@@ -49,7 +52,11 @@ namespace Fritz.StreamTools.Services
 
 					var newInfo = new GitHubInformation[] { };
 
-					if (Updated != null) Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
+					if (Updated != null)
+					{
+						Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
+						Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
+					}
 
 				}
 				await Task.Delay(500);

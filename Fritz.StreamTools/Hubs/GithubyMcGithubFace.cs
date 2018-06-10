@@ -19,7 +19,7 @@ namespace Fritz.StreamTools.Hubs
 		{
 
 			this.GitHubService = gitHubService;
-			this.GitHubClient = client;
+			this.GitHubClient = client;  
 
 			GitHubService.Updated += Git_Updated;
 

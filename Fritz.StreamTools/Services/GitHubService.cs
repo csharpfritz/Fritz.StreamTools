@@ -14,12 +14,12 @@ namespace Fritz.StreamTools.Services
 
 		private DateTime _LastUpdate = DateTime.MinValue;
 
-		public GitHubService(IHttpClientFactory httpClientFactory)
+		public GitHubService(IServiceProvider services)
 		{
-			this.HttpClient = httpClientFactory.CreateClient("GitHub");
+			this.Services = services;
 		}
 
-		public HttpClient HttpClient { get; }
+		public IServiceProvider Services { get; }
 
 		public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
 
@@ -41,10 +41,6 @@ namespace Fritz.StreamTools.Services
 			while (!cancellationToken.IsCancellationRequested)
 			{
 
-				if (lastRequest.AddMinutes(1) > DateTime.Now) continue;
-
-				lastRequest = DateTime.Now;
-
 				var lastUpdate = await GetLastCommittedTimestamp();
 				if (lastUpdate > this._LastUpdate)
 				{
@@ -65,12 +61,9 @@ namespace Fritz.StreamTools.Services
 		private async Task<DateTime> GetLastCommittedTimestamp()
 		{
 
-			var result = await this.HttpClient.GetAsync("https://localhost:5001/api/GitHub/Latest");
+			var repo = Services.GetService(typeof(GitHubRepository)) as GitHubRepository;
 
-			// "2018-06-02T15:08:38Z"
-			var resultDate = await result.Content.ReadAsStringAsync();
-
-			return DateTime.ParseExact(resultDate, "MM/dd/yyyy HH:mm:ss", null);
+			return await repo.GetLastCommitTimestamp();
 
 
 		}

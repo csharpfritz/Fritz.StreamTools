@@ -29,6 +29,8 @@ namespace Fritz.StreamTools.Models
 
 		public readonly GitHubClient Client;
 
+		private (string user, string repo)[] _Repositories = null;
+
 		public async Task<IEnumerable<GitHubInformation>> GetRecentContributors(string repositoryCsv) {
 
 			var outModel = new List<GitHubInformation>();
@@ -105,44 +107,67 @@ namespace Fritz.StreamTools.Models
 
 		public static DateTime LastUpdate = DateTime.MinValue;
 
-		public async Task<DateTime> GetLastCommitTimestamp(string repositoryCsv) {
+		public async Task<DateTime> GetLastCommitTimestamp(string repositoryCsv = "") {
 
 			return await AppCache.GetOrAddAsync("GitHubLastCommit", async x => 
 			{
 
-				x.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+				x.AbsoluteExpiration = DateTime.UtcNow.AddMinutes(1);
 
-				Logger.LogInformation($"Getting LastCommitTimestap for {repositoryCsv}");
+				var thisLastUpdate = DateTime.MinValue;
+				var repositories = GetRepositories(repositoryCsv);
 
-				var lastUpdates = new DateTime[] { };
-
-				var repositories = repositoryCsv.Split(',');
 				foreach (var r in repositories)
 				{
 
 					Logger.LogInformation($"Getting GitHub last update information for {r}");
 
-					var userName = r.Split('/')[0];
-					var repoName = r.Split('/')[1];
-
-					var updateInfo = (await Client.Repository.Get(userName, repoName));
+					var updateInfo = (await Client.Repository.Get(r.user, r.repo));
 					Logger.LogInformation($"{r} last updated at: {updateInfo.UpdatedAt.UtcDateTime}");
 
-					lastUpdates = lastUpdates.Append(updateInfo.UpdatedAt.UtcDateTime).ToArray();
+					thisLastUpdate = (thisLastUpdate < updateInfo.UpdatedAt.UtcDateTime) ? updateInfo.UpdatedAt.UtcDateTime : thisLastUpdate;
 
 				}
 
-				if (LastUpdate < lastUpdates.Max())
+				if (LastUpdate < thisLastUpdate)
 				{
 					AppCache.Remove("GitHubData");
 				}
 
-				return lastUpdates.Max();
+				return thisLastUpdate;
 
 			});
 
 		}
 
+		private (string user, string repo)[] GetRepositories(string repositoryCsv)
+		{
+
+			if (_Repositories != null)
+			{
+				return _Repositories;
+			}
+
+			if (string.IsNullOrEmpty(repositoryCsv))
+			{
+				repositoryCsv = Configuration.RepositoryCsv;
+			}
+
+			var arrRepositories = repositoryCsv.Split(',');
+			var outArr = new(string, string)[] { };
+
+			foreach (var repo in arrRepositories)
+			{
+
+				var parts = repo.Split('/');
+				outArr = outArr.Append((parts[0], parts[1])).ToArray();
+
+			}
+
+			_Repositories = outArr;
+			return outArr;
+
+		}
 	}
 
 }

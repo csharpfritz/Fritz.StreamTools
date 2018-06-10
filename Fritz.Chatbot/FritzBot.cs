@@ -80,7 +80,7 @@ namespace Fritz.StreamTools.Services
 
 						// Handle Q&A separately
 						_CommandRegistry.Remove("qna");
-			_CommandRegistry.Remove("ImageDescriptor");
+						_CommandRegistry.Remove("ImageDescriptor");
 
 						_qnaCommand = new AzureQnACommand()
 						{

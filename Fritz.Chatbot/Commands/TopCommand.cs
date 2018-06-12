@@ -1,11 +1,10 @@
-﻿using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Text;
-using System.Linq;
 using Microsoft.Extensions.Configuration;
+using Fritz.StreamTools.Services;
 
 namespace Fritz.Chatbot.Commands
 {
@@ -21,13 +20,17 @@ namespace Fritz.Chatbot.Commands
 			_StreamUrl = config["StreamUrl"];
 		}
 
+		public TopCommand(string streamUrl)
+		{
+			_StreamUrl = streamUrl;
+		}
+
 		public string Name => "Top";
 		public string Description => "Get top contributors from github";
 
 		public async Task Execute(string userName, string fullCommandText)
 		{
-			var client = new HttpClient();
-			var response = await client.GetAsync(_StreamUrl);
+			var response = await FritzBot.HttpClient.GetAsync(_StreamUrl);
 			var result = await response.Content.ReadAsStringAsync();
 			response.EnsureSuccessStatusCode();
 

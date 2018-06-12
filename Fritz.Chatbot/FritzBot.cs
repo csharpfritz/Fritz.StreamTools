@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace Fritz.StreamTools.Services
 				internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
 
 				public TimeSpan CooldownTime { get; private set; }
-
+				public static readonly HttpClient HttpClient = new HttpClient();
 				public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 				{
 

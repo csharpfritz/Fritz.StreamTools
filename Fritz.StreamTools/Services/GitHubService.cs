@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Fritz.Models;
 using Fritz.StreamTools.Models;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.Services
@@ -13,14 +14,16 @@ namespace Fritz.StreamTools.Services
 	public class GitHubService : IHostedService
 	{
 
-		private DateTime _LastUpdate = DateTime.MinValue;
+		public static DateTime LastUpdate = DateTime.MinValue;
 
-		public GitHubService(IHttpClientFactory httpClientFactory)
+		public GitHubService(IServiceProvider services, ILogger<GitHubService> logger)
 		{
-			this.HttpClient = httpClientFactory.CreateClient("GitHub");
+			this.Services = services;
+			this.Logger = logger;
 		}
 
-		public HttpClient HttpClient { get; }
+		public IServiceProvider Services { get; }
+		public ILogger<GitHubService> Logger { get; }
 
 		public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
 
@@ -42,19 +45,16 @@ namespace Fritz.StreamTools.Services
 			while (!cancellationToken.IsCancellationRequested)
 			{
 
-				if (lastRequest.AddMinutes(1) > DateTime.Now) continue;
-
-				lastRequest = DateTime.Now;
-
 				var lastUpdate = await GetLastCommittedTimestamp();
-				if (lastUpdate > this._LastUpdate)
+				if (lastUpdate > LastUpdate)
 				{
 
-					_LastUpdate = lastUpdate;
+					LastUpdate = lastUpdate;
 
 					var newInfo = new GitHubInformation[] { };
 
-					if (Updated != null) Updated.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
+					Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
+					Updated?.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
 
 				}
 				await Task.Delay(500);
@@ -66,12 +66,9 @@ namespace Fritz.StreamTools.Services
 		private async Task<DateTime> GetLastCommittedTimestamp()
 		{
 
-			var result = await this.HttpClient.GetAsync("https://localhost:5001/api/GitHub/Latest");
+			var repo = Services.GetService(typeof(GitHubRepository)) as GitHubRepository;
 
-			// "2018-06-02T15:08:38Z"
-			var resultDate = await result.Content.ReadAsStringAsync();
-
-			return DateTime.ParseExact(resultDate, "MM/dd/yyyy HH:mm:ss", null);
+			return await repo.GetLastCommitTimestamp();
 
 
 		}

@@ -52,9 +52,7 @@ namespace Fritz.StreamTools.StartupServices
 		private static void RegisterGitHubServices(IServiceCollection services, IConfiguration configuration)
 		{
 			services.AddScoped<GitHubRepository>();
-			services.AddTransient<Services.GitHubClient>();
-			services.AddSingleton<GitHubService>();
-
+			services.AddSingleton<Services.GitHubClient>();
 
 			services.AddScoped(_ => {
 				var client = new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools"));
@@ -69,8 +67,9 @@ namespace Fritz.StreamTools.StartupServices
 			});
 
 			var provider = services.BuildServiceProvider();
-			var svc = provider.GetService<GitHubService>();
+			var svc = new GitHubService(provider, provider.GetService<ILogger<GitHubService>>());
 			services.AddSingleton(svc as IHostedService);
+			services.AddSingleton(svc);
 
 		}
 

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using Services = Fritz.StreamTools.Services;
 using Fritz.Models;
+using Fritz.StreamTools.Services;
 
 namespace Fritz.StreamTools.Controllers
 {
@@ -84,22 +85,24 @@ namespace Fritz.StreamTools.Controllers
 
 		public IActionResult Test(int value, string devName, string projectName) {
 
-			var testInfo = new [] {
-				new GitHubInformation {
-					Repository = projectName
-				}
-			};
+			//var testInfo = new [] {
+			//	new GitHubInformation {
+			//		Repository = projectName
+			//	}
+			//};
 
-			testInfo[0].TopWeekContributors.Add(new GitHubContributor {
-				Author = devName,
-				Commits = value
-			});
+			//testInfo[0].TopWeekContributors.Add(new GitHubContributor {
+			//	Author = devName,
+			//	Commits = value
+			//});
 
-			GitHubRepository.LastUpdate = DateTime.MinValue;
+			//GitHubRepository.LastUpdate = DateTime.MinValue;
 
-			Client.UpdateGitHub(testInfo);
+			//Client.UpdateGitHub(testInfo);
 
-			return Json(testInfo);
+			GitHubService.LastUpdate = DateTime.MinValue;
+
+			return Json(0);
 
 
 		}

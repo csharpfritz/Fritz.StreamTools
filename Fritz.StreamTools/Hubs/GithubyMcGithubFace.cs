@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Fritz.StreamTools.Hubs
 {
 
+	/// So named because @rachelAppel said so..
 	public class GithubyMcGithubFace : BaseHub
 	{
 		public GitHubService GitHubService { get; }
@@ -18,7 +19,7 @@ namespace Fritz.StreamTools.Hubs
 		{
 
 			this.GitHubService = gitHubService;
-			this.GitHubClient = client;
+			this.GitHubClient = client;  
 
 			GitHubService.Updated += Git_Updated;
 

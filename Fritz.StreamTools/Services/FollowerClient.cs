@@ -1,15 +1,13 @@
 ﻿// REF: https://dev.mixer.com/reference/constellation/index.html
 
-using System;
 using System.Collections.Generic;
-using Fritz.Models;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
-using Fritz.StreamTools.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Fritz.StreamTools.Services
 {
-	public class FollowerClient
+  public class FollowerClient
 	{
 
 		public FollowerClient(IHubContext<FollowerHub> followerContext)

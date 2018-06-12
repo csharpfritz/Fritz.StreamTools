@@ -1,4 +1,4 @@
-﻿@using Fritz.Models
+﻿@using Fritz.StreamLib.Core
 @model GitHubInformation
 @{
 	Layout = null;
@@ -17,17 +17,17 @@
 			align-items: center;
 		}
 
-		#content div {
-			display: flex;
-			flex-direction: row;
-			align-items: center;
-			white-space:nowrap;
-		}
+			#content div {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				white-space: nowrap;
+			}
 
 		h2, ol, li, span {
 			float: left;
 			margin-left: 3px;
-			display: inline!important;
+			display: inline !important;
 			font-size: 12pt;
 			white-space: nowrap;
 		}
@@ -36,46 +36,48 @@
 			clear: left;
 			display: block;
 		}
-
 	</style>
 
 </head>
 <body>
 
-<div id="content">
+	<div id="content">
 
-<h2>Top week:</h2>
-@if (Model.TopWeekContributors.Count() == 0) {
-	<span>No contributors this week</span>
-} else {
+		<h2>Top week:</h2>
+		@if (Model.TopWeekContributors.Count() == 0)
+		{
+			<span>No contributors this week</span>
+		}
+		else
+		{
 
-	@foreach (var item in Model.TopWeekContributors)
-	{
-		<span>@Html.DisplayFor(modelItem => item.Author)</span>
-		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
-	}
+			@foreach (var item in Model.TopWeekContributors)
+			{
+				<span>@Html.DisplayFor(modelItem => item.Author)</span>
+								<span>@Html.DisplayFor(modelItem => item.Commits)</span>
+															}
 
-}
+					}
 
-<h2>Top month:</h2>
+				<h2>Top month:</h2>
 
-	@foreach (var item in Model.TopMonthContributors)
-	{
-		<span>@Html.DisplayFor(modelItem => item.Author)</span>
-		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
-	}
-
-
-<h2>Top All Time:</h2>
-
-	@foreach (var item in Model.TopEverContributors)
-	{
-		<span>@Html.DisplayFor(modelItem => item.Author)</span>
-		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
-	}
+				@foreach (var item in Model.TopMonthContributors)
+				{
+					<span>@Html.DisplayFor(modelItem => item.Author)</span>
+										<span>@Html.DisplayFor(modelItem => item.Commits)</span>
+																			}
 
 
-</div>
+								<h2>Top All Time:</h2>
 
-</body>
-</html>
+								@foreach (var item in Model.TopEverContributors)
+								{
+									<span>@Html.DisplayFor(modelItem => item.Author)</span>
+																		<span>@Html.DisplayFor(modelItem => item.Commits)</span>
+																																			}
+
+
+															</div>
+
+														</body>
+													</html>

@@ -1,4 +1,4 @@
-using Fritz.Models;
+using Fritz.StreamLib.Core;
 using System;
 using System.Collections.Generic;
 

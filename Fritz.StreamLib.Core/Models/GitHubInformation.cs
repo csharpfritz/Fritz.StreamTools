@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Fritz.Models
+namespace Fritz.StreamLib.Core
 {
     public class GitHubInformation
   {
@@ -10,7 +10,7 @@ namespace Fritz.Models
 			TopMonthContributors = new List<GitHubContributor>();
 			TopEverContributors = new List<GitHubContributor>();
 		}
-
+		
 		public string Repository { get; set; }
 
 		public List<GitHubContributor> TopWeekContributors { get; private set; }

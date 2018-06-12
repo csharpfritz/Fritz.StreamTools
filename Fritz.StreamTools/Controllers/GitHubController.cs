@@ -11,7 +11,6 @@ using LazyCache;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using Services = Fritz.StreamTools.Services;
-using Fritz.Models;
 using Fritz.StreamTools.Services;
 
 namespace Fritz.StreamTools.Controllers

@@ -1,4 +1,4 @@
-﻿namespace Fritz.Models
+﻿namespace Fritz.StreamLib.Core
 {
     public class GitHubContributor
   {

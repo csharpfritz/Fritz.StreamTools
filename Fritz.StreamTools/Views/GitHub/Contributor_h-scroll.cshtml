@@ -1,8 +1,8 @@
-@using Fritz.Models
+@using Fritz.StreamLib.Core
 @model IEnumerable<GitHubInformation>
 @{
 	Layout = null;
-	var Config = ViewBag.Configuration as GitHubConfiguration;
+ var Config = ViewBag.Configuration as GitHubConfiguration;
 }
 
 <html>
@@ -40,55 +40,58 @@
 </head>
 <body>
 
-<p id="marquee">
+	<p id="marquee">
 
-	@foreach (var repo in Model)
-	{
-
-		<b>@repo.Repository</b>
-
-	<span id="topWeek">
-		<u>Top week:</u>
-		@if (repo.TopWeekContributors.Count() == 0)
-		{
-			@:No contributors this week
-		}
-		else
+		@foreach (var repo in Model)
 		{
 
-			@await Html.PartialAsync("_ContributorTickerSegment", repo.TopWeekContributors)
+			<b>@repo.Repository</b>
 
-		}
-		</span>
+						<span id="topWeek">
+							<u>Top week:</u>
+							@if (repo.TopWeekContributors.Count() == 0)
+							{
+								@:No contributors this week
+							}
+							else
+							{
 
-		<span id="topMonth">
+								@await Html.PartialAsync("_ContributorTickerSegment", repo.TopWeekContributors)
 
-		<u>Top month:</u>
+															}
+													</span>
 
-		@if (repo.TopMonthContributors.Count() == 0) {
-			@:No contributors this month
-		} else {
-			@await Html.PartialAsync("_ContributorTickerSegment", repo.TopMonthContributors)
-		}
-		</span>
+													<span id="topMonth">
 
-		<span id="topAllTime">
+														<u>Top month:</u>
 
-		<u>Top All Time:</u>
+														@if (repo.TopMonthContributors.Count() == 0)
+														{
+															@:No contributors this month
+														}
+														else
+														{
+															@await Html.PartialAsync("_ContributorTickerSegment", repo.TopMonthContributors)
+																													}
+																											</span>
 
-		@await Html.PartialAsync("_ContributorTickerSegment", repo.TopEverContributors)
+																											<span id="topAllTime">
 
-		</span>
+																												<u>Top All Time:</u>
 
-	}
+																												@await Html.PartialAsync("_ContributorTickerSegment", repo.TopEverContributors)
 
-</p>
+																																																							</span>
 
-<script type='text/javascript' src='/lib/jquery.js'></script>
-<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.3.1/jquery.marquee.min.js'></script>
-<script src="~/lib/signalr/signalr-client.js"></script>
-<script src="~/js/mcGitHubbub.js"></script>
-<script type="text/javascript">
+																																																						}
+
+			</p>
+
+			<script type='text/javascript' src='/lib/jquery.js'></script>
+			<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.3.1/jquery.marquee.min.js'></script>
+			<script src="~/lib/signalr/signalr-client.js"></script>
+			<script src="~/js/mcGitHubbub.js"></script>
+			<script type="text/javascript">
 
 	var $mq = $("#marquee");
 
@@ -128,7 +131,7 @@
 }());
 
 
-</script>
+			</script>
 
-</body>
-</html>
+		</body>
+	</html>

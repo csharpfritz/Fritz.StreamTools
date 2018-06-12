@@ -1,17 +1,14 @@
 using System;
-using System.Globalization;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Fritz.Models;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.Services
 {
-	public class GitHubService : IHostedService
+  public class GitHubService : IHostedService
 	{
 
 		public static DateTime LastUpdate = DateTime.MinValue;

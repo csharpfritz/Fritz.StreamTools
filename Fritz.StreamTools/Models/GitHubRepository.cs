@@ -1,4 +1,4 @@
-﻿using Fritz.Models;
+﻿using Fritz.StreamLib.Core;
 using LazyCache;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

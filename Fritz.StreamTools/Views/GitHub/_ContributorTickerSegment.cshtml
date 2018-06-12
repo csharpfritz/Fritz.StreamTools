@@ -1,7 +1,7 @@
-@using Fritz.Models
+@using Fritz.StreamLib.Core
 @model List<GitHubContributor>
 
 @foreach (var item in Model)
 {
 	<text>@item.Author @item.Commits </text>
-}
+	}

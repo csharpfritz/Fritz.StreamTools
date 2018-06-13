@@ -31,7 +31,6 @@ namespace Fritz.StreamTools.Services
 				internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
 
 				public TimeSpan CooldownTime { get; private set; }
-				public static readonly HttpClient HttpClient = new HttpClient();
 				public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
 				{
 

@@ -4,25 +4,22 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using Fritz.StreamTools.Services;
+using System.Net.Http;
 
 namespace Fritz.Chatbot.Commands
 {
   public class TopCommand : ICommand
   {
-		private readonly string _StreamUrl;
+		private readonly HttpClient _Client;
+
 		public IChatService ChatService { get; set; }
 
 		public TopCommand() { }
 
-		public TopCommand(IConfiguration config)
+		public TopCommand(IConfiguration config, HttpClient client)
 		{
-			_StreamUrl = config["StreamUrl"];
-		}
-
-		public TopCommand(string streamUrl)
-		{
-			_StreamUrl = streamUrl;
+			client.BaseAddress = new System.Uri( config["StreamUrl"]);
+			_Client = client;
 		}
 
 		public string Name => "Top";
@@ -30,7 +27,7 @@ namespace Fritz.Chatbot.Commands
 
 		public async Task Execute(string userName, string fullCommandText)
 		{
-			var response = await FritzBot.HttpClient.GetAsync(_StreamUrl);
+			var response = await _Client.GetAsync("/Github/ContributorsInformationApi");
 			var result = await response.Content.ReadAsStringAsync();
 			response.EnsureSuccessStatusCode();
 

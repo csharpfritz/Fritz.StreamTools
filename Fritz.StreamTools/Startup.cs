@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.Chatbot.Commands;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
@@ -29,6 +30,8 @@ namespace Fritz.StreamTools
 		{
 
 			services.AddTwitchClient();
+			services.AddHttpClient<TopCommand>();
+			services.AddHttpClient();
 
 			StartupServices.ConfigureServices.Execute(services, Configuration);
 

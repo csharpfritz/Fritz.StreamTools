@@ -3,7 +3,7 @@ class McGitHubbub {
 		constructor() {
 				this.onUpdated = null;
 				this.debug = true;
-				this._hub = null;
+				this._hub = null;                 
 		}
 
 		start(groups) {
@@ -26,9 +26,9 @@ class McGitHubbub {
 						}, 5000);
 				});
 
-				this._hub.on('OnGitHubUpdated', (contributors) => {
-						if (this.debug) console.debug("OnGitHubUpdated", { contributors });
-						if (this.onUpdated) this.onUpdated(contributors);
+				this._hub.on('OnGitHubUpdated', (repository, userName, commits) => {
+						if (this.debug) console.debug("OnGitHubUpdated", { repository, userName, commits });
+						if (this.onUpdated) this.onUpdated(repository, userName, commits);
 				});
 
 				return this._hub.start();

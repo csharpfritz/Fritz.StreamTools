@@ -39,9 +39,21 @@ namespace Fritz.StreamTools.Controllers
 
 		private readonly GitHubConfiguration _gitHubConfiguration;
 
-		public async Task<IActionResult> ContributorsInformation()
+		public async Task<IActionResult> ContributorsInformation(string repo, string userName, int count)
 		{
 			var outModel = await _gitHubRepository.GetRecentContributors(_gitHubConfiguration.RepositoryCsv);
+
+			if (!string.IsNullOrEmpty(repo))
+			{
+				outModel.First(i => i.Repository.Equals(repo, StringComparison.InvariantCultureIgnoreCase))
+				.TopWeekContributors.Add(new GitHubContributor
+				{
+					Author = userName,
+					Commits = count
+				});
+			}
+
+
 
 			ViewBag.Configuration = _gitHubConfiguration;
 
@@ -60,7 +72,7 @@ namespace Fritz.StreamTools.Controllers
 
 			var outModel = await _gitHubRepository.GetLastCommitTimestamp(_gitHubConfiguration.RepositoryCsv);
 
-			return Ok(outModel.ToString("MM/dd/yyyy HH:mm:ss"));
+			return Ok(outModel.Item1.ToString("MM/dd/yyyy HH:mm:ss"));
 
 		}
 
@@ -76,21 +88,6 @@ namespace Fritz.StreamTools.Controllers
 
 
 		public IActionResult Test(int value, string devName, string projectName) {
-
-			//var testInfo = new [] {
-			//	new GitHubInformation {
-			//		Repository = projectName
-			//	}
-			//};
-
-			//testInfo[0].TopWeekContributors.Add(new GitHubContributor {
-			//	Author = devName,
-			//	Commits = value
-			//});
-
-			//GitHubRepository.LastUpdate = DateTime.MinValue;
-
-			//Client.UpdateGitHub(testInfo);
 
 			GitHubService.LastUpdate = DateTime.MinValue;
 

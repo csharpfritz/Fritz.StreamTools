@@ -144,7 +144,7 @@ namespace Fritz.StreamTools.StartupServices
 
 				options.KeepAliveInterval = TimeSpan.FromSeconds(5);
 
-			}).AddJsonProtocol();
+			}).AddMessagePackProtocol();
 
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);

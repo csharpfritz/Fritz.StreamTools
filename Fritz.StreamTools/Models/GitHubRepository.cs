@@ -56,6 +56,7 @@ namespace Fritz.StreamTools.Models
 					try {
 						contributors =
 							await Client.Repository.Statistics.GetContributors(thisUser, thisRepo);
+
 					}
 					catch (RateLimitExceededException) {
 						// do nothing... return empty collection
@@ -107,7 +108,7 @@ namespace Fritz.StreamTools.Models
 
 		public static DateTime LastUpdate = DateTime.MinValue;
 
-		public async Task<DateTime> GetLastCommitTimestamp(string repositoryCsv = "") {
+		public async Task<(DateTime, string, string)> GetLastCommitTimestamp(string repositoryCsv = "") {
 
 			return await AppCache.GetOrAddAsync("GitHubLastCommit", async x => 
 			{
@@ -116,6 +117,7 @@ namespace Fritz.StreamTools.Models
 
 				var thisLastUpdate = DateTime.MinValue;
 				var repositories = GetRepositories(repositoryCsv);
+				(string, string) updatedRepository = ("","");
 
 				foreach (var r in repositories)
 				{
@@ -127,6 +129,8 @@ namespace Fritz.StreamTools.Models
 
 					thisLastUpdate = (thisLastUpdate < updateInfo.UpdatedAt.UtcDateTime) ? updateInfo.UpdatedAt.UtcDateTime : thisLastUpdate;
 
+					updatedRepository = r;
+
 				}
 
 				if (LastUpdate < thisLastUpdate)
@@ -134,7 +138,7 @@ namespace Fritz.StreamTools.Models
 					AppCache.Remove("GitHubData");
 				}
 
-				return thisLastUpdate;
+				return (thisLastUpdate, updatedRepository.Item1, updatedRepository.Item2);
 
 			});
 

@@ -25,10 +25,10 @@ namespace Fritz.StreamTools.Hubs
 
 		}
 
-		private void Git_Updated(object sender, GitHubUpdatedEventArgs e)
+		private void Git_Updated(object sender, GitHubNewContributorsEventArgs e)
 		{
 
-			this.GitHubClient.UpdateGitHub(e.Contributors);
+			this.GitHubClient.UpdateGitHub(e.Repository, e.UserName, e.NewCommits);
 
 		}
 	}

@@ -24,7 +24,7 @@ namespace Fritz.StreamTools.Services
 		public IServiceProvider Services { get; }
 		public ILogger<GitHubService> Logger { get; }
 
-		public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
+		public event EventHandler<GitHubNewContributorsEventArgs> Updated = null;
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
@@ -45,15 +45,18 @@ namespace Fritz.StreamTools.Services
 			{
 
 				var lastUpdate = await GetLastCommittedTimestamp();
-				if (lastUpdate > LastUpdate)
+				if (lastUpdate.Item1 > LastUpdate)
 				{
 
-					LastUpdate = lastUpdate;
+					LastUpdate = lastUpdate.Item1;
 
 					var newInfo = new GitHubInformation[] { };
 
 					Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
-					Updated?.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
+
+					// TODO: Identify who the new update is, and how much updated
+
+					Updated?.Invoke(this, new GitHubNewContributorsEventArgs(lastUpdate.Item2, "rachel", 5));
 
 				}
 				await Task.Delay(500);
@@ -62,12 +65,14 @@ namespace Fritz.StreamTools.Services
 
 		}
 
-		private async Task<DateTime> GetLastCommittedTimestamp()
+		private async Task<(DateTime, string)> GetLastCommittedTimestamp()
 		{
 
 			var repo = Services.GetService(typeof(GitHubRepository)) as GitHubRepository;
 
-			return await repo.GetLastCommitTimestamp();
+			var lastUpdate = await repo.GetLastCommitTimestamp();
+
+			return (lastUpdate.Item1, lastUpdate.Item3);
 
 
 		}

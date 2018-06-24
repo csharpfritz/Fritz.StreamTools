@@ -1,25 +1,29 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Fritz.StreamTools.Hubs;
-using Fritz.StreamTools.Models;
-using Fritz.StreamTools.Services;
 using Fritz.Twitch;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools
 {
 	public class Startup
 	{
-		public Startup(IConfiguration configuration)
+		public Startup(IHostingEnvironment env)
 		{
-			Configuration = configuration;
+			var builder = new ConfigurationBuilder();
+			builder
+				.SetBasePath(env.ContentRootPath)
+				.AddJsonFile("appsettings.json", optional: false, reloadOnChange:true)
+				.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional:true, reloadOnChange:true)
+				.AddEnvironmentVariables();
+
+			if (env.IsDevelopment())
+			{
+				builder.AddUserSecrets<Startup>();
+			}
+
+			Configuration = builder.Build();
 		}
 
 		public IConfiguration Configuration { get; }
@@ -35,7 +39,7 @@ namespace Fritz.StreamTools
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, Microsoft.Extensions.Hosting.IHostingEnvironment env)
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 		{
 			if (env.IsDevelopment())
 			{

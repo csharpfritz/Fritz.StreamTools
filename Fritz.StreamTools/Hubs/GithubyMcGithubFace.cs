@@ -9,20 +9,13 @@ namespace Fritz.StreamTools.Hubs
 	/// So named because @rachelAppel said so..
 	public class GithubyMcGithubFace : BaseHub
 	{
-		public GitHubService GitHubService { get; }
 		public GitHubClient GitHubClient { get; }
 
 		public GithubyMcGithubFace(
-			GitHubService gitHubService,
 			GitHubClient client
 			)
 		{
-
-			this.GitHubService = gitHubService;
-			this.GitHubClient = client;  
-
-			GitHubService.Updated += Git_Updated;
-
+			this.GitHubClient = client;
 		}
 
 		private void Git_Updated(object sender, GitHubUpdatedEventArgs e)

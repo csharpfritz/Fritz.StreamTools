@@ -89,12 +89,12 @@ namespace Fritz.StreamTools.Models
 		return outModel;
 	}
 
-		public async Task<IEnumerable<GitHubInformation>> GetRecentContributors(string repositoryCsv)
+		public async Task<IEnumerable<GitHubInformation>> GetRecentContributors(string repositoryCsv = "")
 		{
-			return await AppCache.GetOrAddAsync<List<GitHubInformation>>("GitHubData", async (x) =>
+			return await AppCache.GetOrAddAsync<List<GitHubInformation>>("GitHubData", x =>
 			{
 				x.AbsoluteExpiration = DateTime.Now.AddMinutes(60);
-				return await FetchContributersFromGithub(repositoryCsv);
+				return FetchContributersFromGithub(repositoryCsv);
 			});
 		}
 
@@ -132,7 +132,7 @@ namespace Fritz.StreamTools.Models
 
 		}
 
-		private (string user, string repo)[] GetRepositories(string repositoryCsv)
+		private (string user, string repo)[] GetRepositories(string repositoryCsv = "")
 		{
 
 			if (_Repositories != null)

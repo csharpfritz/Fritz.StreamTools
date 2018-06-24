@@ -52,9 +52,9 @@ namespace Fritz.StreamTools.StartupServices
 		private static void RegisterGitHubServices(IServiceCollection services, IConfiguration configuration)
 		{
 			services.AddSingleton<GitHubRepository>();
-			services.AddSingleton<Services.GitHubClient>();
+			services.AddSingleton<GithubyMcGithubFaceClient>();
 
-			services.AddTransient(_ => new Octokit.GitHubClient(new ProductHeaderValue("Fritz.StreamTools"))
+			services.AddTransient(_ => new GitHubClient(new ProductHeaderValue("Fritz.StreamTools"))
 			{
 				Credentials = new Credentials(Configuration["GitHub:User"], Configuration["GitHub:AuthenticationToken"])
 			});

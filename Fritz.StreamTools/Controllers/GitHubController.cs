@@ -5,12 +5,8 @@ using Octokit;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Caching.Memory;
 using LazyCache;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using Services = Fritz.StreamTools.Services;
 using Fritz.StreamTools.Services;
 
 namespace Fritz.StreamTools.Controllers
@@ -20,7 +16,7 @@ namespace Fritz.StreamTools.Controllers
 		public GitHubController(
 			IAppCache cache,
 			GitHubRepository repository,
-			Services.GitHubClient client,
+			GithubyMcGithubFaceClient client,
 			ILogger<GitHubController> logger,
 			IOptions<GitHubConfiguration> githubConfiguration)
 		{
@@ -33,7 +29,7 @@ namespace Fritz.StreamTools.Controllers
 
 		public IAppCache Cache { get; }
 		public ILogger<GitHubController> Logger { get; }
-		public Services.GitHubClient Client { get; }
+		public GithubyMcGithubFaceClient Client { get; }
 
 		private readonly GitHubRepository _gitHubRepository;
 

@@ -41,7 +41,7 @@ namespace Fritz.StreamTools.Services
 		  using (var scope = Services.CreateScope())
 		  {
 			  var repo = scope.ServiceProvider.GetService(typeof(GitHubRepository)) as GitHubRepository;
-			  var githubClient = scope.ServiceProvider.GetService(typeof(GitHubClient)) as GitHubClient;
+			  var mcGithubFaceClient = scope.ServiceProvider.GetService(typeof(GithubyMcGithubFaceClient)) as GithubyMcGithubFaceClient;
 				while (!cancellationToken.IsCancellationRequested)
 			  {
 				  if (repo != null)
@@ -55,7 +55,7 @@ namespace Fritz.StreamTools.Services
 						  var newInfo = new GitHubInformation[] { };
 
 						  Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
-						  githubClient?.UpdateGitHub(newInfo);
+						  mcGithubFaceClient?.UpdateGitHub(newInfo);
 					  }
 				  }
 				  await Task.Delay(500, cancellationToken);

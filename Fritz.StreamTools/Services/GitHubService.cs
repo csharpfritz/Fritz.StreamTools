@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Threading;
@@ -22,8 +23,8 @@ namespace Fritz.StreamTools.Services
 			this.Logger = logger;
 		}
 
-		public IServiceProvider Services { get; }
-		public ILogger<GitHubService> Logger { get; }
+		private IServiceProvider Services { get; }
+		private ILogger<GitHubService> Logger { get; }
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
@@ -48,14 +49,14 @@ namespace Fritz.StreamTools.Services
 				  {
 					  var lastUpdate = await repo.GetLastCommitTimestamp();
 					  if (lastUpdate > LastUpdate)
-					  {
+						{
 
-						  LastUpdate = lastUpdate;
+							LastUpdate = lastUpdate;
 
-						  var newInfo = new GitHubInformation[] { };
+						  var newInfo = await repo.GetRecentContributors(); //Refetch the contributers here (GetLastCommitTimestamp() cleared the cache for us)
 
-						  Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
-						  mcGithubFaceClient?.UpdateGitHub(newInfo);
+							Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
+							mcGithubFaceClient?.UpdateGitHub(newInfo);
 					  }
 				  }
 				  await Task.Delay(500, cancellationToken);

@@ -7,8 +7,10 @@
 
 <html>
 <head>
-    <title>Follower Count</title>
-    <style>
+	<title>Follower Count</title>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/solid.css" integrity="sha384-TbilV5Lbhlwdyc4RuIV/JhD8NR+BfMrvz4BL5QFa2we1hQu6wvREr3v6XSRfCTRp" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/fontawesome.css" integrity="sha384-ozJwkrqb90Oa3ZNb+yKFW2lToAWYdTiF1vt8JiH5ptTGHTGcN7qdoR1F95e0kYyG" crossorigin="anonymous">
+	<style>
 
         body {
           background-color: @Model.BackgroundColor;
@@ -32,11 +34,11 @@
 			**/
         }
 
-    </style>
+	</style>
 </head>
 <body>
 
-  <span id="fg">Followers: <span id="count">@Model.CurrentValue</span></span>
+  <span id="fg"><i class="fas fa-user-friends"></i> <span id="count">@Model.CurrentValue</span></span>
 
 		<script src="~/lib/signalr/signalr-client.js"></script>
 		<script src="~/js/streamhub.js"></script>

@@ -23,5 +23,24 @@ namespace Fritz.Chatbot.Helpers
 
 			return value;
 		}
+
+		public static bool IsValidRegularExpression(this string value)
+		{
+			if (string.IsNullOrEmpty(value))
+			{
+				return false;
+			}
+
+			try
+			{
+				Regex.IsMatch("", value);
+			}
+			catch (ArgumentException)
+			{
+				return false;
+			}
+
+			return true;
+		}
   }
 }

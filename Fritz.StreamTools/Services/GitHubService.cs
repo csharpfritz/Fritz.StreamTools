@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,8 +25,6 @@ namespace Fritz.StreamTools.Services
 		public IServiceProvider Services { get; }
 		public ILogger<GitHubService> Logger { get; }
 
-		public event EventHandler<GitHubUpdatedEventArgs> Updated = null;
-
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
 			return MonitorUpdates(cancellationToken);
@@ -38,39 +37,30 @@ namespace Fritz.StreamTools.Services
 
 		private async Task MonitorUpdates(CancellationToken cancellationToken)
 		{
-
 			var lastRequest = DateTime.Now;
+		  using (var scope = Services.CreateScope())
+		  {
+			  var repo = scope.ServiceProvider.GetService(typeof(GitHubRepository)) as GitHubRepository;
+			  var mcGithubFaceClient = scope.ServiceProvider.GetService(typeof(GithubyMcGithubFaceClient)) as GithubyMcGithubFaceClient;
+				while (!cancellationToken.IsCancellationRequested)
+			  {
+				  if (repo != null)
+				  {
+					  var lastUpdate = await repo.GetLastCommitTimestamp();
+					  if (lastUpdate > LastUpdate)
+					  {
 
-			while (!cancellationToken.IsCancellationRequested)
-			{
+						  LastUpdate = lastUpdate;
 
-				var lastUpdate = await GetLastCommittedTimestamp();
-				if (lastUpdate > LastUpdate)
-				{
+						  var newInfo = new GitHubInformation[] { };
 
-					LastUpdate = lastUpdate;
-
-					var newInfo = new GitHubInformation[] { };
-
-					Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
-					Updated?.Invoke(this, new GitHubUpdatedEventArgs(newInfo, lastUpdate));
-
-				}
-				await Task.Delay(500);
-
-			}
-
+						  Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
+						  mcGithubFaceClient?.UpdateGitHub(newInfo);
+					  }
+				  }
+				  await Task.Delay(500, cancellationToken);
+			  }
+		  }
 		}
-
-		private async Task<DateTime> GetLastCommittedTimestamp()
-		{
-
-			var repo = Services.GetService(typeof(GitHubRepository)) as GitHubRepository;
-
-			return await repo.GetLastCommitTimestamp();
-
-
-		}
-
 	}
 }

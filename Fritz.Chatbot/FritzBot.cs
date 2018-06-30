@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Commands;
+using Fritz.Chatbot.Helpers;
 using Fritz.StreamLib.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,10 @@ namespace Fritz.StreamTools.Services
 				readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
 				internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
 
+				private readonly string urlRegex;
+				private readonly string titleRegex;
+				private readonly string titleMessageTemplate;
+
 				public TimeSpan CooldownTime { get; private set; }
 
 				public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
@@ -37,13 +42,29 @@ namespace Fritz.StreamTools.Services
 						var chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 						Initialize(config, chatServices, loggerFactory);
 
+						urlRegex = _config[$"{CONFIGURATION_ROOT}:HttpLinkTitleCommand:UrlRegex"];
+						if (!urlRegex.IsValidRegularExpression())
+						{
+								_logger.LogWarning($"Regular expression for URL is not set or is not valid. Default used.");
+						}
+
+						titleRegex = _config[$"{CONFIGURATION_ROOT}:HttpLinkTitleCommand:TitleRegex"];
+						if (!titleRegex.IsValidRegularExpression())
+						{
+								_logger.LogWarning($"Regular expression for title is not set or is not valid. Default used.");
+						}
+
+						titleMessageTemplate = _config[$"{CONFIGURATION_ROOT}:HttpLinkTitleCommand:PageTitleMessageTemplate"];
+						if (!titleMessageTemplate.IsValidRegularExpression())
+						{
+								_logger.LogWarning($"Link message template is not set. Default used.");
+						}
 				}
 
 				internal FritzBot() { }
 
 				internal void Initialize(IConfiguration config, IChatService[] chatServices, ILoggerFactory loggerFactory)
 				{
-
 						_config = config;
 						_logger = loggerFactory.CreateLogger(nameof(FritzBot));
 						_chatServices = chatServices;
@@ -51,7 +72,6 @@ namespace Fritz.StreamTools.Services
 						ConfigureCommandCooldown(config);
 
 						RegisterCommands();
-
 				}
 
 				private void ConfigureCommandCooldown(IConfiguration config)
@@ -63,6 +83,12 @@ namespace Fritz.StreamTools.Services
 
 				private void RegisterCommands()
 				{
+						var internalCommands = new string[]
+						{
+								"AzureQnACommand",
+								"ImageDescriptorCommand",
+								"HttpPageTitleCommand"
+						};
 
 						if (_CommandRegistry.Count > 0)
 						{
@@ -73,14 +99,10 @@ namespace Fritz.StreamTools.Services
 
 						foreach (var type in commandTypes)
 						{
-								if (type.Name == "ICommand") continue;
+								if (type.Name == "ICommand" || internalCommands.Contains(type.Name)) continue;
 								var cmd = Activator.CreateInstance(type) as ICommand;
 								_CommandRegistry.Add(cmd.Name, cmd);
 						}
-
-						// Handle Q&A separately
-						_CommandRegistry.Remove("qna");
-						_CommandRegistry.Remove("ImageDescriptor");
 
 						_qnaCommand = new AzureQnACommand()
 						{
@@ -136,6 +158,8 @@ namespace Fritz.StreamTools.Services
 						ChatUserInfo user;
 						if (!_activeUsers.TryGetValue(userKey, out user))
 								user = new ChatUserInfo();
+
+						await HandleHttpPageTitle(e.UserName, e.Message, sender as IChatService);
 
 						// message is empty OR message doesn't start with ! AND doesn't end with ?
 						if (e.Message.EndsWith("?"))
@@ -226,6 +250,24 @@ namespace Fritz.StreamTools.Services
 						return;
 				}
 
+				private async Task HandleHttpPageTitle(string username, string message, IChatService chatService)
+				{
+						if (!HttpPageTitleCommand.ContainsLink(urlRegex, message))
+						{
+								return;
+						}
+
+						try
+						{
+								var command = new HttpPageTitleCommand(urlRegex, titleRegex, titleMessageTemplate);
+								command.ChatService = chatService;
+								await command.Execute(username, message);
+						}
+						catch (Exception e)
+						{
+								_logger.LogError($"{nameof(FritzBot)}.{nameof(HandleHttpPageTitle)}: {e.Message}");
+						}
+				}
 
 				private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
 

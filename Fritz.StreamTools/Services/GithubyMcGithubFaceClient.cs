@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Fritz.StreamTools.Services
 {
-	public class GitHubClient
+	public class GithubyMcGithubFaceClient
 	{
 
-		public GitHubClient(IHubContext<GithubyMcGithubFace> mcGitHubContext)
+		public GithubyMcGithubFaceClient(IHubContext<GithubyMcGithubFace> mcGitHubContext)
 		{
 
 			this.McGitHubContext = mcGitHubContext;

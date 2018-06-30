@@ -175,5 +175,42 @@ namespace Test.Chatbot
 			_chatservice.Verify(sm => sm.SendMessageAsync(
 						It.Is<string>(x => x.StartsWith("Supported commands: !echo !help !ping !quote !skeet"))), Times.Exactly(2));
 		}
+
+		[Fact]
+		public void ShouldReturnLinkTitle()
+		{
+			var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);
+			Task.WaitAll(sut.StartAsync(new CancellationToken()));
+			var args = new ChatMessageEventArgs
+			{
+				Message = "Hey! Check this link: www.google.com",
+				UserName = "testusername",
+				IsModerator = false,
+				IsOwner = false
+			};
+
+			_chatservice.Raise(cs => cs.ChatMessage += null, args);
+			_chatservice.Verify(sm => sm.SendMessageAsync(
+							It.Is<string>(x => x.StartsWith("testusername's linked page title:"))), Times.Exactly(1));
+		}
+
+
+		[Fact]
+		public void ShouldReturnTwoLinkTitles()
+		{
+			var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);
+			Task.WaitAll(sut.StartAsync(new CancellationToken()));
+			var args = new ChatMessageEventArgs
+			{
+				Message = "Which search engine is better? www.google.com or www.bing.com",
+				UserName = "testusername",
+				IsModerator = false,
+				IsOwner = false
+			};
+
+			_chatservice.Raise(cs => cs.ChatMessage += null, args);
+			_chatservice.Verify(sm => sm.SendMessageAsync(
+							It.Is<string>(x => x.StartsWith("testusername's linked page title:"))), Times.Exactly(2));
+		}
 	}
 }

@@ -48,15 +48,13 @@ namespace Fritz.StreamTools.Services
 				  if (repo != null)
 				  {
 					  var lastUpdate = await repo.GetLastCommitTimestamp();
-					  if (lastUpdate > LastUpdate)
-						{
+					  if (lastUpdate.Item1 > LastUpdate)
+					  {
 
-							LastUpdate = lastUpdate;
+						  LastUpdate = lastUpdate.Item1;
 
-						  var newInfo = await repo.GetRecentContributors(); //Refetch the contributers here (GetLastCommitTimestamp() cleared the cache for us)
-
-							Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
-							mcGithubFaceClient?.UpdateGitHub(newInfo);
+						  Logger.LogWarning($"Triggering refresh of GitHub scoreboard with updates as of {lastUpdate}");
+						  mcGithubFaceClient?.UpdateGitHub("", "", 0);
 					  }
 				  }
 				  await Task.Delay(500, cancellationToken);

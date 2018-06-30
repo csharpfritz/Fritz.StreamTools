@@ -18,10 +18,10 @@ namespace Fritz.StreamTools.Hubs
 			this.GithubyMcGithubFaceClient = client;
 		}
 
-		private void Git_Updated(object sender, GitHubUpdatedEventArgs e)
+		private void Git_Updated(object sender, GitHubNewContributorsEventArgs e)
 		{
 
-			this.GithubyMcGithubFaceClient.UpdateGitHub(e.Contributors);
+			this.GithubyMcGithubFaceClient.UpdateGitHub(e.Repository, e.UserName, e.NewCommits);
 
 		}
 	}

@@ -17,9 +17,9 @@ namespace Fritz.StreamTools.Services
 
 		private IHubContext<GithubyMcGithubFace> McGitHubContext { get; }
 
-		internal void UpdateGitHub(IEnumerable<GitHubInformation> contributors)
+		internal void UpdateGitHub(string repository, string userName, int commits)
 		{
-			McGitHubContext.Clients.Group("github").SendAsync("OnGitHubUpdated", contributors);
+			McGitHubContext.Clients.Group("github").SendAsync("OnGitHubUpdated", repository, userName, commits);
 		}
 
 	}

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Commands;
+using Fritz.Chatbot.Helpers;
 using Fritz.StreamLib.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,35 +25,34 @@ namespace Fritz.StreamTools.Services
 		private IBasicCommand[] _basicCommands;
 		private IExtendedCommand[] _extendedCommands;
 		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>(); // Could use IMemoryCache for this ???
-		private readonly IServiceProvider _serviceProvider;
+		private IServiceProvider _serviceProvider;
 		readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
 
 		public TimeSpan CooldownTime { get; private set; }
 
-		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
+		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory) : this(config, loggerFactory)
 		{
 
+			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 			_serviceProvider = serviceProvider;
-			var chatServices = serviceProvider.GetServices<IChatService>().ToArray();
-			Initialize(config, chatServices, loggerFactory);
-		}
 
-		internal FritzBot() { }
-
-		internal void Initialize(IConfiguration config, IChatService[] chatServices, ILoggerFactory loggerFactory)
-		{
-
-			_config = config;
-			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
-			_chatServices = chatServices;
-
-			ConfigureCommandCooldown(config);
 
 			_basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
 			_extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
 		}
 
-		private void ConfigureCommandCooldown(IConfiguration config)
+		/// <summary>
+		/// For testing
+		/// </summary>
+		/// <param name="config"></param>
+		/// <param name="loggerFactory"></param>
+		internal FritzBot(IConfiguration config, ILoggerFactory loggerFactory) {
+			_config = config;
+			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
+			ConfigureCommandCooldown(config);
+		}
+
+		internal void ConfigureCommandCooldown(IConfiguration config)
 		{
 			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
 			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
@@ -150,7 +150,7 @@ namespace Fritz.StreamTools.Services
 
 				var trigger = e.Message.AsMemory(1);
 				var rhs = ReadOnlyMemory<char>.Empty;
-				int n = trigger.Span.IndexOf(' ');
+				var n = trigger.Span.IndexOf(' ');
 				if (n != -1)
 				{
 					rhs = trigger.Slice(n + 1);
@@ -244,13 +244,6 @@ namespace Fritz.StreamTools.Services
 				_commandExecutedTimeMap[command] = DateTime.UtcNow;
 			}
 		}
-
-		// private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
-		// {
-		// 		_qnaCommand.ChatService = chatService;
-		// 		await _qnaCommand.Execute(userName, message);
-		// 		return;
-		// }
 
 		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
 

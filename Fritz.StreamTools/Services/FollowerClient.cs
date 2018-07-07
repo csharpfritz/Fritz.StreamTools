@@ -1,7 +1,9 @@
 ﻿// REF: https://dev.mixer.com/reference/constellation/index.html
 
 using System;
+using System.Collections.Generic;
 using Fritz.StreamTools.Hubs;
+using Fritz.StreamTools.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Fritz.StreamTools.Services
@@ -29,6 +31,12 @@ namespace Fritz.StreamTools.Services
 		{
 			FollowerContext.Clients.Group("viewers").SendAsync("OnViewersCountUpdated", serviceName.ToLowerInvariant(), viewerCount);
 		}
+
+		internal void UpdateGitHub(IEnumerable<GitHubInformation> contributors)
+		{
+			FollowerContext.Clients.Group("github").SendAsync("OnGitHubUpdated", contributors);
+		}
+
 	}
 
 }

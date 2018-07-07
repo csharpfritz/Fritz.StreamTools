@@ -21,21 +21,28 @@ namespace Fritz.Chatbot.Commands
 		private readonly string _AzureUrl;
 		private readonly string _AzureApiKey;
 		private string ImageUrl;
+		private string v1;
+		private string v2;
+
 		public TimeSpan? Cooldown => null;
 
-		public ImageDescriptorCommand(IConfiguration config)
+		private static readonly Regex _UrlCheck = new Regex(@"http(s)?:?(\/\/[^""']*\.(?:png|jpg|jpeg|gif))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+		public ImageDescriptorCommand(IConfiguration config) : this(config["FritzBot:VisionApiBaseUrl"], config["FritzBot:VisionApiKey"])
 		{
-			_AzureUrl = config["FritzBot:VisionApiBaseUrl"];
-			_AzureApiKey = config["FritzBot:VisionApiKey"];
+		}
+
+		public ImageDescriptorCommand(string azureUrl, string azureKey)
+		{
+			_AzureUrl = azureUrl;
+			_AzureApiKey = azureKey;
 		}
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{
-			var imageCheckPattern = @"http(s)?:?(\/\/[^""']*\.(?:png|jpg|jpeg|gif))";
-			var r = new Regex(imageCheckPattern, RegexOptions.IgnoreCase);
 
 			// Match the regular expression pattern against a text string.
-			var imageCheck = r.Match(fullCommandText);
+			var imageCheck = _UrlCheck.Match(fullCommandText);
 			if (imageCheck.Captures.Count == 0)
 				return false;
 			this.ImageUrl = imageCheck.Captures[0].Value;

@@ -34,20 +34,10 @@ namespace Fritz.StreamTools.Pages
 
 		public TimeSpan? Uptime { get; set; }
 
-		public async Task OnGet()
+		public void OnGet()
 		{
 
-			var sw = Stopwatch.StartNew();
-			Uptime = await TwitchProxy.Uptime();
-			this.Logger.LogInformation($"Get uptime took {sw.ElapsedMilliseconds}ms");
-
-			sw.Restart();
-			var api = new TwitchLib.TwitchAPI(clientId: "t7y5txan5q662t7zj7p3l4wlth8zhv");
-			var v5Stream = new TwitchLib.Streams.V5(api);
-			var myStream = await v5Stream.GetStreamByUserAsync("96909659");
-			var createdAt = myStream.Stream?.CreatedAt;
-			this.Logger.LogInformation($"Get uptime took {sw.ElapsedMilliseconds}ms");
-
+			
 
 		}
 

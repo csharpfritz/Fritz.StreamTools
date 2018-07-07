@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Threading;
@@ -22,8 +23,8 @@ namespace Fritz.StreamTools.Services
 			this.Logger = logger;
 		}
 
-		public IServiceProvider Services { get; }
-		public ILogger<GitHubService> Logger { get; }
+		private IServiceProvider Services { get; }
+		private ILogger<GitHubService> Logger { get; }
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{

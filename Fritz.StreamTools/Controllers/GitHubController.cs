@@ -14,20 +14,17 @@ namespace Fritz.StreamTools.Controllers
 	public class GitHubController : Controller
 	{
 		public GitHubController(
-			IAppCache cache,
 			GitHubRepository repository,
 			GithubyMcGithubFaceClient client,
 			ILogger<GitHubController> logger,
 			IOptions<GitHubConfiguration> githubConfiguration)
 		{
-			this.Cache = cache;
 			this.Logger = logger;
 			this.Client = client;
 			_gitHubRepository = repository;
 			_gitHubConfiguration = githubConfiguration.Value;
 		}
 
-		public IAppCache Cache { get; }
 		public ILogger<GitHubController> Logger { get; }
 		public GithubyMcGithubFaceClient Client { get; }
 

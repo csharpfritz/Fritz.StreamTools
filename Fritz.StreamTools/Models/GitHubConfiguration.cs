@@ -23,7 +23,7 @@ namespace Fritz.StreamTools.Models
 
 		public int Width { get; set; } = 600;
 
-		public int SpeedMs { get; set; } = 15000;
+		public int SpeedInSec { get; set; } = 30;
 
 		public string Font { get; set; } = "Arial";
 

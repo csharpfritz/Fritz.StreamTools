@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Models;
 using Fritz.StreamLib.Core;
@@ -10,73 +11,82 @@ using Newtonsoft.Json;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class ImageDescriptorCommand : ICommand
+	public class ImageDescriptorCommand : IExtendedCommand
 	{
+		public string Name => "Image";
+		public string Description => "Inspect images and report to the chat room what they contain using Vision API";
+		public int Order => 10;
+		public bool Final => false;
+
 		private readonly string _AzureUrl;
 		private readonly string _AzureApiKey;
+		private string ImageUrl;
+		private string v1;
+		private string v2;
 
-		public ImageDescriptorCommand() { }
+		public TimeSpan? Cooldown => null;
 
-		public ImageDescriptorCommand(IConfiguration config)
+		private static readonly Regex _UrlCheck = new Regex(@"http(s)?:?(\/\/[^""']*\.(?:png|jpg|jpeg|gif))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+		public ImageDescriptorCommand(IConfiguration config) : this(config["FritzBot:VisionApiBaseUrl"], config["FritzBot:VisionApiKey"])
 		{
-			_AzureUrl = config["FritzBot:VisionApiBaseUrl"];
-			_AzureApiKey = config["FritzBot:VisionApiKey"];
 		}
 
-		public ImageDescriptorCommand(string azureUrl, string azureApiKey)
+		public ImageDescriptorCommand(string azureUrl, string azureKey)
 		{
-
-			// This is ok for now...  :-)
-            // no it's not
-
 			_AzureUrl = azureUrl;
-			_AzureApiKey = azureApiKey;
-
+			_AzureApiKey = azureKey;
 		}
 
-		public IChatService ChatService { get; set; }
-        
-
-		public string Name => "ImageDescriptor";
-
-		public string Description => "Inspect images and report to the chat room what they contain using Vision API";
-
-        /// param name="fullCommandText" (this is the URL of the image we already found)
-		public async Task Execute(string userName, string fullCommandText)
+		public bool CanExecute(string userName, string fullCommandText)
 		{
 
+			// Match the regular expression pattern against a text string.
+			var imageCheck = _UrlCheck.Match(fullCommandText);
+			if (imageCheck.Captures.Count == 0)
+				return false;
+			this.ImageUrl = imageCheck.Captures[0].Value;
+			return (imageCheck.Captures.Count > 0);
+		}
+
+		/// param name="fullCommandText" (this is the URL of the image we already found)
+		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		{
+
+			// TODO: Pull from ASP.NET Core Dependency Injection
 			var client = new HttpClient();
 			client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _AzureApiKey);
 
 			var requestParameters = "visualFeatures=Categories,Description,Color,Adult&language=en";
 			var uri = _AzureUrl + "?" + requestParameters;
 
-			var body = "{\"url\":\"" + fullCommandText + "\"}";
+			var body = "{\"url\":\"" + ImageUrl + "\"}";
 			var content = new StringContent(body, Encoding.UTF8, "application/json");
 
 			var apiResponse = await client.PostAsync(uri, content);
-			var result = await apiResponse.Content.ReadAsStringAsync();
 			apiResponse.EnsureSuccessStatusCode();
+			var result = await apiResponse.Content.ReadAsStringAsync();
+			apiResponse.Dispose();
+
 			var visionDescription = JsonConvert.DeserializeObject<VisionDescription>(result);
 
 			if (visionDescription.adult.isAdultContent)
 			{
-				await ChatService.SendMessageAsync($"Hey {userName} - we don't like adult content here!");
+				await chatService.SendMessageAsync($"Hey {userName} - we don't like adult content here!");
 				// TODO: Timeout / Ban user
 				return;
 			}
 
 			if (visionDescription.adult.isRacyContent)
 			{
-				await ChatService.SendMessageAsync($"Hey {userName} - that's too racy ({visionDescription.adult.racyScore,0:P2}) for our chat room!");
+				await chatService.SendMessageAsync($"Hey {userName} - that's too racy ({visionDescription.adult.racyScore,0:P2}) for our chat room!");
 				// TODO: Timeout user
 				return;
 			}
 
-
 			var description = $"{userName} Photo ({visionDescription.description.captions[0].confidence,0:P2}): {visionDescription.description.captions[0].text}";
 
-			await ChatService.SendMessageAsync(description);
+			await chatService.SendMessageAsync(description);
 
 		}
 	}

@@ -61,10 +61,9 @@ namespace Test.ImageCommand
 				.Returns(Task.FromResult(true));
 
 			var sut = new ImageDescriptorCommand("testlocation", "testkey");
-			sut.ChatService = chatService.Object;
 
 			// Act
-			await sut.Execute("test", url);
+			await sut.Execute(chatService.Object, "test", url);
 
 			// Assert
 			Assert.Contains("guitar", outDescription);

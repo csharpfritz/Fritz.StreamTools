@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Commands;
@@ -18,260 +15,239 @@ using Microsoft.Extensions.Logging;
 namespace Fritz.StreamTools.Services
 {
 
-		public class FritzBot : IHostedService
+	public class FritzBot : IHostedService
+	{
+
+		public const string CONFIGURATION_ROOT = "FritzBot";
+		IConfiguration _config;
+		ILogger _logger;
+		internal IChatService[] _chatServices;
+		private IBasicCommand[] _basicCommands;
+		private IExtendedCommand[] _extendedCommands;
+		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>(); // Could use IMemoryCache for this ???
+		private IServiceProvider _serviceProvider;
+		readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
+
+		public TimeSpan CooldownTime { get; private set; }
+
+		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory) : this(config, loggerFactory)
 		{
 
-				public const string CONFIGURATION_ROOT = "FritzBot";
-				const char COMMAND_PREFIX = '!';
-				IConfiguration _config;
-				ILogger _logger;
-				internal IChatService[] _chatServices;
-				private AzureQnACommand _qnaCommand;
-				readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();  // Could use IMemoryCache for this ???
-				internal static readonly Dictionary<string, ICommand> _CommandRegistry = new Dictionary<string, ICommand>();
-
-				private readonly string urlRegex;
-				private readonly string titleRegex;
-				private readonly string titleMessageTemplate;
-
-				public TimeSpan CooldownTime { get; private set; }
-
-				public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
-				{
-
-						var chatServices = serviceProvider.GetServices<IChatService>().ToArray();
-						Initialize(config, chatServices, loggerFactory);
-
-						urlRegex = _config[$"{CONFIGURATION_ROOT}:HttpLinkTitleCommand:UrlRegex"];
-						if (!urlRegex.IsValidRegularExpression())
-						{
-								_logger.LogWarning($"Regular expression for URL is not set or is not valid. Default used.");
-						}
-
-						titleRegex = _config[$"{CONFIGURATION_ROOT}:HttpLinkTitleCommand:TitleRegex"];
-						if (!titleRegex.IsValidRegularExpression())
-						{
-								_logger.LogWarning($"Regular expression for title is not set or is not valid. Default used.");
-						}
-
-						titleMessageTemplate = _config[$"{CONFIGURATION_ROOT}:HttpLinkTitleCommand:PageTitleMessageTemplate"];
-						if (!titleMessageTemplate.IsValidRegularExpression())
-						{
-								_logger.LogWarning($"Link message template is not set. Default used.");
-						}
-				}
-
-				internal FritzBot() { }
-
-				internal void Initialize(IConfiguration config, IChatService[] chatServices, ILoggerFactory loggerFactory)
-				{
-						_config = config;
-						_logger = loggerFactory.CreateLogger(nameof(FritzBot));
-						_chatServices = chatServices;
-
-						ConfigureCommandCooldown(config);
-
-						RegisterCommands();
-				}
-
-				private void ConfigureCommandCooldown(IConfiguration config)
-				{
-						var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
-						CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
-						_logger.LogInformation("Command cooldown set to {0}", CooldownTime);
-				}
-
-				private void RegisterCommands()
-				{
-						var internalCommands = new string[]
-						{
-								"AzureQnACommand",
-								"ImageDescriptorCommand",
-								"HttpPageTitleCommand"
-						};
-
-						if (_CommandRegistry.Count > 0)
-						{
-								return;
-						}
-
-						var commandTypes = GetType().Assembly.GetTypes().Where(t => t.GetInterfaces().Contains(typeof(ICommand)));
-
-						foreach (var type in commandTypes)
-						{
-								if (type.Name == "ICommand" || internalCommands.Contains(type.Name)) continue;
-								var cmd = Activator.CreateInstance(type) as ICommand;
-								_CommandRegistry.Add(cmd.Name, cmd);
-						}
-
-						_qnaCommand = new AzureQnACommand()
-						{
-								Configuration = _config,
-								Logger = _logger
-						};
-
-				}
-
-				#region IHostedService
-
-				public Task StartAsync(CancellationToken cancellationToken)
-				{
-						foreach (var chat in _chatServices)
-						{
-								chat.ChatMessage += OnChat_ChatMessage;
-								chat.UserJoined += Chat_UserJoined;
-								chat.UserLeft += Chat_UserLeft;
-						}
-						return Task.CompletedTask;
-				}
-
-				public Task StopAsync(CancellationToken cancellationToken)
-				{
-						foreach (var chat in _chatServices)
-						{
-								chat.ChatMessage -= OnChat_ChatMessage;
-								chat.UserJoined -= Chat_UserJoined;
-								chat.UserLeft -= Chat_UserLeft;
-						}
-						return Task.CompletedTask;
-				}
-
-				#endregion
-
-				private async void OnChat_ChatMessage(object sender, ChatMessageEventArgs e)
-				{
-						// async void as Event callback
-						try
-						{
-								await Chat_ChatMessage(sender, e);
-						}
-						catch (Exception ex)
-						{
-								// Don't let exception escape from async void
-								_logger.LogError($"{DateTime.UtcNow}: Chat_ChatMessage - Error {Environment.NewLine}{ex}");
-						}
-				}
-
-				private async Task Chat_ChatMessage(object sender, ChatMessageEventArgs e)
-				{
-						var userKey = $"{e.ServiceName}:{e.UserName}";
-						ChatUserInfo user;
-						if (!_activeUsers.TryGetValue(userKey, out user))
-								user = new ChatUserInfo();
-
-						await HandleHttpPageTitle(e.UserName, e.Message, sender as IChatService);
-
-						// message is empty OR message doesn't start with ! AND doesn't end with ?
-						if (e.Message.EndsWith("?"))
-						{
-
-								_logger.LogInformation($"Handling question: \"{e.Message}\" from {e.UserName} on {e.ServiceName}");
+			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
+			_serviceProvider = serviceProvider;
 
 
-								if (CommandsTooFast("qna")) return;
-								await HandleAzureQuestion(e.Message, e.UserName, sender as IChatService);
-								return;
-						}
+			_basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
+			_extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
+		}
 
-						// Check for image processing
-						var imageCheckPattern = @"http(s)?:?(\/\/[^""']*\.(?:png|jpg|jpeg|gif))";
-						var r = new Regex(imageCheckPattern, RegexOptions.IgnoreCase);
+		/// <summary>
+		/// For testing
+		/// </summary>
+		/// <param name="config"></param>
+		/// <param name="loggerFactory"></param>
+		internal FritzBot(IConfiguration config, ILoggerFactory loggerFactory) {
+			_config = config;
+			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
+			ConfigureCommandCooldown(config);
+		}
 
-						// Match the regular expression pattern against a text string.
-						var imageCheck = r.Match(e.Message);
-						if (imageCheck.Captures.Count > 0)
-						{
-				//cal the new comand
-				var imageDescCommand = new ImageDescriptorCommand(_config);
-				imageDescCommand.ChatService = sender as IChatService;
-				await imageDescCommand.Execute(e.UserName, imageCheck.Captures[0].Value);
+		internal void ConfigureCommandCooldown(IConfiguration config)
+		{
+			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
+			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
+			_logger.LogInformation("Command cooldown set to {0}", CooldownTime);
+		}
+
+		#region Static stuff
+
+		/// <summary>
+		/// Register all classes derived from IBasicCommand & IExtendedCommand as singletons in DI
+		/// </summary>
+		public static void RegisterCommands(IServiceCollection services)
+		{
+			// Register basic commands
+			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IBasicCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+				services.AddSingleton(typeof(IBasicCommand), type);
+
+			// Register extended commands
+			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IExtendedCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+				services.AddSingleton(typeof(IExtendedCommand), type);
+		}
+
+		#endregion
+
+		#region IHostedService
+
+		public Task StartAsync(CancellationToken cancellationToken)
+		{
+			foreach (var chat in _chatServices)
+			{
+				chat.ChatMessage += OnChat_ChatMessage;
+				chat.UserJoined += Chat_UserJoined;
+				chat.UserLeft += Chat_UserLeft;
+			}
+			return Task.CompletedTask;
+		}
+
+		public Task StopAsync(CancellationToken cancellationToken)
+		{
+			foreach (var chat in _chatServices)
+			{
+				chat.ChatMessage -= OnChat_ChatMessage;
+				chat.UserJoined -= Chat_UserJoined;
+				chat.UserLeft -= Chat_UserLeft;
+			}
+			return Task.CompletedTask;
+		}
+
+		#endregion
+
+		private async void OnChat_ChatMessage(object sender, ChatMessageEventArgs e)
+		{
+			// async void as Event callback
+			try
+			{
+				await ProcessChatMessage(sender, e);
+			}
+			catch (Exception ex)
+			{
+				// Don't let exception escape from async void
+				_logger.LogError($"{DateTime.UtcNow}: Chat_ChatMessage - Error {Environment.NewLine}{ex}");
+			}
+		}
+
+		private async Task ProcessChatMessage(object sender, ChatMessageEventArgs e)
+		{
+
+			// TODO: Add queue processing to ensure only one instance of a command is executing at a time
+
+			var userKey = $"{e.ServiceName}:{e.UserName}";
+			var user = _activeUsers.AddOrUpdate(userKey, new ChatUserInfo(), (_, u) => u);
+
+			var chatService = sender as IChatService;
+
+			var final = await HandleExtendedCommands();
+			if (final)
 				return;
 
-						}
-
-						if (string.IsNullOrEmpty(e.Message) || (e.Message[0] != COMMAND_PREFIX & !e.Message.EndsWith("?")))
-								return; // e.Message.StartsWith(...) did not work for some reason ?!?
-						var segments = e.Message.Substring(1).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-						if (segments.Length == 0)
-								return;
-
-						var chatService = sender as IChatService;
-						Debug.Assert(chatService != null);
-						if (!chatService.IsAuthenticated)
-								return;
-
-
-						// Ignore if the normal user is sending commands to fast
-						if (CommandsTooFast(segments[0])) return;
-
-						_logger.LogInformation($"!{segments[0]} from {e.UserName} on {e.ServiceName}");
-
-						// Handle commands
-						ICommand cmd = null;
-						if (_CommandRegistry.TryGetValue(segments[0].ToLowerInvariant(), out cmd))
-						{
-								cmd.ChatService = chatService;
-								await cmd.Execute(e.UserName, e.Message);
-						}
-						else
-						{
-
-								await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
-								return;
-						}
-
-						// Remember last command time
-						user.LastCommandTime = DateTime.UtcNow;
-						_activeUsers.AddOrUpdate(userKey, user, (k, v) => user);
-
-						bool CommandsTooFast(string namedCommand)
-						{
-
-								if (!e.IsModerator && !e.IsOwner)
-								{
-										if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
-										{
-												_logger.LogWarning($"Ignoring command {namedCommand} from {e.UserName} on {e.ServiceName}. Cooldown active");
-												return true;
-										}
-								}
-
-								return false;
-						}
-
-				}
-
-
-
-				private async Task HandleAzureQuestion(string message, string userName, IChatService chatService)
+			if (e.Message.FirstOrDefault() == '!')
+			{
+				if (!await HandleBasicCommands())
 				{
-						_qnaCommand.ChatService = chatService;
-						await _qnaCommand.Execute(userName, message);
-						return;
+					await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
 				}
+			}
 
-				private async Task HandleHttpPageTitle(string username, string message, IChatService chatService)
+			return; // Only local functions below
+
+			async ValueTask<bool> HandleBasicCommands()
+			{
+				// NOTE: Returns true if the command was found
+
+				Debug.Assert(_basicCommands != null);
+				Debug.Assert(!string.IsNullOrEmpty(e.Message) && e.Message[0] == '!');
+
+				var trigger = e.Message.AsMemory(1);
+				var rhs = ReadOnlyMemory<char>.Empty;
+				var n = trigger.Span.IndexOf(' ');
+				if (n != -1)
 				{
-						if (!HttpPageTitleCommand.ContainsLink(urlRegex, message))
-						{
-								return;
-						}
-
-						try
-						{
-								var command = new HttpPageTitleCommand(urlRegex, titleRegex, titleMessageTemplate);
-								command.ChatService = chatService;
-								await command.Execute(username, message);
-						}
-						catch (Exception e)
-						{
-								_logger.LogError($"{nameof(FritzBot)}.{nameof(HandleHttpPageTitle)}: {e.Message}");
-						}
+					rhs = trigger.Slice(n + 1);
+					trigger = trigger.Slice(0, n);
 				}
 
-				private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+				foreach (var cmd in _basicCommands)
+				{
+					Debug.Assert(!string.IsNullOrEmpty(cmd.Trigger));
 
-				private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
+					if (trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
+					{
+						// Ignore if the normal user is sending commands to fast, or command is in cooldown
+						if (CommandsTooFast(cmd.Trigger, cmd.Cooldown))
+							return true;
 
+						await cmd.Execute(chatService, e.UserName, rhs);
+
+						AfterExecute(cmd.Trigger);
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+			async ValueTask<bool> HandleExtendedCommands()
+			{
+				// NOTE: Returns true if no other commands should be run
+
+				Debug.Assert(_extendedCommands != null);
+
+				foreach (var cmd in _extendedCommands)
+				{
+					Debug.Assert(!string.IsNullOrEmpty(cmd.Name));
+
+					if (cmd.CanExecute(e.UserName, e.Message))
+					{
+						// Ignore if the normal user is sending commands to fast, or command is in cooldown
+						if (CommandsTooFast(cmd.Name, cmd.Cooldown))
+							return false;
+
+						await cmd.Execute(chatService, e.UserName, e.Message);
+
+						AfterExecute(cmd.Name);
+						return cmd.Final;
+					}
+				}
+
+				return false;
+			}
+
+			bool CommandsTooFast(string namedCommand, TimeSpan? cooldown = null)
+			{
+				Debug.Assert(user != null);
+
+#if !DEBUG
+				if (e.IsModerator || e.IsOwner)
+					return false;
+#endif
+
+				// Check per user cooldown
+				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
+				{
+					_logger.LogWarning("Ignoring command {0} from {1} on {2}. Cooldown active", namedCommand, e.UserName, e.ServiceName);
+					return true;
+				}
+
+				// Check per command cooldown
+				if (_commandExecutedTimeMap.TryGetValue(namedCommand, out var dt))
+				{
+					var now = DateTime.UtcNow;
+					if (now - dt < cooldown.GetValueOrDefault())
+					{
+						var remain = cooldown.GetValueOrDefault() - (now - dt);
+						_logger.LogWarning("Ignoring command {0} from {1} on {2}. In cooldown for {3} more secs", namedCommand, e.UserName, e.ServiceName,
+							(int) remain.TotalSeconds);
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+			void AfterExecute(string command)
+			{
+				Debug.Assert(user != null);
+
+				// Remember last command time
+				user.LastCommandTime = DateTime.UtcNow;
+				_commandExecutedTimeMap[command] = DateTime.UtcNow;
+			}
 		}
+
+		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+
+		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
+
+	}
 }

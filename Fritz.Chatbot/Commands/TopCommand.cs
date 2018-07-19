@@ -5,14 +5,13 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http;
+using System;
 
 namespace Fritz.Chatbot.Commands
 {
-  public class TopCommand : ICommand
+  public class TopCommand : IBasicCommand
   {
 		private readonly HttpClient _Client;
-
-		public IChatService ChatService { get; set; }
 
 		public TopCommand() { }
 
@@ -22,10 +21,12 @@ namespace Fritz.Chatbot.Commands
 			_Client = client;
 		}
 
-		public string Name => "Top";
+		public string Trigger => "Top";
 		public string Description => "Get top contributors from github";
 
-		public async Task Execute(string userName, string fullCommandText)
+		public TimeSpan? Cooldown => null;
+
+		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
 			var response = await _Client.GetAsync("/Github/ContributorsInformationApi");
 			var result = await response.Content.ReadAsStringAsync();
@@ -33,7 +34,7 @@ namespace Fritz.Chatbot.Commands
 
 			var model = JsonConvert.DeserializeObject<IEnumerable<GitHubInformation>>(result);
 
-			await ChatService.SendMessageAsync(GetMsg(model));
+			await chatService.SendMessageAsync(GetMsg(model));
 		}
 
 		private string GetMsg(IEnumerable<GitHubInformation> model)
@@ -63,5 +64,5 @@ namespace Fritz.Chatbot.Commands
 				builder.AppendLine($"{item.Author}, with {item.Commits} commits!");
 			}
 		}
-  }
+	}
 }

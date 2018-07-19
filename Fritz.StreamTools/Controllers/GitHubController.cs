@@ -8,6 +8,7 @@ using System;
 using LazyCache;
 using Microsoft.Extensions.Logging;
 using Fritz.StreamTools.Services;
+using Fritz.StreamLib.Core;
 
 namespace Fritz.StreamTools.Controllers
 {

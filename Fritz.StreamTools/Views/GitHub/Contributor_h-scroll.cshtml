@@ -45,7 +45,13 @@
 		@foreach (var repo in Model)
 		{
 
+<<<<<<< HEAD
 			<b>@repo.Repository</b>
+=======
+		<span id="repository_@repo.Repository">
+
+		<b>@repo.Repository</b>
+>>>>>>> 51f144d29a8b42000ebd8d2a641f0517a7aaa6f1
 
 						<span id="topWeek">
 							<u>Top week:</u>
@@ -83,7 +89,13 @@
 
 																																																							</span>
 
+<<<<<<< HEAD
 																																																						}
+=======
+		</span>
+
+	}
+>>>>>>> 51f144d29a8b42000ebd8d2a641f0517a7aaa6f1
 
 			</p>
 
@@ -94,6 +106,7 @@
 			<script type="text/javascript">
 
 	var $mq = $("#marquee");
+	var hub = new McGitHubbub();
 
 (function() {
 
@@ -103,25 +116,12 @@
 		duration: @(Config.SpeedMs)
 	});
 
-	var hub = new McGitHubbub();
 
-	hub.onUpdated = (contributors) => {
+	hub.onUpdated = (repository, userName, commits) => {
 
-		console.log(contributors);
+		console.log(`${repository} - ${userName} - ${commits}`);
 
-		$mq.marquee("destroy");
-
-		$("#marquee").html("-- Update Incoming --");
-
-		$("#marquee").load("/github/contributorsinformation #marquee>*", function () {
-
-				$("#marquee").marquee({
-					duplicated: true,
-					duration: @(Config.SpeedMs)
-				});
-
-
-		});
+		$(`#repository_${repository}`).load(`/github/contributorsinformation?repo=Corewiki&username=rachel&count=1000 #repository_${repository}`);
 
 	}
 

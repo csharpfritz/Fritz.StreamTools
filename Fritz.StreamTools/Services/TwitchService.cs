@@ -29,7 +29,7 @@ namespace Fritz.StreamTools.Services
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft {
-			add { throw new NotSupportedException(); }
+			add { }
 			remove { }
 		}
 

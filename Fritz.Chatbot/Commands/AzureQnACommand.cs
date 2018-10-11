@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -54,7 +55,7 @@ namespace Fritz.Chatbot.Commands
 			query = WebUtility.UrlEncode(query);
 
 			//Build the URI
-			var qnamakerUriBase = new Uri("https://westus.api.cognitive.microsoft.com/qnamaker/v1.0");
+			var qnamakerUriBase = new Uri("https://fritzbotqna.azurewebsites.net/qnamaker");
 			var builder = new UriBuilder($"{qnamakerUriBase}/knowledgebases/{KnowledgebaseId}/generateAnswer");
 
 			//Add the question as part of the body
@@ -67,8 +68,9 @@ namespace Fritz.Chatbot.Commands
 				client.Encoding = System.Text.Encoding.UTF8;
 
 				//Add the subscription key header
-				client.Headers.Add("Ocp-Apim-Subscription-Key", AzureKey);
+				client.Headers.Add("Authorization", $"EndpointKey {AzureKey}");
 				client.Headers.Add("Content-Type", "application/json");
+				// client.Headers.Add("Host", "https://fritzbotqna.azurewebsites.net/qnamaker");
 
 				try
 				{
@@ -80,6 +82,11 @@ namespace Fritz.Chatbot.Commands
 					chatService.SendMessageAsync($"Unable to answer the question '{query}' at this time").Forget();
 					return;
 				}
+                catch(Exception ex)
+                {
+                    _logger.LogError($">>> Error while communicating with QnA service: {ex.ToString()}");
+										return;
+                }
 			}
 
 			QnAMakerResult response;
@@ -87,15 +94,18 @@ namespace Fritz.Chatbot.Commands
 			{
 				response = JsonConvert.DeserializeObject<QnAMakerResult>(responseString);
 
-				response.Answer = WebUtility.HtmlDecode(response.Answer).HandleMarkdownLinks();
+				var thisAnswer = response.Answers.OrderByDescending(a => a.Score).FirstOrDefault();
 
-				if (response.Score > 50)
+				thisAnswer.Answer = WebUtility.HtmlDecode(thisAnswer.Answer).HandleMarkdownLinks();
+
+
+				if (thisAnswer.Score > 50)
 				{
-					await chatService.SendMessageAsync(response.Answer);
+					await chatService.SendMessageAsync(thisAnswer.Answer);
 				}
-				else if (response.Score > 30)
+				else if (thisAnswer.Score > 30)
 				{
-					await chatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + response.Answer + $@"({response.Score.ToString("0.0")}% certainty)");
+					await chatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + thisAnswer.Answer + $@"({thisAnswer.Score.ToString("0.0")}% certainty)");
 
 				}
 				else

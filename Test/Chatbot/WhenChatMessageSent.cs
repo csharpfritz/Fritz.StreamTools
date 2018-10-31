@@ -145,7 +145,7 @@ namespace Test.Chatbot
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 			_chatservice.Verify(sm => sm.SendMessageAsync(
 						It.Is<string>(x => x.StartsWith($"{command}: {description}"))),
-						Times.AtLeastOnce);
+						Times.Once);
 		}
 
 		[Fact]
@@ -197,7 +197,7 @@ namespace Test.Chatbot
 
 			_chatservice.Verify(sm => sm.SendMessageAsync(
 						It.Is<string>(x => x.StartsWith("Supported commands:"))),
-						Times.Exactly(1));
+						Times.Once);
 		}
 
 		[Fact]
@@ -217,7 +217,7 @@ namespace Test.Chatbot
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 			_chatservice.Verify(sm => sm.SendMessageAsync(
 							It.Is<string>(x => x.StartsWith("testusername's linked page title:"))),
-							Times.Exactly(1));
+							Times.Once);
 		}
 
 		[Fact]

@@ -27,7 +27,7 @@ namespace Fritz.Chatbot.Commands
 		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{
 
-			// if (!(isModerator || isBroadcaster)) return;
+			if (!(isModerator || isBroadcaster)) return;
 
 			var rhsTest = rhs.ToString();
 			if (rhsTest.StartsWith("@")) rhsTest = rhsTest.Substring(1);

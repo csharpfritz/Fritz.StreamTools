@@ -33,4 +33,19 @@ namespace Fritz.Chatbot.Commands
 		/// <param name="rhs">The remaining text after the trigger keyword</param>
 		Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs);
 	}
+
+	public interface IBasicCommand2 : IBasicCommand {
+
+		/// <summary>
+		/// Execute the command.
+		/// </summary>
+		/// <param name="chatService">The chatservice to use</param>
+		/// <param name="userName">User that invoked the command</param>
+		/// <param name="badges">Badges carried by the user</param>
+		/// <param name="rhs">The remaining text after the trigger keyword</param>
+		Task Execute(IChatService chatService, string userName, bool isModerator, bool isBroadcaster, ReadOnlyMemory<char> rhs);
+
+	}
+
+
 }

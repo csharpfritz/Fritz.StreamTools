@@ -167,7 +167,14 @@ namespace Fritz.StreamTools.Services
 						if (CommandsTooFast(cmd.Trigger, cmd.Cooldown))
 							return true;
 
-						await cmd.Execute(chatService, e.UserName, rhs);
+						if (cmd is IBasicCommand2)
+						{
+							await (cmd as IBasicCommand2).Execute(chatService, e.UserName, e.IsModerator, e.IsOwner, rhs);
+						}
+						else
+						{
+							await cmd.Execute(chatService, e.UserName, rhs);
+						}
 
 						AfterExecute(cmd.Trigger);
 						return true;

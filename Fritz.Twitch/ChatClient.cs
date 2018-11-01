@@ -27,6 +27,7 @@ namespace Fritz.Twitch
 		private MemoryStream _ReceiveStream = new MemoryStream();
 
 		internal static readonly Regex reUserName = new Regex(@"!([^@]+)@");
+		internal static readonly Regex reBadges = new Regex(@"@badges=([^;]*)");
 		internal static Regex reChatMessage;
 		internal static Regex reWhisperMessage;
 
@@ -230,6 +231,8 @@ namespace Fritz.Twitch
 
 			userName = ChatClient.reUserName.Match(msg).Groups[1].Value;
 
+			var badges = ChatClient.reBadges.Match(msg).Groups[1].Value.Split(',');
+
 			if (!string.IsNullOrEmpty(userName) && msg.Contains($" JOIN #{ChannelName}"))
 			{
 				UserJoined?.Invoke(this, new ChatUserJoinedEventArgs { UserName = userName });
@@ -257,6 +260,7 @@ namespace Fritz.Twitch
 				{
 					UserName = userName,
 					Message = message,
+					Badges = (badges ?? new string[] { }),
 					IsWhisper = true
 				});
 

@@ -66,6 +66,12 @@ namespace Fritz.StreamTools.StartupServices
 				c.DefaultRequestHeaders.Add("Accept", "applications/json");
 			});
 
+			services.AddHttpClient("ShoutoutCommand", c =>
+			{
+				c.BaseAddress = new Uri("https://api.twitch.tv/kraken/channels/");
+				c.DefaultRequestHeaders.Add("client-id", configuration["StreamServices:Twitch:ClientId"]);
+			});
+
 			services.AddHostedService<GitHubService>();
 		}
 

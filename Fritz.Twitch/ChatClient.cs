@@ -247,7 +247,8 @@ namespace Fritz.Twitch
 				NewMessage?.Invoke(this, new NewMessageEventArgs
 				{
 					UserName = userName,
-					Message = message
+					Message = message,
+					Badges = badges
 				});
 
 			} else if (reWhisperMessage.IsMatch(msg))

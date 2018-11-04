@@ -1,6 +1,6 @@
-﻿using Fritz.Chatbot.Commands;
+﻿using Fritz.Chatbot;
+using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
@@ -27,7 +27,7 @@ namespace Test.Chatbot
 			_logger = new Mock<ILogger>();
 			_loggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>())).Returns(_logger.Object);
 			_config = new Mock<IConfiguration>();
-			_config.SetupGet(s => s[FritzBot.CONFIGURATION_ROOT + ":CooldownTime"]).Returns("1");
+			_config.SetupGet(s => s[FritzBot.ConfigurationRoot + ":CooldownTime"]).Returns("1");
 			_chatservice = new Mock<IChatService>();
 			_chatservice.SetupGet(x => x.IsAuthenticated).Returns(true);
 
@@ -175,29 +175,6 @@ namespace Test.Chatbot
 									 It.IsAny<Exception>(),
 									 It.IsAny<Func<object, Exception, string>>())
 			);
-		}
-
-		[Fact]
-		public void ShouldIgnoreCommandsToFastIfModerator()
-		{
-			var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);
-			Task.WaitAll(sut.StartAsync(new CancellationToken()));
-
-			var args = new ChatMessageEventArgs
-			{
-				Message = "!help",
-				ServiceName = "TestService",
-				UserName = "Moderator",
-				IsModerator = true,
-				IsOwner = false
-			};
-
-			_chatservice.Raise(cs => cs.ChatMessage += null, args);
-			_chatservice.Raise(cs => cs.ChatMessage += null, args);
-
-			_chatservice.Verify(sm => sm.SendMessageAsync(
-						It.Is<string>(x => x.StartsWith("Supported commands:"))),
-						Times.Once);
 		}
 
 		[Fact]

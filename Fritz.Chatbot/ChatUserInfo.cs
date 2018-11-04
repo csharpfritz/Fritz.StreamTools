@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Fritz.StreamTools.Services
+namespace Fritz.Chatbot
 {
 	public class ChatUserInfo
 	{

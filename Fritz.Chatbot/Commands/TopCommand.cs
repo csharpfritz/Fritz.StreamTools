@@ -17,7 +17,7 @@ namespace Fritz.Chatbot.Commands
 
 		public TopCommand(IConfiguration config, HttpClient client)
 		{
-			client.BaseAddress = new System.Uri( config["StreamUrl"]);
+			client.BaseAddress = new Uri( config["StreamUrl"]);
 			_Client = client;
 		}
 
@@ -53,7 +53,7 @@ namespace Fritz.Chatbot.Commands
 				builder.AppendLine("Top ever contributors:");
 				AppendContributors(builder, repoInfo.TopEverContributors);
 			}
-
+			message = builder.ToString();
 			return message;
 		}
 

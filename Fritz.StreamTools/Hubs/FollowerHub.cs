@@ -7,12 +7,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
+using Fritz.Chatbot.Commands;
 
 namespace Fritz.StreamTools.Hubs
 {
 
 	public class FollowerHub : BaseHub
 	{
+		//private readonly CodeSuggestionsManager CodeSuggestionsManager;
+
 		public StreamService StreamService { get; }
 		public FollowerClient FollowerClient { get; }
 
@@ -22,8 +25,11 @@ namespace Fritz.StreamTools.Hubs
 			)
 		{
 
+
 			this.StreamService = streamService;
 			this.FollowerClient = client;
+
+			CodeSuggestionsManager.Instance.SuggestionAdded = (suggestion) => this.FollowerClient.UpdateCodeSuggestions(suggestion);
 
 			StreamService.Updated += StreamService_Updated;
 		}

@@ -32,10 +32,15 @@ class StreamHub {
 						if (this.debug) console.debug("OnFollowersCountUpdated", { followerCount });
 						if (this.onFollowers) this.onFollowers(followerCount);
 				});
-				this._hub.on('OnViewersCountUpdated', (serviceName, viewerCount) => {
-						if (this.debug) console.debug("OnViewersCountUpdated", { serviceName, viewerCount });
-						if (this.onViewers) this.onViewers(serviceName, viewerCount);
-				});
+			this._hub.on('OnViewersCountUpdated', (serviceName, viewerCount) => {
+				if (this.debug) console.debug("OnViewersCountUpdated", { serviceName, viewerCount });
+				if (this.onViewers) this.onViewers(serviceName, viewerCount);
+			});
+
+			this._hub.on('OnNewCode', (newCode) => {
+				if (this.debug) console.debug("OnNewCode");
+				if (this.onNewCode) this.onNewCode(newCode);
+			});
 
 				return this._hub.start();
 

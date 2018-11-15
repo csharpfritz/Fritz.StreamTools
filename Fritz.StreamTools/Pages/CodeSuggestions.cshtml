@@ -1,0 +1,49 @@
+﻿@page
+@model Fritz.StreamTools.Pages.CodeSuggestionsModel
+@{
+	ViewData["Title"] = "CodeSuggestions";
+}
+
+<h2>Code Suggestions</h2>
+
+<fieldset>
+
+	<ul id="codelist">
+		@foreach (var item in Model.CodeSuggestionsManager.CurrentSuggestions)
+		{
+			<li>
+				<b>@item.UserName</b> - @item.FileName on line @item.LineNumber<br />
+				<code>
+					@item.Body
+				</code>
+			</li>
+		}
+	</ul>
+
+</fieldset>
+
+
+
+<script src="~/lib/signalr/signalr-client.js"></script>
+<script src="~/js/streamhub.js"></script>
+<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<script>
+		(function () {
+
+			var hub = new StreamHub();
+			var list = document.getElementById("codelist");
+
+			hub.onNewCode = (suggestion) => {
+
+				var newCode = document.createElement("li");
+				newCode.innerHTML = `<b>${suggestion.UserName}</b> - ${suggestion.FileName} on line ${suggestion.LineNumber}
+				<code>${suggestion.Body}</code>`;
+
+				list.appendChild(newCode);
+
+			}
+
+			hub.start("codesuggestions");
+
+		})();
+</script>

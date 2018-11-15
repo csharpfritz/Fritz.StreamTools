@@ -30,6 +30,7 @@ namespace Fritz.Chatbot.Commands
 			// TODO: Add comment indicating the Twitch user who suggested the code
 
 			// SqlMisterMagoo Cheered 100 on November 15, 2018
+			// Pakmanjr Cheered 2000 on November 15, 2018
 
 			var segments = rhs.ToString().Split(' ');
 

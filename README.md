@@ -47,6 +47,8 @@ This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux,
 1. Clone
 1. (Recommended) Open in editor such as Visual Studio or Visual Studio Code
 1. Run `dotnet build .\Fritz.StreamTools.sln` to confirm build success
+    1. If error: *A compatible SDK version for global.json version*, update the version in global.json to match your .NET version.
+    1. If error: *\Fritz.StreamTools\Test\Test.csproj : error NU1605: Detected package downgrade*, update the version numbers to match what is expected based on the error.
 1. Run `docker-compose -f "docker-compose.yml` up -d --build"
 1. Browse to http://localhost
 

@@ -24,10 +24,11 @@ namespace Fritz.Chatbot.Commands
 			// TODO: Programming Language validation  ?Roslyn?
 			// TODO: Blacklisting users
 			// TODO: Blacklisting files / whitelisting files
-
+			// NOTE: opened an issue #166 to track these
 
 			// TODO: Visual Studio plugin to list these suggestions
 			// TODO: Add comment indicating the Twitch user who suggested the code
+			// TODO: Twitch extension that shows editor at the current place I'm working in VS / VS Code
 
 			// SqlMisterMagoo Cheered 100 on November 15, 2018
 			// Pakmanjr Cheered 2000 on November 15, 2018

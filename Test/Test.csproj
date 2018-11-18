@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture" Version="4.4.0" />
+    <PackageReference Include="AutoFixture" Version="4.5.0" />
     <PackageReference Include="AutoFixture.AutoMoq" Version="4.4.0" />
     <PackageReference Include="AutoFixture.Xunit2" Version="4.5.0" />
     <PackageReference Include="FluentAssertions" Version="5.4.1" />
@@ -15,7 +15,7 @@
     <PackageReference Include="Moq" Version="4.10.0" />
     <PackageReference Include="System.IO.Abstractions" Version="2.1.0.256" />
     <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0-rc.1.build4038">
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

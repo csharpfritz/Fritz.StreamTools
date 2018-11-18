@@ -1,4 +1,5 @@
 # Fritz.StreamTools
+
 Handy tools for managing my a live video stream and outputting video widgets that can be used directly in OBS or other streaming tools. 
 
 ## Features
@@ -25,7 +26,8 @@ The project supports reading stream metrics from the following services:
 This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux, and Windows.  Download the [.NET SDK](https://dot.net) and grab a copy of [Visual Studio Code](https://code.visualstudio.com) to get started on any platform.
 
 ### How to contribute
-1. Open new issue or find some intresting,
+
+1. Open new issue or find some interesting,
 2. Fork repository,
 3. Create new branch in your fork from dev,
 4. Code something awesome,
@@ -35,6 +37,22 @@ This application was built with ASP.NET Core 2.0 and can be built on Mac, Linux,
 8. Celebrate that you are new Contributor :)
 
 [More about forking](https://guides.github.com/activities/forking/)
+
+### Building and running locally
+
+1. Ensure pre-requisites:
+    1. [.NET Core 2.1 SDK](https://www.microsoft.com/net/download)
+    1. [Docker](https://docs.docker.com/install)
+1. Fork repository
+1. Clone
+1. (Recommended) Open in editor such as Visual Studio or Visual Studio Code
+1. Add GitHub > **User** and **[AuthenticationToken](https://github.com/settings/tokens)** to Fritz.StreamTools\appsettings.json (no scopes needed)
+1. Run `dotnet build .\Fritz.StreamTools.sln` to confirm build success
+    1. If error: *A compatible SDK version for global.json version*, update the version in global.json to match your .NET version.
+    1. If error: *\Fritz.StreamTools\Test\Test.csproj : error NU1605: Detected package downgrade*, update the version numbers to match what is expected based on the error.
+1. Run `docker-compose -f "docker-compose.yml" -f "docker-compose.override.yml" up -d --build`
+1. Run `docker ps` to find the port (for example: "32768" in "0.0.0.0:32768->80/tcp")
+1. Browse to http://localhost[port]
 
 ## Configuration
 
@@ -48,15 +66,14 @@ If you are using Visual Studio you can use the [integrated User Secrets manageme
 
 The `secrets.json` file should look like this
 
-
     {
       "GoogleFontsApi": {
         "Key": "<YOUR API KEY>"
       }
     }
 
+### Naming guideline for unit tests
 
-### Naming guideline for unit tests:
 *  Create a folder for each "logical class"
 *  Create a test class for each feature to test - end with "Should"
 *  Test Methods should describe what they are inspecting and what they're given, if anything.. ending with "\_Given..."

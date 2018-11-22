@@ -5,24 +5,28 @@ using Microsoft.VisualStudio.Shell.TableManager;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Windows;
-using System.Windows.Documents;
 
 namespace Fritz.LiveCoding
 {
+
+
+
+	/// <summary>
+	/// This is the datasource we are providing to the 'Errors List' window in Visual Studio.  We will manage
+	/// our collection of Code Suggestions in this class
+	/// </summary>
 	class CodeSuggestionSnapshot : WpfTableEntriesSnapshotBase
 	{
-		private readonly string _filePath;
+
 		private readonly int _versionNumber;
 
 		// We're not using an immutable list here but we cannot modify the list in any way once we've published the snapshot.
-		public readonly List<CodeSuggestion> Errors = new List<CodeSuggestion>();
+		public readonly List<CodeSuggestion> Suggestions = new List<CodeSuggestion>();
 
 		public CodeSuggestionSnapshot NextSnapshot;
 
-		internal CodeSuggestionSnapshot(string filePath, int versionNumber)
+		internal CodeSuggestionSnapshot(int versionNumber = 0)
 		{
-			_filePath = filePath;
 			_versionNumber = versionNumber;
 		}
 
@@ -30,7 +34,7 @@ namespace Fritz.LiveCoding
 		{
 			get
 			{
-				return this.Errors.Count;
+				return this.Suggestions.Count;
 			}
 		}
 
@@ -55,10 +59,10 @@ namespace Fritz.LiveCoding
 			do
 			{
 
-				System.Diagnostics.Debug.Assert(currentIndex >= 0);
+				Debug.Assert(currentIndex >= 0);
 				Debug.Assert(currentIndex < currentSnapshot.Count);
 
-				currentIndex = currentSnapshot.Errors[currentIndex].NextIndex;
+				currentIndex = currentSnapshot.Suggestions[currentIndex].NextIndex;
 
 				currentSnapshot = currentSnapshot.NextSnapshot;
 			}
@@ -67,36 +71,46 @@ namespace Fritz.LiveCoding
 			return currentIndex;
 		}
 
+		/// <summary>
+		/// This method formats the entries in the table for a code suggestion
+		/// </summary>
+		/// <param name="index">The position of the code suggestion in our collection</param>
+		/// <param name="columnName">The name of the column in the error list window</param>
+		/// <param name="content">The content to present in the column for our entry</param>
+		/// <returns>Success indicator</returns>
 		public override bool TryGetValue(int index, string columnName, out object content)
 		{
-			if ((index >= 0) && (index < this.Errors.Count))
+			if ((index >= 0) && (index < this.Suggestions.Count))
 			{
+
+				var thisSuggestion = this.Suggestions[index];
+
 				if (columnName == StandardTableKeyNames.DocumentName)
 				{
 					// We return the full file path here. The UI handles displaying only the Path.GetFileName().
-					content = _filePath;
+					content = thisSuggestion.FileName;
 					return true;
 				}
 				else if (columnName == StandardTableKeyNames.ErrorCategory)
 				{
-					content = "Documentation";
+					content = "Live Coding";
 					return true;
 				}
 				else if (columnName == StandardTableKeyNames.ErrorSource)
 				{
-					content = "Spelling";
+					content = thisSuggestion.ViewerName;
 					return true;
 				}
 				else if (columnName == StandardTableKeyNames.Line)
 				{
 					// Line and column numbers are 0-based (the UI that displays the line/column number will add one to the value returned here).
-					content = this.Errors[index].Span.Start.GetContainingLine().LineNumber;
+					content = thisSuggestion.LineNumber;
 
 					return true;
 				}
 				else if (columnName == StandardTableKeyNames.Column)
 				{
-					var position = this.Errors[index].Span.Start;
+					var position = thisSuggestion.Span.Start;
 					var line = position.GetContainingLine();
 					content = position.Position - line.Start.Position;
 
@@ -104,24 +118,24 @@ namespace Fritz.LiveCoding
 				}
 				else if (columnName == StandardTableKeyNames.Text)
 				{
-					content = string.Format(CultureInfo.InvariantCulture, "Spelling: {0}", this.Errors[index].Span.GetText());
+					content = thisSuggestion.SuggestedCode;
 
 					return true;
 				}
-				else if (columnName == StandardTableKeyNames2.TextInlines)
-				{
-					var inlines = new List<Inline>();
+				//else if (columnName == StandardTableKeyNames2.TextInlines)
+				//{
+				//	var inlines = new List<Inline>();
 
-					inlines.Add(new Run("Spelling: "));
-					inlines.Add(new Run(this.Errors[index].Span.GetText())
-					{
-						FontWeight = FontWeights.ExtraBold
-					});
+				//	inlines.Add(new Run("Spelling: "));
+				//	inlines.Add(new Run(this.Suggestions[index].Span.GetText())
+				//	{
+				//		FontWeight = FontWeights.ExtraBold
+				//	});
 
-					content = inlines;
+				//	content = inlines;
 
-					return true;
-				}
+				//	return true;
+				//}
 				else if (columnName == StandardTableKeyNames.ErrorSeverity)
 				{
 					content = __VSERRORCATEGORY.EC_MESSAGE;
@@ -136,19 +150,19 @@ namespace Fritz.LiveCoding
 				}
 				else if (columnName == StandardTableKeyNames.BuildTool)
 				{
-					content = "SpellChecker";
+					content = "Code Suggestion";
 
 					return true;
 				}
-				else if (columnName == StandardTableKeyNames.ErrorCode)
-				{
-					content = this.Errors[index].Span.GetText();
+				//else if (columnName == StandardTableKeyNames.ErrorCode)
+				//{
+				//	content = this.Suggestions[index].Span.GetText();
 
-					return true;
-				}
+				//	return true;
+				//}
 				else if ((columnName == StandardTableKeyNames.ErrorCodeToolTip) || (columnName == StandardTableKeyNames.HelpLink))
 				{
-					content = string.Format(CultureInfo.InvariantCulture, "http://www.bing.com/search?q={0}", this.Errors[index].Span.GetText());
+					content = string.Format(CultureInfo.InvariantCulture, "http://www.bing.com/search?q={0}", this.Suggestions[index].Span.GetText());
 
 					return true;
 				}
@@ -163,12 +177,13 @@ namespace Fritz.LiveCoding
 
 		public override bool CanCreateDetailsContent(int index)
 		{
-			return this.Errors[index].AlternateSpellings.Count > 0;
+			return true;	// Yes, we can create details content --> we will have a suggestion from a viewer
+			//return this.Suggestions[index].AlternateSpellings.Count > 0;
 		}
 
 		public override bool TryCreateDetailsStringContent(int index, out string content)
 		{
-			content = this.Errors[index].Alternatives;
+			content = this.Suggestions[index].SuggestedCode;
 
 			return (content != null);
 		}

@@ -8,23 +8,23 @@ using System.Threading.Tasks;
 namespace Fritz.LiveCoding
 {
 
-	class CodeSuggestionFactory : TableEntriesSnapshotFactoryBase
+	class CodeSuggestionsFactory : TableEntriesSnapshotFactoryBase
 	{
 		private readonly CodeSuggestionProxy _codeSuggester;
 
-		public SpellingErrorsSnapshot CurrentSnapshot { get; private set; }
+		public CodeSuggestionSnapshot CurrentSnapshot { get; private set; }
 
-		public CodeSuggestionFactory(CodeSuggestionProxy codeSuggester, SpellingErrorsSnapshot spellingErrors)
+		public CodeSuggestionsFactory(CodeSuggestionProxy codeSuggester, CodeSuggestionSnapshot codeSuggestions)
 		{
 			_codeSuggester = codeSuggester;
 
-			this.CurrentSnapshot = spellingErrors;
+			this.CurrentSnapshot = codeSuggestions;
 		}
 
-		internal void UpdateErrors(SpellingErrorsSnapshot spellingErrors)
+		internal void UpdateErrors(CodeSuggestionSnapshot codeSuggestions)
 		{
-			this.CurrentSnapshot.NextSnapshot = spellingErrors;
-			this.CurrentSnapshot = spellingErrors;
+			this.CurrentSnapshot.NextSnapshot = codeSuggestions;
+			this.CurrentSnapshot = codeSuggestions;
 		}
 
 		#region ITableEntriesSnapshotFactory members

@@ -65,20 +65,6 @@ namespace Fritz.LiveCoding
 			// GC.SuppressFinalize(this);
 		}
 
-		internal void AddCodeSuggester(CodeSuggestionProxy codeSuggester)
-		{
-			throw new NotImplementedException();
-		}
-
-		internal void RemoveCodeSuggester(CodeSuggestionProxy codeSuggester)
-		{
-			throw new NotImplementedException();
-		}
-
-		internal void UpdateSink()
-		{
-			throw new NotImplementedException();
-		}
 		#endregion
 	}
 }

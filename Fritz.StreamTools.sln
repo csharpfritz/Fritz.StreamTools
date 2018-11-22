@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleChatbot", "ConsoleCh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.LiveCoding", "Fritz.LiveCoding\Fritz.LiveCoding.csproj", "{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker", "ErrorList\C#\SpellChecker.csproj", "{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -50,7 +50,7 @@ namespace Fritz.LiveCoding
 		}
 
 		/// <summary>
-		/// Create a tagger that does spell checking on the view/buffer combination.
+		/// Create a tagger that locates the code suggestion on the view/buffer combination.
 		/// </summary>
 		public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
 		{
@@ -64,7 +64,7 @@ namespace Fritz.LiveCoding
 
 				// This is a thin wrapper around the SpellChecker that can be disposed of without shutting down the SpellChecker
 				// (unless it was the last tagger on the spell checker).
-				tagger = new SpellCheckerTagger(spellChecker) as ITagger<T>;
+				tagger = new CodeSuggestionTagger(spellChecker) as ITagger<T>;
 			}
 
 			return tagger;

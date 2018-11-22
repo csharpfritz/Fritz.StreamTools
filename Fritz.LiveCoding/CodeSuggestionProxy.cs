@@ -27,13 +27,11 @@ namespace Fritz.LiveCoding
 				// TODO we should listen for the file changing its name (ITextDocument.FileActionOccurred)
 			}
 
-			// turn on spell checking for the box we're using to do spell checking.
-			_box.SpellCheck.IsEnabled = true;
-
 			// We're assuming we're created on the UI thread so capture the dispatcher so we can do all of our updates on the UI thread.
-			_uiThreadDispatcher = Dispatcher.CurrentDispatcher;
+			// JTF: Not needed until we're ready to tag fixes
+			//_uiThreadDispatcher = Dispatcher.CurrentDispatcher;
 
-			this.Factory = new CodeSuggestionsFactory(this, new CodeSuggestionSnapshot(this.FilePath, 0));
+			this.Factory = new CodeSuggestionsFactory(this, new CodeSuggestionSnapshot());
 		}
 
 		// mike_from_playrgg cheered 600 on November 18, 2018

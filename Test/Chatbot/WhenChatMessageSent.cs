@@ -195,15 +195,15 @@ namespace Test.Chatbot
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 			_chatservice.Raise(cs => cs.ChatMessage += null, args);
 			
-			var times = Moq.Times.Once();
+			var verifyTimes = Moq.Times.Once();
 
 #if !DEBUG
-			times = Moq.Times.Exactly(2);
+			verifyTimes = Moq.Times.Exactly(2);
 #endif
 
 	  	_chatservice.Verify(sm => sm.SendMessageAsync(
-							It.Is<string>(x => x.StartsWith("Supported commands:"))),
-							times);
+					It.Is<string>(x => x.StartsWith("Supported commands:"))),
+					verifyTimes);
 		}
 
 		[Fact]

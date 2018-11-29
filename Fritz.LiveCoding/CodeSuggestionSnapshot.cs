@@ -162,6 +162,9 @@ namespace Fritz.LiveCoding
 				//}
 				else if ((columnName == StandardTableKeyNames.ErrorCodeToolTip) || (columnName == StandardTableKeyNames.HelpLink))
 				{
+
+					// TODO: What do we do with this???
+
 					content = string.Format(CultureInfo.InvariantCulture, "http://www.bing.com/search?q={0}", this.Suggestions[index].Span.GetText());
 
 					return true;

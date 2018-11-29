@@ -12,17 +12,20 @@ using System.ComponentModel.Composition;
 namespace Fritz.LiveCoding
 {
 
+	// restarted cheered 500 on November 29, 2018
+
 	/// <summary>
 	/// Factory for the <see cref="ITagger{T}"/>. There will be one instance of this class/VS session.
 	/// 
 	/// It is also the <see cref="ITableDataSource"/> that reports spelling errors in comments.
 	/// </summary>
 	[Export(typeof(IViewTaggerProvider))]
+	//[Export(typeof(IText))]
 	[TagType(typeof(IErrorTag))]
 	[ContentType("text")]
 	[TextViewRole(PredefinedTextViewRoles.Document)]
 	[TextViewRole(PredefinedTextViewRoles.Analyzable)]
-	internal sealed class CodeSuggestionProvider : IViewTaggerProvider, ITableDataSource
+	internal sealed class CodeSuggestionProvider : ITableDataSource
 	{
 
 		internal readonly ITableManager ErrorTableManager;
@@ -47,27 +50,6 @@ namespace Fritz.LiveCoding
 																						 StandardTableColumnDefinitions.ErrorSource, StandardTableColumnDefinitions.BuildTool,
 																						 StandardTableColumnDefinitions.ErrorSource, StandardTableColumnDefinitions.ErrorCategory,
 																						 StandardTableColumnDefinitions.Text, StandardTableColumnDefinitions.DocumentName, StandardTableColumnDefinitions.Line, StandardTableColumnDefinitions.Column);
-		}
-
-		/// <summary>
-		/// Create a tagger that locates the code suggestion on the view/buffer combination.
-		/// </summary>
-		public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
-		{
-			ITagger<T> tagger = null;
-
-			// Only attempt to spell check on the view's edit buffer (and multiple views could have that buffer open simultaneously so
-			// only create one instance of the spell checker.
-			if ((buffer == textView.TextBuffer) && (typeof(T) == typeof(IErrorTag)))
-			{
-				var spellChecker = buffer.Properties.GetOrCreateSingletonProperty(typeof(CodeSuggestionProxy), () => new CodeSuggestionProxy(this, textView, buffer));
-
-				// This is a thin wrapper around the SpellChecker that can be disposed of without shutting down the SpellChecker
-				// (unless it was the last tagger on the spell checker).
-				tagger = new CodeSuggestionTagger(spellChecker) as ITagger<T>;
-			}
-
-			return tagger;
 		}
 
 		#region ITableDataSource members
@@ -147,7 +129,7 @@ namespace Fritz.LiveCoding
 			}
 		}
 
-		public void RemoveSpellChecker(CodeSuggestionProxy codeSuggester)
+		public void RemoveCodeSuggester(CodeSuggestionProxy codeSuggester)
 		{
 			// This call will always happen on the UI thread (it is a side-effect of adding or removing the 1st/last tagger).
 			lock (_managers)

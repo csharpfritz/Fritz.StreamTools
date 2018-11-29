@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Fritz.LiveCoding
 {
+
+/**
+
 	class CodeSuggestionTagger : ITagger<IErrorTag>, IDisposable
 	{
 		private readonly CodeSuggestionProxy _spellChecker;
@@ -73,4 +76,7 @@ namespace Fritz.LiveCoding
 			}
 		}
 	}
+	**/
+
+
 }

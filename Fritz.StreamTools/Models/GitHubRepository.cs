@@ -54,7 +54,7 @@ namespace Fritz.StreamTools.Models
 				return outModel;
 			}
 			model.TopEverContributors.AddRange(
-				contributors.Where(c => c.Total > 0 && c.Author.Login != Configuration.ExcludeUser)
+				contributors.Where(c => c.Total > 0 && !Configuration.ExcludeUsers.Contains(c.Author.Login))
 										.OrderByDescending(c => c.Total)
 										.Take(5)
 										.Select(c => new GitHubContributor()
@@ -71,7 +71,7 @@ namespace Fritz.StreamTools.Models
 												  Commits = c.Weeks.Where(w => w.Week >= lastMonth)
 																												.Sum(e => e.Commits)
 												})
-												.Where(c => c.Commits > 0 && c.Author != Configuration.ExcludeUser)
+												.Where(c => c.Commits > 0 && !Configuration.ExcludeUsers.Contains(c.Author))
 												.OrderByDescending(c => c.Commits)
 												.Take(5));
 			model.TopWeekContributors.AddRange(
@@ -81,7 +81,7 @@ namespace Fritz.StreamTools.Models
 												  Author = c.Author.Login,
 												  Commits = c.Weeks.Last().Commits
 												})
-												.Where(c => c.Commits > 0 && c.Author != Configuration.ExcludeUser)
+												.Where(c => c.Commits > 0 && !Configuration.ExcludeUsers.Contains(c.Author))
 												.OrderByDescending(c => c.Commits)
 												.Take(5));
 			outModel.Add(model);

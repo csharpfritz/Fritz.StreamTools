@@ -153,5 +153,10 @@ namespace Fritz.LiveCoding
 				}
 			}
 		}
+
+		public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

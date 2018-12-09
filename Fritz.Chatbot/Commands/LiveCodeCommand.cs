@@ -32,6 +32,11 @@ namespace Fritz.Chatbot.Commands
 
 			// SqlMisterMagoo Cheered 100 on November 15, 2018
 			// Pakmanjr Cheered 2000 on November 15, 2018
+			// Quiltoni cheered 300 on December 9, 2018
+			// RobertTables cheered 200 on December 9, 2018
+			// stho32 cheered 100 on December 9, 2018
+			// johanb cheered 100 on December 9, 2018
+			// ziliel47 cheered 100 on December 9, 2018
 
 			var segments = rhs.ToString().Split(' ');
 

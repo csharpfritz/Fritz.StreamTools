@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28315.86
+# Visual Studio 15
+VisualStudioVersion = 15.0.28306.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{520B1405-AC30-493A-8F04-6AA9B8FE2CDD}"
 EndProject
@@ -31,9 +31,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Twitch", "Fritz.Twitc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleChatbot", "ConsoleChatbot\ConsoleChatbot.csproj", "{A9F1860F-163B-44AC-A935-C1B584D3CB8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.LiveCoding", "Fritz.LiveCoding\Fritz.LiveCoding.csproj", "{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker", "ErrorList\C#\SpellChecker.csproj", "{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.LiveCoding2", "Fritz.LiveCoding2\Fritz.LiveCoding2.csproj", "{DD21ECB3-960C-443C-855B-0AF543912637}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,14 +69,14 @@ Global
 		{A9F1860F-163B-44AC-A935-C1B584D3CB8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9F1860F-163B-44AC-A935-C1B584D3CB8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9F1860F-163B-44AC-A935-C1B584D3CB8A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D4EE17DB-4EF8-40F7-87F4-D281A91B8199}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD21ECB3-960C-443C-855B-0AF543912637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD21ECB3-960C-443C-855B-0AF543912637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD21ECB3-960C-443C-855B-0AF543912637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD21ECB3-960C-443C-855B-0AF543912637}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

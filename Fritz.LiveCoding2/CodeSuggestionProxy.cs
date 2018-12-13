@@ -20,12 +20,12 @@ namespace Fritz.LiveCoding2
 
 			try
 			{
-				_client = new HubConnectionBuilder().WithUrl("http://localhost.fiddler:62574/followerstream?groups=codesuggestions")
+				_client = new HubConnectionBuilder().WithUrl("http://localhost:62574/followerstream?groups=codesuggestions")
 				.Build();
 			}
 			catch (Exception ex)
 			{
-				Debug.WriteLine($"Exception while initializing HubConnectionBuilder: {ex}");
+				Debug.WriteLine($"Exception while initializing HubConnectionBuilder: {ex} \n");
 			}
 
 			_client.On<CodeSuggestion>("OnNewCode", x => OnNewCode?.Invoke(null, x));
@@ -42,34 +42,15 @@ namespace Fritz.LiveCoding2
 			}
 			catch (Exception ex)
 			{
-				Debug.WriteLine($"Error while connecting: {ex}");
+				CodeSuggestionsPackage.WriteToPane($"Error while connecting: {ex} \n");
 			}
-			Debug.WriteLine("Completed starting connection to SignalR");
+			CodeSuggestionsPackage.WriteToPane("Connected to ChatBot service \n");
 
 		}
 
 		private async System.Threading.Tasks.Task _client_Closed(Exception arg)
 		{
 			throw new NotImplementedException();
-		}
-
-		internal static void Initialize()
-		{
-
-			if (_Instance != null) return;
-
-			lock (_InstanceLock)
-			{
-
-				if (_Instance == null)
-				{
-
-					_Instance = new CodeSuggestionProxy();
-
-				}
-
-			}
-
 		}
 
 		#region IDisposable Support

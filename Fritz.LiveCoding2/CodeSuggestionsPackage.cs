@@ -86,31 +86,41 @@ namespace Fritz.LiveCoding2
 			// When initialized asynchronously, the current thread may be a background thread at this point.
 			// Do any initialization that requires the UI thread after switching to the UI thread.
 
-			this.Proxy = new CodeSuggestionProxy();
-			Proxy.OnNewCode += Proxy_OnNewCode;
-			await Proxy.StartAsync();
-
 			await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
 			var thisPane = CreatePane();
-			thisPane.OutputString("Here is the new window pane!  \n");
 			MyOutputPane = thisPane;
+			WriteToPane("Code Suggestions from Twitch will appear here  \n");
+
+			this.Proxy = new CodeSuggestionProxy();
+			Proxy.OnNewCode += Proxy_OnNewCode;
+			await Proxy.StartAsync();
 
 		}
 
 		private void Proxy_OnNewCode(object sender, CodeSuggestion e)
 		{
 
-			ThreadHelper.JoinableTaskFactory.Run(async delegate {
+			ThreadHelper.JoinableTaskFactory.Run(async delegate
+			{
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 			});
 
-			MyOutputPane.OutputString($"New code suggestion from {e.UserName} \n");
-			MyOutputPane.Activate();
+			WriteToPane($"New code suggestion from {e.UserName} for {e.FileName} on line {e.LineNumber}: \n\t {e.Body} \n", true);
 
 		}
 
-		internal static OutputWindowPane CreatePane(string title = "Code Suggestions")
+		internal static void WriteToPane(string text, bool activate = false)
+		{
+
+			//ThreadHelper.ThrowIfNotOnUIThread();
+
+			MyOutputPane.OutputString(text);
+			if (activate) MyOutputPane.Activate();
+
+		}
+
+		private static OutputWindowPane CreatePane(string title = "Code Suggestions")
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 

@@ -16,7 +16,7 @@ namespace Fritz.Chatbot.Commands
 	  this.Configuration = configuration;
 	}
 
-	public string Trigger => "Fritz";
+	public string Trigger => "attention";
 
 	public string Description => "Play audio queue to divert attention to chat";
 

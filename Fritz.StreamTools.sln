@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker", "ErrorList\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.LiveCoding2", "Fritz.LiveCoding2\Fritz.LiveCoding2.csproj", "{DD21ECB3-960C-443C-855B-0AF543912637}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{34555889-871B-4656-B97D-F230A89621BB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,10 @@ Global
 		{DD21ECB3-960C-443C-855B-0AF543912637}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD21ECB3-960C-443C-855B-0AF543912637}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD21ECB3-960C-443C-855B-0AF543912637}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34555889-871B-4656-B97D-F230A89621BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34555889-871B-4656-B97D-F230A89621BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34555889-871B-4656-B97D-F230A89621BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34555889-871B-4656-B97D-F230A89621BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

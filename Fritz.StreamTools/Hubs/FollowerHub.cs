@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
 using Fritz.Chatbot.Commands;
+using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools.Hubs
 {
@@ -18,20 +19,31 @@ namespace Fritz.StreamTools.Hubs
 
 		public StreamService StreamService { get; }
 		public FollowerClient FollowerClient { get; }
+		public ILogger Logger { get; }
 
 		public FollowerHub(
 			StreamService streamService,
-			FollowerClient client
+			FollowerClient client,
+			ILoggerFactory loggerFactory
 			)
 		{
 
 
 			this.StreamService = streamService;
 			this.FollowerClient = client;
+			this.Logger = loggerFactory.CreateLogger("SignalR");
 
 			CodeSuggestionsManager.Instance.SuggestionAdded = (suggestion) => this.FollowerClient.UpdateCodeSuggestions(suggestion);
 
 			StreamService.Updated += StreamService_Updated;
+		}
+
+		public override Task OnConnectedAsync()
+		{
+
+			Logger.LogError($"New connection from: {this.Context.ConnectionId}");
+
+			return base.OnConnectedAsync();
 		}
 
 		private void StreamService_Updated(object sender, ServiceUpdatedEventArgs e)

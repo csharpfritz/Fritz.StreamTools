@@ -15,6 +15,18 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Fritz.LiveCoding2
 {
+
+/*
+ * Cheer ramblinggeek 100 Dec 11
+Cheer pharewings 100 
+Cheer nodebotanist 100 
+Cheer SqlMisterMagoo 600
+Cheer svavablount 100
+Cheer VindicatorVef 500
+*/
+
+
+
 	/// <summary>
 	/// This is the class that implements the package exposed by this assembly.
 	/// </summary>
@@ -55,6 +67,8 @@ namespace Fritz.LiveCoding2
 			// initialization is the Initialize method.
 		}
 
+		internal CodeSuggestionProxy Proxy { get; private set; }
+
 		#region Package Members
 
 		/// <summary>
@@ -69,10 +83,12 @@ namespace Fritz.LiveCoding2
 			// When initialized asynchronously, the current thread may be a background thread at this point.
 			// Do any initialization that requires the UI thread after switching to the UI thread.
 
+			this.Proxy = new CodeSuggestionProxy();
+
 			await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 			OutputWindow = await this.GetServiceAsync(typeof(SVsOutputWindow)) as IVsOutputWindow;
 
-			CodeSuggestionProxy.Initialize();
+			await Proxy.StartAsync();
 
 		}
 

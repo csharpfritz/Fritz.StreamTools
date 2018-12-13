@@ -1,4 +1,6 @@
-﻿namespace Fritz.LiveCoding2
+﻿using Newtonsoft.Json.Linq;
+
+namespace Fritz.LiveCoding2
 {
 	public class CodeSuggestion
 	{
@@ -11,6 +13,6 @@
 
 		public string Body { get; set; }
 
-
 	}
 }
+

@@ -6,6 +6,8 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -16,14 +18,14 @@ using Task = System.Threading.Tasks.Task;
 namespace Fritz.LiveCoding2
 {
 
-/*
- * Cheer ramblinggeek 100 Dec 11
-Cheer pharewings 100 
-Cheer nodebotanist 100 
-Cheer SqlMisterMagoo 600
-Cheer svavablount 100
-Cheer VindicatorVef 500
-*/
+	/*
+	 * Cheer ramblinggeek 100 Dec 11
+	Cheer pharewings 100 
+	Cheer nodebotanist 100 
+	Cheer SqlMisterMagoo 600
+	Cheer svavablount 100
+	Cheer VindicatorVef 500
+	*/
 
 
 
@@ -67,6 +69,7 @@ Cheer VindicatorVef 500
 			// initialization is the Initialize method.
 		}
 
+		public static OutputWindowPane MyOutputPane { get; private set; }
 		internal CodeSuggestionProxy Proxy { get; private set; }
 
 		#region Package Members
@@ -84,12 +87,46 @@ Cheer VindicatorVef 500
 			// Do any initialization that requires the UI thread after switching to the UI thread.
 
 			this.Proxy = new CodeSuggestionProxy();
-
-			await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-			OutputWindow = await this.GetServiceAsync(typeof(SVsOutputWindow)) as IVsOutputWindow;
-
+			Proxy.OnNewCode += Proxy_OnNewCode;
 			await Proxy.StartAsync();
 
+			await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+			var thisPane = CreatePane();
+			thisPane.OutputString("Here is the new window pane!  \n");
+			MyOutputPane = thisPane;
+
+		}
+
+		private void Proxy_OnNewCode(object sender, CodeSuggestion e)
+		{
+
+			ThreadHelper.JoinableTaskFactory.Run(async delegate {
+				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+			});
+
+			MyOutputPane.OutputString($"New code suggestion from {e.UserName} \n");
+			MyOutputPane.Activate();
+
+		}
+
+		internal static OutputWindowPane CreatePane(string title = "Code Suggestions")
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var dte = (DTE2)AsyncPackage.GetGlobalService(typeof(DTE));
+			var panes = dte.ToolWindows.OutputWindow.OutputWindowPanes;
+
+			try
+			{
+				// If the pane exists already, write to it.  
+				return panes.Item(title);
+			}
+			catch (ArgumentException)
+			{
+				// Create a new pane and write to it.  
+				return panes.Add(title);
+			}
 		}
 
 		#endregion

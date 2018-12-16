@@ -108,6 +108,9 @@ namespace Fritz.LiveCoding2
 
 			WriteToPane(e, true);
 
+			// cheer 100 svavablount  12/16/2018
+			// cheer 1000 lannonbr		12/16/2018
+
 			var p = new ErrorListProvider(this);
 			var newTask = new ErrorTask
 			{

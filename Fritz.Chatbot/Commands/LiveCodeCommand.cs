@@ -10,7 +10,7 @@ namespace Fritz.Chatbot.Commands
 
 		public string Trigger => "code";
 
-		public string Description => "Send a code suggestion to the broadcaster";
+		public string Description => "Send a code suggestion to the broadcaster in the format: !code <filename> <linenumber> <code>";
 
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(0.5);
 

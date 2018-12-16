@@ -106,7 +106,33 @@ namespace Fritz.LiveCoding2
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 			});
 
-			WriteToPane($"New code suggestion from {e.UserName} for {e.FileName} on line {e.LineNumber}: \n\t {e.Body} \n", true);
+			WriteToPane(e, true);
+
+			var p = new ErrorListProvider(this);
+			var newTask = new ErrorTask
+			{
+				Line = e.LineNumber,
+				Document = @"c:\dev\ConsoleApp1\ConsoleApp1\Program.cs",
+				Category = TaskCategory.Misc,
+				Text = $"New code suggestion from {e.UserName} for {e.FileName} on line {e.LineNumber}: \n\t {e.Body} \n"
+
+			};
+			p.Tasks.Add(newTask);
+			p.Show();
+
+
+		}
+
+		internal static void WriteToPane(CodeSuggestion suggestion, bool activate = false)
+		{
+
+			//ThreadHelper.ThrowIfNotOnUIThread();
+
+			MyOutputPane.OutputString($"New code suggestion from {suggestion.UserName} for {suggestion.FileName} on line {suggestion.LineNumber}: \n\t {suggestion.Body} \n");
+			MyOutputPane.OutputTaskItemString("Some text", vsTaskPriority.vsTaskPriorityLow, "Subcategory", vsTaskIcon.vsTaskIconComment, @"c:\dev\ConsoleApp1\ConsoleApp1\Program.cs", suggestion.LineNumber, $"New code suggestion from {suggestion.UserName}", true);
+			if (activate) MyOutputPane.Activate();
+
+
 
 		}
 

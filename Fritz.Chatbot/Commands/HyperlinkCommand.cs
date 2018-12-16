@@ -7,6 +7,9 @@ namespace Fritz.Chatbot.Commands
 {
 	public class HyperlinkCommand : IExtendedCommand
 	{
+
+		// TODO: Do not check for links posted by the bot
+
 		public string Name => "HyperLink";
 		public string Description => "";
 		public int Order => 2;

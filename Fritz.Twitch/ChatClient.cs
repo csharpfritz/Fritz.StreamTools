@@ -230,6 +230,7 @@ namespace Fritz.Twitch
 			var message = "";
 
 			userName = ChatClient.reUserName.Match(msg).Groups[1].Value;
+			if (userName == Settings.ChatBotName) return; // Exit and do not process if the bot posted this message
 
 			var badges = ChatClient.reBadges.Match(msg).Groups[1].Value.Split(',');
 

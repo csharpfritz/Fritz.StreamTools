@@ -104,25 +104,63 @@ namespace Fritz.LiveCoding2
 			ThreadHelper.JoinableTaskFactory.Run(async delegate
 			{
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+				WriteToPane(e, true);
+
+				// cheer 100 svavablount  12/16/2018
+				// cheer 1000 lannonbr		12/16/2018
+
+				var projectItem = LocateProject(e.FileName);
+
+				var p = new ErrorListProvider(this);
+				var newTask = new ErrorTask
+				{
+					Line = e.LineNumber-1,
+					
+					Document = @"c:\dev\ConsoleApp1\ConsoleApp1\Program.cs",
+					HierarchyItem = projectItem,
+					Category = TaskCategory.Misc,
+					ErrorCategory = TaskErrorCategory.Message,
+					Text = $"New code suggestion from {e.UserName} for {e.FileName} on line {e.LineNumber}: \n\t {e.Body} \n"
+
+				};
+				newTask.Navigate += (s, cs) =>
+				{
+					newTask.Line++;
+					p.Navigate(newTask, Guid.Parse(EnvDTE.Constants.vsViewKindCode));
+					newTask.Line--;
+				};
+				p.Tasks.Add(newTask);
+				p.Show();
+
 			});
 
-			WriteToPane(e, true);
 
-			// cheer 100 svavablount  12/16/2018
-			// cheer 1000 lannonbr		12/16/2018
+		}
 
-			var p = new ErrorListProvider(this);
-			var newTask = new ErrorTask
-			{
-				Line = e.LineNumber,
-				Document = @"c:\dev\ConsoleApp1\ConsoleApp1\Program.cs",
-				Category = TaskCategory.Misc,
-				Text = $"New code suggestion from {e.UserName} for {e.FileName} on line {e.LineNumber}: \n\t {e.Body} \n"
+		private IVsHierarchy LocateProject(string fileName)
+		{
 
-			};
-			p.Tasks.Add(newTask);
-			p.Show();
+			var ivsSolution = (IVsSolution)Package.GetGlobalService(typeof(IVsSolution));
+			var dte = (EnvDTE80.DTE2)Package.GetGlobalService(typeof(EnvDTE.DTE));
+			for (var projCounter=0; projCounter < dte.Solution.Projects.Count; projCounter++) {
 
+				var thisProject = dte.Solution.Projects.Item(projCounter);
+				for (var fileCounter = 0; fileCounter < thisProject.ProjectItems.Count; fileCounter++) {
+
+					if (thisProject.ProjectItems.Item(fileCounter).Name == fileName) {
+
+						IVsHierarchy outItem;
+						ivsSolution.GetProjectOfUniqueName(thisProject.UniqueName, out outItem);
+						return outItem;
+
+					}
+
+				}
+
+			}
+
+			return null;
 
 		}
 
@@ -130,12 +168,7 @@ namespace Fritz.LiveCoding2
 		{
 
 			//ThreadHelper.ThrowIfNotOnUIThread();
-
-			MyOutputPane.OutputString($"New code suggestion from {suggestion.UserName} for {suggestion.FileName} on line {suggestion.LineNumber}: \n\t {suggestion.Body} \n");
-			MyOutputPane.OutputTaskItemString("Some text", vsTaskPriority.vsTaskPriorityLow, "Subcategory", vsTaskIcon.vsTaskIconComment, @"c:\dev\ConsoleApp1\ConsoleApp1\Program.cs", suggestion.LineNumber, $"New code suggestion from {suggestion.UserName}", true);
-			if (activate) MyOutputPane.Activate();
-
-
+			WriteToPane($"New code suggestion from {suggestion.UserName} for {suggestion.FileName} on line {suggestion.LineNumber}: \n\t {suggestion.Body} \n", activate);
 
 		}
 

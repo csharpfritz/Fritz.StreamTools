@@ -55,6 +55,7 @@ namespace Fritz.StreamTools
 			{
 				configure.MapHub<FollowerHub>("/followerstream");
 				configure.MapHub<GithubyMcGithubFace>("/github");
+				configure.MapHub<AttentionHub>("/attentionhub");
 			});
 
 			app.UseMvc(routes =>

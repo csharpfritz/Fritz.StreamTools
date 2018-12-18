@@ -23,7 +23,7 @@ namespace Fritz.Chatbot.Commands
 
 		public string Description => "Play audio queue to divert attention to chat";
 
-		public TimeSpan? Cooldown => TimeSpan.FromSeconds(5);
+	public TimeSpan? Cooldown => TimeSpan.Parse(Configuration["FritzBot:AttentionCommand:Cooldown"]);
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{

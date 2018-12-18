@@ -10,7 +10,7 @@ namespace Fritz.StreamTools.Hubs
 	public interface IAttentionHubClient
 	{
 
-		// Cheer 100 parithon 12/18/2018
+		// Cheer 200 parithon 12/18/2018
 		// Cheer 500 pharewings 12/18/2018
 		Task AlertFritz();
 		Task ClientConnected(string connectionId);

@@ -19,7 +19,7 @@
 		<PackageReference Include="Bundgaard.MixerLib" Version="1.2.65" />
 		<PackageReference Include="LazyCache.AspNetCore" Version="2.0.0-beta03" />
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.5.1" />
-		<PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.6" />
+		<PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="1.0.4" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.6" />
 		<PackageReference Include="Octokit" Version="0.32.0" />

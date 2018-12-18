@@ -2,8 +2,9 @@
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
-
+using Microsoft.Extensions.Hosting;
 
 namespace Fritz.Chatbot.Commands
 {
@@ -11,13 +12,15 @@ namespace Fritz.Chatbot.Commands
 	{
 		private readonly IConfiguration Configuration;
 
-		public AttentionCommand(IAttentionClient client, IConfiguration configuration)
+		public AttentionCommand(IConfiguration configuration)
 		{
 			this.Configuration = configuration;
-			this.Client = client;
+			var thisUri = new Uri(configuration["FritzBot:ServerUrl"], UriKind.Absolute);
+			this.Client = new HubConnectionBuilder().WithUrl(new Uri(thisUri, "attentionhub").ToString()).Build();
+			this.Client.StartAsync();
 		}
 
-		protected IAttentionClient Client { get; }
+		protected HubConnection Client { get; }
 
 		public string Trigger => "attention";
 
@@ -27,14 +30,11 @@ namespace Fritz.Chatbot.Commands
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
-			await this.Client.AlertFritz();
+			await this.Client.InvokeAsync("AlertFritz");
 
 			var attentionText = Configuration["FritzBot:AttentionCommand:TemplateText"];
 
-			var sb = new StringBuilder();
-			sb.AppendFormat(attentionText, userName);
-
-			await chatService.SendMessageAsync(attentionText);
+			await chatService.SendMessageAsync(string.Format(attentionText, userName));
 		}
 	}
 }

@@ -12,6 +12,9 @@
 		<None Remove="ClientApp\**" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Compile Remove="Hubs\AttentionHub.cs" />
+	</ItemGroup>
+	<ItemGroup>
 	  <Content Remove="wwwroot\hey_listen.wav" />
 	</ItemGroup>
 	<ItemGroup>

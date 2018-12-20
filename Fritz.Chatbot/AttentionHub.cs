@@ -16,7 +16,7 @@ namespace Fritz.StreamTools.Hubs
 		Task ClientConnected(string connectionId);
 	}
 
-	public class AttentionHub : Hub<IAttentionHubClient>
+	public class AttentionHub : Hub<IAttentionHubClient>, IAttentionClient
 	{
 		public override Task OnConnectedAsync()
 		{

@@ -57,8 +57,10 @@ namespace Test.Startup
 			{
 				{"StreamServices:Twitch:ClientId", twitchClientId},
 				{"StreamServices:Mixer:Channel", mixerClientId},
-				{"StreamServices:Fake:Enabled", enableFake.ToString()}
+				{"StreamServices:Fake:Enabled", enableFake.ToString()},
+				{"FritzBot:ServerUrl", "http://localhost:80" }
 			};
 		}
+
 	}
 }

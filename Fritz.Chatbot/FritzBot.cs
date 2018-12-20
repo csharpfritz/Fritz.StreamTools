@@ -214,15 +214,15 @@ namespace Fritz.StreamTools.Services
 			{
 				Debug.Assert(user != null);
 
-#if !DEBUG
 				if (e.IsModerator || e.IsOwner)
 					return false;
-#endif
 
 				// Check per user cooldown
 				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
 				{
 					_logger.LogWarning("Ignoring command {0} from {1} on {2}. Cooldown active", namedCommand, e.UserName, e.ServiceName);
+					var remain = cooldown.GetValueOrDefault() - (DateTime.UtcNow - user.LastCommandTime);
+					chatService.SendMessageAsync($"Ignoring command {namedCommand} from {e.UserName}.  Cooldown is active for {e.UserName} for {remain.TotalSeconds}");
 					return true;
 				}
 
@@ -235,6 +235,7 @@ namespace Fritz.StreamTools.Services
 						var remain = cooldown.GetValueOrDefault() - (now - dt);
 						_logger.LogWarning("Ignoring command {0} from {1} on {2}. In cooldown for {3} more secs", namedCommand, e.UserName, e.ServiceName,
 							(int) remain.TotalSeconds);
+						chatService.SendMessageAsync($"Ignoring command {namedCommand} from {e.UserName}.  Cooldown is active for {e.UserName} for {remain.TotalSeconds}");
 						return true;
 					}
 				}

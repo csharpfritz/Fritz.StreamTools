@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -115,13 +117,12 @@ namespace Fritz.LiveCoding2
 				var p = new ErrorListProvider(this);
 				var newTask = new ErrorTask
 				{
-					Line = e.LineNumber-1,
-					
-					Document = @"c:\dev\ConsoleApp1\ConsoleApp1\Program.cs",
-					HierarchyItem = projectItem,
+					Line = e.LineNumber - 1,
+					Document = projectItem.path,
+					HierarchyItem = projectItem.vsObject,
 					Category = TaskCategory.Misc,
 					ErrorCategory = TaskErrorCategory.Message,
-					Text = $"New code suggestion from {e.UserName} for {e.FileName} on line {e.LineNumber}: \n\t {e.Body} \n"
+					Text = $"New code suggestion from {e.UserName}: \n\t {e.Body} \n"
 
 				};
 				newTask.Navigate += (s, cs) =>
@@ -138,29 +139,57 @@ namespace Fritz.LiveCoding2
 
 		}
 
-		private IVsHierarchy LocateProject(string fileName)
+		private (IVsHierarchy vsObject, string path) LocateProject(string fileName)
 		{
+
+			/// NOTE: Projects.Item and ProjectItems.Item are 1 indexed NOT 0 indexed
 
 			var ivsSolution = (IVsSolution)Package.GetGlobalService(typeof(IVsSolution));
 			var dte = (EnvDTE80.DTE2)Package.GetGlobalService(typeof(EnvDTE.DTE));
-			for (var projCounter=0; projCounter < dte.Solution.Projects.Count; projCounter++) {
+
+			var fileList = new List<(IVsHierarchy vsObject, string path)>();
+			for (var projCounter = 1; projCounter <= dte.Solution.Projects.Count; projCounter++)
+			{
 
 				var thisProject = dte.Solution.Projects.Item(projCounter);
-				for (var fileCounter = 0; fileCounter < thisProject.ProjectItems.Count; fileCounter++) {
+				fileList.AddRange(FindFiles(thisProject));
 
-					if (thisProject.ProjectItems.Item(fileCounter).Name == fileName) {
+			}
 
-						IVsHierarchy outItem;
+			// TODO: Return the first... error / whisper if there are multiple
+			return fileList[0];
+
+			IEnumerable<(IVsHierarchy vsObject, string path)> FindFiles(Project thisProject, ProjectItem projectItem = null)
+			{
+
+				var outList = new List<(IVsHierarchy vsObject, string path)>();
+				IVsHierarchy outItem = null;
+
+				var projectItems = projectItem != null ? projectItem.ProjectItems : thisProject.ProjectItems; 
+				for (var fileCounter = 1; fileCounter <= projectItems.Count; fileCounter++)
+				{
+
+					var thisObject = projectItems.Item(fileCounter);
+					if (thisObject.Name.Equals(fileName, StringComparison.InvariantCultureIgnoreCase) && thisObject.ProjectItems.Count == 0)
+					{
+
+						// NOTE: Do we need to search all of the filenames?
+
 						ivsSolution.GetProjectOfUniqueName(thisProject.UniqueName, out outItem);
-						return outItem;
+						var fullPath = thisObject.FileNames[1];
+						outList.Add((outItem, fullPath));
+
+					} else if (thisObject.ProjectItems.Count > 0) {
+
+						outList.AddRange(FindFiles(thisProject, thisObject));
 
 					}
 
 				}
 
-			}
+				return outList;
 
-			return null;
+			}
 
 		}
 

@@ -29,4 +29,8 @@
     <ProjectReference Include="..\Fritz.Twitch\Fritz.Twitch.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Fritz.LiveCoding2\" />
+  </ItemGroup>
+
 </Project>

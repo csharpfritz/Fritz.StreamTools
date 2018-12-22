@@ -6,10 +6,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
+using Fritz.LiveCoding2.Exceptions;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -60,6 +62,9 @@ namespace Fritz.LiveCoding2
 		/// </summary>
 		public const string PackageGuidString = "a8df1642-6a10-4948-abf9-0d2fbac0753f";
 		internal static IVsOutputWindow OutputWindow;
+
+		internal static readonly Regex FileNameRegex = new Regex(@"(?<projectName>^[\w.]+\/)?(?<folders>[\w.^\/]+\/)*(?<filename>[\w.]+$)");
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CodeSuggestionsPackage"/> class.
 		/// </summary>
@@ -107,19 +112,33 @@ namespace Fritz.LiveCoding2
 			{
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+				// VALIDATE the filename
+				IVsHierarchy projectItem = null;
+				var fileName = string.Empty;
+
+
+				// VALIDATE the line number
+				try
+				{
+					(projectItem, fileName) = LocateProject(e.FileName);
+				} catch (ProjectFileNotFoundException ex) {
+
+				} catch (Exception ex) {
+					// Whisper back to the person in chat about the error
+				}
+
 				WriteToPane(e, true);
 
 				// cheer 100 svavablount  12/16/2018
 				// cheer 1000 lannonbr		12/16/2018
 
-				var projectItem = LocateProject(e.FileName);
 
 				var p = new ErrorListProvider(this);
 				var newTask = new ErrorTask
 				{
 					Line = e.LineNumber - 1,
-					Document = projectItem.path,
-					HierarchyItem = projectItem.vsObject,
+					Document = fileName,
+					HierarchyItem = projectItem,
 					Category = TaskCategory.Misc,
 					ErrorCategory = TaskErrorCategory.Message,
 					Text = $"New code suggestion from {e.UserName}: \n\t {e.Body} \n"
@@ -143,20 +162,62 @@ namespace Fritz.LiveCoding2
 		{
 
 			/// NOTE: Projects.Item and ProjectItems.Item are 1 indexed NOT 0 indexed
+			///
+			/// projectName? / folder* / filename
+			///
+
+			// Cheer 100 johanb 12/22/2018
+			// Cheer 1500 AspiringDevOpsGuru 12/22/2018
+
+			var normalizedFileName = fileName.Replace('\\', '/');
+
+			// TODO: Run regex match on a background thread and timeout after 5 seconds  (maybe shorter)
+			// NOTE: Need to handle if projectName matches a foldername in another project
+			var match = FileNameRegex.Match(normalizedFileName);
+
+			var projectName = match.Groups["projectName"].Success ? match.Groups["projectName"].Value.TrimEnd('/') : "";
+			var folders = match.Groups["folders"].Success ? match.Groups["folders"].Value.TrimEnd('/').Split('/') : new string[0];
+
 
 			var ivsSolution = (IVsSolution)Package.GetGlobalService(typeof(IVsSolution));
 			var dte = (EnvDTE80.DTE2)Package.GetGlobalService(typeof(EnvDTE.DTE));
 
 			var fileList = new List<(IVsHierarchy vsObject, string path)>();
-			for (var projCounter = 1; projCounter <= dte.Solution.Projects.Count; projCounter++)
+			Project theProject = null;
+
+			if (theProject != string.Empty)
 			{
 
-				var thisProject = dte.Solution.Projects.Item(projCounter);
-				fileList.AddRange(FindFiles(thisProject));
+				for (var projCounter = 1; projCounter <= dte.Solution.Projects.Count; projCounter++)
+				{
+
+					var projectFound = dte.Solution.Projects.Item(projCounter).Name.Equals(projectName, StringComparison.InvariantCultureIgnoreCase);
+					if (projectFound) {
+						theProject = dte.Solution.Projects.Item(projCounter);
+					}
+
+				}
+
+				if (theProject != null) projectName = string.Empty;
+				fileList.AddRange(FindFiles(theProject));
 
 			}
 
+			if (theProject == null)
+			{
+				for (var projCounter = 1; projCounter <= dte.Solution.Projects.Count; projCounter++)
+				{
+
+					theProject = dte.Solution.Projects.Item(projCounter);
+					fileList.AddRange(FindFiles(theProject));
+
+				}
+			}
+
 			// TODO: Return the first... error / whisper if there are multiple
+			if (fileList.Count == 0) throw new ProjectFileNotFoundException();
+			if (fileList.Count > 1) throw new MultipleFilesFoundException(fileList);
+
 			return fileList[0];
 
 			IEnumerable<(IVsHierarchy vsObject, string path)> FindFiles(Project thisProject, ProjectItem projectItem = null)

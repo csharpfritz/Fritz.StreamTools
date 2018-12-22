@@ -58,6 +58,7 @@
     <Compile Include="CodeSuggestion.cs" />
     <Compile Include="CodeSuggestionProxy.cs" />
     <Compile Include="CodeSuggestionsPackage.cs" />
+    <Compile Include="Exceptions\ProjectFileNotFoundException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

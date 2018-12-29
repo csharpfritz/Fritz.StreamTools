@@ -230,6 +230,7 @@ namespace Fritz.Twitch
 			var message = "";
 
 			userName = ChatClient.reUserName.Match(msg).Groups[1].Value;
+			if (userName == Settings.ChatBotName) return; // Exit and do not process if the bot posted this message
 
 			var badges = ChatClient.reBadges.Match(msg).Groups[1].Value.Split(',');
 
@@ -247,7 +248,8 @@ namespace Fritz.Twitch
 				NewMessage?.Invoke(this, new NewMessageEventArgs
 				{
 					UserName = userName,
-					Message = message
+					Message = message,
+					Badges = badges
 				});
 
 			} else if (reWhisperMessage.IsMatch(msg))

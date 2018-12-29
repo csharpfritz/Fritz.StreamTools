@@ -107,7 +107,7 @@ namespace Fritz.StreamTools.Services
 
 			ChatMessage?.Invoke(this, new ChatMessageEventArgs
 			{
-				IsModerator = e.Badges.Contains(@"moderator/1"),
+				IsModerator = e.Badges?.Contains(@"moderator/1") ?? false,
 				IsOwner = (_ChatClient.ChannelName == e.UserName),
 				IsWhisper = e.IsWhisper,
 				Message = e.Message,

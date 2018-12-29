@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Fritz.StreamTools.Models
@@ -15,7 +17,7 @@ namespace Fritz.StreamTools.Models
 		[Remote(action: "VerifyRepository", controller: "GitHub", AdditionalFields = nameof(RepositoryOwner))]
 		public string RepositoryName { get; set; }
 
-		public string ExcludeUser { get; set;} = "csharpfritz";
+		public ICollection<string> ExcludeUsers { get; set; }
 
 		public string RepositoryCsv { get; set; } = "csharpfritz/Fritz.StreamTools,csharpfritz/CoreWiki";
 

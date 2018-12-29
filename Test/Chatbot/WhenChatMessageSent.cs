@@ -178,6 +178,31 @@ namespace Test.Chatbot
 		}
 
 		[Fact]
+		public void ShouldIgnoreCommandsToFastIfModerator()
+		{
+			var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);
+			Task.WaitAll(sut.StartAsync(new CancellationToken()));
+
+			var args = new ChatMessageEventArgs
+			{
+				Message = "!help",
+				ServiceName = "TestService",
+				UserName = "Moderator",
+				IsModerator = true,
+				IsOwner = false
+			};
+
+			_chatservice.Raise(cs => cs.ChatMessage += null, args);
+			_chatservice.Raise(cs => cs.ChatMessage += null, args);
+			
+			var verifyTimes = Moq.Times.Exactly(2);
+
+	  	_chatservice.Verify(sm => sm.SendMessageAsync(
+					It.Is<string>(x => x.StartsWith("Supported commands:"))),
+					verifyTimes);
+		}
+
+		[Fact]
 		public void ShouldReturnLinkTitle()
 		{
 			var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);

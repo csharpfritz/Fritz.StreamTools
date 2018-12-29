@@ -1,0 +1,24 @@
+﻿
+@{
+	ViewData["Title"] = "Test Client";
+}
+
+<h2>Test Client</h2>
+
+<a class="btn btn-primary" href="javascript:alertFritz();">Send Alert</a>
+
+@section scripts {
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/attentionhub.js"></script>
+	<script type="text/javascript">
+		var attentionHub = new AttentionHub();
+
+		(function () {
+			attentionHub.start();
+		})();
+
+		function alertFritz() {
+			attentionHub.sendTest();
+		}
+	</script>
+}

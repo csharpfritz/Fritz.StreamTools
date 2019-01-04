@@ -86,6 +86,15 @@ namespace Fritz.LiveCoding2
 			// GC.SuppressFinalize(this);
 		}
 
+		internal Tasks.Task WhisperToUserAsync(string userName, string message)
+		{
+
+			// Cheer 220 crazy240sx 1/4/2019
+
+			return _client.InvokeAsync("WhisperToUser", userName, message);
+
+		}
+
 		#endregion
 
 	}

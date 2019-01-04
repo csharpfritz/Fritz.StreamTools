@@ -121,7 +121,14 @@ namespace Fritz.LiveCoding2
 				try
 				{
 					(projectItem, fileName) = LocateProject(e.FileName);
-				} catch (ProjectFileNotFoundException ex) {
+				}
+				catch (ProjectFileNotFoundException ex)
+				{
+
+				} catch (MultipleFilesFoundException ex) {
+
+					ThreadHelper.JoinableTaskFactory.RunAsync(async () => await Proxy.WhisperToUserAsync(e.UserName, "Multiple files match that name.  Please be more specific in folder/filename notation"));
+					return;
 
 				} catch (Exception ex) {
 					// Whisper back to the person in chat about the error
@@ -185,7 +192,7 @@ namespace Fritz.LiveCoding2
 			var fileList = new List<(IVsHierarchy vsObject, string path)>();
 			Project theProject = null;
 
-			if (theProject != string.Empty)
+			if (theProject != null)
 			{
 
 				for (var projCounter = 1; projCounter <= dte.Solution.Projects.Count; projCounter++)

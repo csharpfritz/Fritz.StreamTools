@@ -28,7 +28,7 @@ namespace Fritz.Chatbot.Commands
 
 			if (rhs.IsEmpty)
 			{
-				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Trigger)).Select(c => $"!{c.Trigger.ToLower()}"));
+				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Trigger) && c.Trigger != "sleep").Select(c => $"!{c.Trigger.ToLower()}"));
 
 				await chatService.SendMessageAsync($"Supported commands: {availableCommands}");
 				return;

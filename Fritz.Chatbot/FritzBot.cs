@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -28,6 +29,16 @@ namespace Fritz.StreamTools.Services
 		private IServiceProvider _serviceProvider;
 		readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
 
+		/// <summary>
+		/// Is the bot in DebugMode and should NOT process commands OTHER than Debug?
+		/// </summary>
+		internal static bool IsSleeping { get; set; } = false;
+
+		/// <summary>
+		/// Queue of messages to send to the chatroom
+		/// </summary>
+		public static readonly ObservableCollection<(string userName, string message)> WhisperQueue = new ObservableCollection<(string userName, string message)>();
+
 		public TimeSpan CooldownTime { get; private set; }
 
 		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory) : this(config, loggerFactory)
@@ -50,6 +61,22 @@ namespace Fritz.StreamTools.Services
 			_config = config;
 			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
 			ConfigureCommandCooldown(config);
+
+			WhisperQueue.CollectionChanged += WhisperQueue_CollectionChanged;
+
+		}
+
+		private void WhisperQueue_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+		{
+
+			if (e.Action != System.Collections.Specialized.NotifyCollectionChangedAction.Add) return;
+
+			var whisperTarget = WhisperQueue[0];
+			WhisperQueue.Remove(whisperTarget);
+
+			// TODO: Identify the correct chat service to send to
+			_chatServices[0].SendWhisperAsync(whisperTarget.userName, whisperTarget.message);
+
 		}
 
 		internal void ConfigureCommandCooldown(IConfiguration config)
@@ -126,6 +153,9 @@ namespace Fritz.StreamTools.Services
 			var user = _activeUsers.AddOrUpdate(userKey, new ChatUserInfo(), (_, u) => u);
 
 			var chatService = sender as IChatService;
+
+			// Handle Sleep mode
+			if (IsSleeping && e.Message != "!" + SleepCommand.TriggerText) return;
 
 			var final = await HandleExtendedCommands();
 			if (final)

@@ -38,6 +38,19 @@ namespace Fritz.StreamTools.Hubs
 			StreamService.Updated += StreamService_Updated;
 		}
 
+		public Task WhisperToUser(string userName, string message) {
+
+			/*
+			 *Cheer 219 Magnus10 10:14 1/3/2019
+				Cheer 218 SqlMisterMagoo 10:52 1/4/2019
+			*/
+
+			FritzBot.WhisperQueue.Add((userName, message));
+
+			return Task.CompletedTask;
+
+		}
+
 		public override Task OnConnectedAsync()
 		{
 

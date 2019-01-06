@@ -68,6 +68,16 @@ namespace Fritz.StreamTools.Services
 
 		public bool IsAuthenticated => true;
 
+		/// <summary>
+		/// current project that is being worked on
+		/// </summary>
+		private string _currentProject;
+		public string CurrentProject
+		{
+			get { return _currentProject; }
+			set { _currentProject = value; }
+		}
+
 		private async Task StartTwitchMonitoring()
 		{
 			try

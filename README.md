@@ -2,6 +2,8 @@
 
 Handy tools for managing my a live video stream and outputting video widgets that can be used directly in OBS or other streaming tools. 
 
+[![Build status](https://dev.azure.com/FritzAndFriends/Fritz.StreamTools/_apis/build/status/Fritz.StreamTools-Docker%20container-CI)](https://dev.azure.com/FritzAndFriends/Fritz.StreamTools/_build/latest?definitionId=7)
+
 ## Features
 
 The project is intended to be built as a Docker container and configured with a series of environment variables.  It is intended to support a single-user, and not run on the public-facing internet.

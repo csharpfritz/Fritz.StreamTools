@@ -9,8 +9,6 @@ namespace Fritz.StreamLib.Core
 		string Name { get; }
 		bool IsAuthenticated { get; }
 
-		string CurrentProject { get; set; }
-
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
 		event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		event EventHandler<ChatUserInfoEventArgs> UserLeft;

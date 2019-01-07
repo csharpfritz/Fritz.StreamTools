@@ -10,16 +10,6 @@ namespace ConsoleChatbot
 
 		public bool IsAuthenticated => true;
 
-		/// <summary>
-		/// current project that is being worked on
-		/// </summary>
-		private string _currentProject;
-		public string CurrentProject
-		{
-			get { return _currentProject; }
-			set { _currentProject = value; }
-		}
-
 		public event EventHandler<ChatMessageEventArgs> ChatMessage;
 		public event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		public event EventHandler<ChatUserInfoEventArgs> UserLeft;

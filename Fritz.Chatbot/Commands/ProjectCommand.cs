@@ -20,20 +20,22 @@ namespace Fritz.Chatbot.Commands
 
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(30);
 
+		private static string CurrentProject = null;
+
 		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{
 			if ((isModerator || isBroadcaster) && !rhs.IsEmpty)
 			{
-				chatService.CurrentProject = rhs.ToString();
+				CurrentProject = rhs.ToString();
 			}
 
 			var projectText = Configuration["FritzBot:ProjectCommand:TemplateText"];
 
-			var project = chatService.CurrentProject;
-			if (chatService.CurrentProject == null)
+			var project = CurrentProject;
+			if (CurrentProject == null)
 				project = Configuration["FritzBot:ProjectCommand:DefaultText"];
 			else
-				project = chatService.CurrentProject;
+				project = CurrentProject;
 
 			await chatService.SendMessageAsync(string.Format(projectText, userName, project));
 		}

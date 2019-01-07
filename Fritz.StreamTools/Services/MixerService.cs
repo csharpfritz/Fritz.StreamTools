@@ -44,16 +44,6 @@ namespace Fritz.StreamTools.Services
 		public uint? UserId { get => _Mixer.UserId; }
 		public string UserName { get => _Mixer.UserName; }
 		internal string AuthToken { get => _config["StreamServices:Mixer:Token"]; }
-			 
-		/// <summary>
-		/// current project that is being worked on
-		/// </summary>
-		private string _currentProject;
-		public string CurrentProject
-		{
-			get { return _currentProject; }
-			set { _currentProject = value; }
-		}
 
 		#endregion
 

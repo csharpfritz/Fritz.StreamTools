@@ -85,7 +85,7 @@ namespace Fritz.StreamTools.Controllers
 					}
 				}
 			}		
-			return ("Discover .NET", "#551A8B", posts.Take(5).ToArray());
+			return ("Discover .NET", "#FFCCFF", posts.Take(5).ToArray());
 		}
 
 		public IActionResult Configuration()

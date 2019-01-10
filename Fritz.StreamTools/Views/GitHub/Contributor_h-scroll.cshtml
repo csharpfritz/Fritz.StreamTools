@@ -1,4 +1,4 @@
-@model IEnumerable<GitHubInformation>
+@model Fritz.StreamTools.Controllers.TickerViewModel
 @{
 	Layout = null;
 	var Config = ViewBag.Configuration as GitHubConfiguration;
@@ -41,7 +41,7 @@
 
 <p id="marquee">
 
-	@foreach (var repo in Model)
+	@foreach (var repo in Model.GitHubInformation)
 	{
 
 		<span id="repository_@repo.Repository">
@@ -80,6 +80,16 @@
 		@await Html.PartialAsync("_ContributorTickerSegment", repo.TopEverContributors)
 
 		</span>
+
+		</span>
+
+		<span id="news">
+
+			<b style="color: @Model.News.color!important">Latest news from @Model.News.source</b>
+
+			@foreach(var article in Model.News.blogPosts) {
+				<span style="margin-right: 3px; text-decoration: underline;">@article.Title</span>
+			}
 
 		</span>
 

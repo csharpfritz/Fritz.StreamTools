@@ -76,8 +76,12 @@
 		<span id="topAllTime">
 
 		<u>Top All Time:</u>
-
-		@await Html.PartialAsync("_ContributorTickerSegment", repo.TopEverContributors)
+		
+		@if (repo.repo.TopEverContributors.Count() == 0) {
+			@:No contributors yet
+		} else {
+			@await Html.PartialAsync("_ContributorTickerSegment", repo.TopEverContributors)
+		}
 
 		</span>
 

@@ -22,7 +22,7 @@
 	<div class="col-md-6 mb-3 form-inline">
 		<label asp-for="BackgroundColor"></label>
 		&nbsp;
-		<input type="color" asp-for="BackgroundColor" value="#CCCCCC" />
+		<input type="color" asp-for="BackgroundColor" value="@nameof(Model.FontColor)" />
 	</div>
 </div>
 
@@ -54,17 +54,15 @@
 			FontColor: "@nameof(Model.FontColor)"
 		};
 
-        var log = function (message, params) {
-            @if (HostingEnvironment.IsDevelopment())
-	{
-<text>console.log(message, params);</text>
-}
-        };
+    var log = function (message, params) {
+        @if (HostingEnvironment.IsDevelopment())
+				{
+					<text>console.log(message, params);</text>
+				}
+    };
 
-		(function () {
-
-	    //document.getElementById('fontsPanel').style.display = 'none';
-
+		(
+			function () {
 	        loadPreview();
 
 	        InitPreview();
@@ -83,33 +81,25 @@
 			}
 
 			document.getElementById(quickPreviewButton).onclick = loadPreview;
+		}
+
+		function loadPreview() {
+
+			const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
+
+			var urlTemplate = "/followers/count?";
+			urlTemplate += `${ConfigurationModel.BackgroundColor}=${escape(document.getElementById(ConfigurationModel.BackgroundColor).value)}`;
+			urlTemplate += `&${ConfigurationModel.FontColor}=${escape(document.getElementById(ConfigurationModel.FontColor).value)}`;
+			//urlTemplate += `&fontName=${escape(fontName)}`;
+
+			document.getElementById("widgetPreview").src = urlTemplate + `&${ConfigurationModel.CurrentValue}=${document.getElementById(ConfigurationModel.CurrentValue).value}`
+			log(urlTemplate);
+
+			document.getElementById("outputUrl").textContent = urlTemplate;
+			document.getElementById("outputUrl").href = urlTemplate;
+			//saveValues();
 
 		}
 
-
-function loadPreview() {
-
-	const iframeWidth = document.getElementById("widgetPreview").clientWidth - 40;
-
-
-	var urlTemplate = "/followers/count?";
-	urlTemplate += `${ConfigurationModel.BackgroundColor}=${escape(document.getElementById(ConfigurationModel.BackgroundColor).value)}`;
-	urlTemplate += `&${ConfigurationModel.FontColor}=${escape(document.getElementById(ConfigurationModel.FontColor).value)}`;
-	//urlTemplate += `&fontName=${escape(fontName)}`;
-
-	document.getElementById("widgetPreview").src = urlTemplate + `&${ConfigurationModel.CurrentValue}=${document.getElementById(ConfigurationModel.CurrentValue).value}`
-	log(urlTemplate);
-
-	document.getElementById("outputUrl").textContent = urlTemplate;
-	document.getElementById("outputUrl").href = urlTemplate;
-	//saveValues();
-
-}
-
-
-
-
-
 </script>
-
 }

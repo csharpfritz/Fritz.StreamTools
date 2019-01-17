@@ -93,9 +93,10 @@ namespace Fritz.StreamTools.Controllers
 		}
 
 		[Route("followers/count/configuration", Name ="ConfigurationFollowerCount")]
-		public IActionResult CountConfigurationAction()
+		public IActionResult CountConfigurationAction(FollowerCountConfiguration model)
 		{
-			return View("CountConfiguration");
+			model.LoadDefaultSettings(CountConfiguration);
+			return View("CountConfiguration", model);
 		}
 
 		[Route("followers/goal/{*stuff}")]

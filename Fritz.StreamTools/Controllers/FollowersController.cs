@@ -81,25 +81,22 @@ namespace Fritz.StreamTools.Controllers
 				return View("Docs_Count");
 			}
 
-			// TODO: Read this from AppSettings?
 			model.LoadDefaultSettings(CountConfiguration);
 
-				if (model.CurrentValue == 0)
-				{
-					model.CurrentValue = StreamService.CurrentFollowerCount;
-				}
-
-
-
+			if (model.CurrentValue == 0)
+			{
+				model.CurrentValue = StreamService.CurrentFollowerCount;
+			}
 
 			return View(model);
 
 		}
 
 		[Route("followers/count/configuration", Name ="ConfigurationFollowerCount")]
-		public IActionResult CountConfigurationAction()
+		public IActionResult CountConfigurationAction(FollowerCountConfiguration model)
 		{
-			return View("CountConfiguration");
+			model.LoadDefaultSettings(CountConfiguration);
+			return View("CountConfiguration", model);
 		}
 
 		[Route("followers/goal/{*stuff}")]

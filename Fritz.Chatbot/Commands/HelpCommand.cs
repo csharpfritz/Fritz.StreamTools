@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fritz.Chatbot.Commands

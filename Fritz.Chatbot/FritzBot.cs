@@ -1,65 +1,57 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Fritz.Chatbot.Commands;
-using Fritz.Chatbot.Helpers;
+﻿using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Fritz.StreamTools.Services
+namespace Fritz.Chatbot
 {
-
 	public class FritzBot : IHostedService
 	{
+		public const string ConfigurationRoot = "FritzBot";
+		public const string UnknownCommandMessage = "Unknown command. Try !help for a list of available commands.";
 
-		public const string CONFIGURATION_ROOT = "FritzBot";
-		IConfiguration _config;
-		ILogger _logger;
-		internal IChatService[] _chatServices;
-		private IBasicCommand[] _basicCommands;
-		private IExtendedCommand[] _extendedCommands;
-		readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>(); // Could use IMemoryCache for this ???
-		private IServiceProvider _serviceProvider;
-		readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
+		private readonly ILogger _logger;
+		private readonly IChatService[] _chatServices;
+		private readonly IBasicCommand[] _basicCommands;
+		private readonly IExtendedCommand[] _extendedCommands;
 
-		public TimeSpan CooldownTime { get; private set; }
+		private readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();
+		private readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
 
-		public FritzBot(IConfiguration config, IServiceProvider serviceProvider, ILoggerFactory loggerFactory) : this(config, loggerFactory)
+		public TimeSpan CooldownTime { get; }
+
+		public FritzBot(IConfiguration configuration, IServiceProvider serviceProvider, ILoggerFactory loggerFactory = null)
 		{
+			if (configuration == null)
+			{
+				throw new ArgumentNullException(nameof(configuration));
+			}
+
+			if (serviceProvider == null)
+			{
+				throw new ArgumentNullException(nameof(serviceProvider));
+			}
 
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
-			_serviceProvider = serviceProvider;
 
+			_basicCommands = serviceProvider.GetServices<IBasicCommand>().ToArray();
+			_extendedCommands = serviceProvider.GetServices<IExtendedCommand>().OrderBy(command => command.Order).ToArray();
 
-			_basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
-			_extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
-		}
+			_logger = loggerFactory?.CreateLogger(nameof(FritzBot));
 
-		/// <summary>
-		/// For testing
-		/// </summary>
-		/// <param name="config"></param>
-		/// <param name="loggerFactory"></param>
-		internal FritzBot(IConfiguration config, ILoggerFactory loggerFactory) {
-			_config = config;
-			_logger = loggerFactory.CreateLogger(nameof(FritzBot));
-			ConfigureCommandCooldown(config);
-		}
-
-		internal void ConfigureCommandCooldown(IConfiguration config)
-		{
-			var cooldownConfig = config[$"{CONFIGURATION_ROOT}:CooldownTime"];
+			var cooldownConfig = configuration[$"{ConfigurationRoot}:CooldownTime"];
 			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
-			_logger.LogInformation("Command cooldown set to {0}", CooldownTime);
-		}
 
-		#region Static stuff
+			_logger?.LogInformation("Command cooldown set to {0}", CooldownTime);
+		}
 
 		/// <summary>
 		/// Register all classes derived from IBasicCommand & IExtendedCommand as singletons in DI
@@ -67,17 +59,21 @@ namespace Fritz.StreamTools.Services
 		public static void RegisterCommands(IServiceCollection services)
 		{
 			// Register basic commands
-			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IBasicCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+			foreach (var type in typeof(FritzBot).Assembly.GetTypes()
+																						.Where(t => typeof(IBasicCommand)
+																						.IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+			{
 				services.AddSingleton(typeof(IBasicCommand), type);
+			}
 
 			// Register extended commands
-			foreach (var type in typeof(FritzBot).Assembly.GetTypes().Where(t => typeof(IExtendedCommand).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+			foreach (var type in typeof(FritzBot).Assembly.GetTypes()
+																						.Where(t => typeof(IExtendedCommand)
+																						.IsAssignableFrom(t) && !t.IsAbstract && t.IsClass))
+			{
 				services.AddSingleton(typeof(IExtendedCommand), type);
+			}
 		}
-
-		#endregion
-
-		#region IHostedService
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
@@ -87,6 +83,7 @@ namespace Fritz.StreamTools.Services
 				chat.UserJoined += Chat_UserJoined;
 				chat.UserLeft += Chat_UserLeft;
 			}
+
 			return Task.CompletedTask;
 		}
 
@@ -98,164 +95,161 @@ namespace Fritz.StreamTools.Services
 				chat.UserJoined -= Chat_UserJoined;
 				chat.UserLeft -= Chat_UserLeft;
 			}
+
 			return Task.CompletedTask;
 		}
 
-		#endregion
-
-		private async void OnChat_ChatMessage(object sender, ChatMessageEventArgs e)
+		private async void OnChat_ChatMessage(object sender, ChatMessageEventArgs chatMessageArgs)
 		{
-			// async void as Event callback
 			try
 			{
-				await ProcessChatMessage(sender, e);
+				await ProcessChatMessage(sender, chatMessageArgs);
 			}
 			catch (Exception ex)
 			{
-				// Don't let exception escape from async void
-				_logger.LogError($"{DateTime.UtcNow}: Chat_ChatMessage - Error {Environment.NewLine}{ex}");
+				_logger?.LogError($"{DateTime.UtcNow}: Chat_ChatMessage - Error {Environment.NewLine}{ex}");
 			}
 		}
 
-		private async Task ProcessChatMessage(object sender, ChatMessageEventArgs e)
+		private async Task ProcessChatMessage(object sender, ChatMessageEventArgs chatMessageArgs)
 		{
+			if (!(sender is IChatService))
+			{
+				return;
+			}
 
 			// TODO: Add queue processing to ensure only one instance of a command is executing at a time
 
-			var userKey = $"{e.ServiceName}:{e.UserName}";
+			var userKey = $"{chatMessageArgs.ServiceName}:{chatMessageArgs.UserName}";
 			var user = _activeUsers.AddOrUpdate(userKey, new ChatUserInfo(), (_, u) => u);
-
 			var chatService = sender as IChatService;
 
-			var final = await HandleExtendedCommands();
-			if (final)
+			if (await HandleExtendedCommands(chatService, chatMessageArgs, user))
+			{
 				return;
-
-			if (e.Message.FirstOrDefault() == '!')
-			{
-				if (!await HandleBasicCommands())
-				{
-					await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
-				}
 			}
 
-			return; // Only local functions below
-
-			async ValueTask<bool> HandleBasicCommands()
+			if (chatMessageArgs.Message.FirstOrDefault() == '!')
 			{
-				// NOTE: Returns true if the command was found
-
-				Debug.Assert(_basicCommands != null);
-				Debug.Assert(!string.IsNullOrEmpty(e.Message) && e.Message[0] == '!');
-
-				var trigger = e.Message.AsMemory(1);
-				var rhs = ReadOnlyMemory<char>.Empty;
-				var n = trigger.Span.IndexOf(' ');
-				if (n != -1)
+				if (!await HandleBasicCommands(chatService, chatMessageArgs, user))
 				{
-					rhs = trigger.Slice(n + 1);
-					trigger = trigger.Slice(0, n);
+					await chatService.SendWhisperAsync(chatMessageArgs.UserName, UnknownCommandMessage);
 				}
-
-				foreach (var cmd in _basicCommands)
-				{
-					Debug.Assert(!string.IsNullOrEmpty(cmd.Trigger));
-
-					if (trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
-					{
-						// Ignore if the normal user is sending commands to fast, or command is in cooldown
-						if (CommandsTooFast(cmd.Trigger, cmd.Cooldown))
-							return true;
-
-						if (cmd is IBasicCommand2)
-						{
-							await (cmd as IBasicCommand2).Execute(chatService, e.UserName, e.IsModerator, e.IsOwner, rhs);
-						}
-						else
-						{
-							await cmd.Execute(chatService, e.UserName, rhs);
-						}
-
-						AfterExecute(cmd.Trigger);
-						return true;
-					}
-				}
-
-				return false;
-			}
-
-			async ValueTask<bool> HandleExtendedCommands()
-			{
-				// NOTE: Returns true if no other commands should be run
-
-				Debug.Assert(_extendedCommands != null);
-
-				foreach (var cmd in _extendedCommands)
-				{
-					Debug.Assert(!string.IsNullOrEmpty(cmd.Name));
-
-					if (cmd.CanExecute(e.UserName, e.Message))
-					{
-						// Ignore if the normal user is sending commands to fast, or command is in cooldown
-						if (CommandsTooFast(cmd.Name, cmd.Cooldown))
-							return false;
-
-						await cmd.Execute(chatService, e.UserName, e.Message);
-
-						AfterExecute(cmd.Name);
-						return cmd.Final;
-					}
-				}
-
-				return false;
-			}
-
-			bool CommandsTooFast(string namedCommand, TimeSpan? cooldown = null)
-			{
-				Debug.Assert(user != null);
-
-				if (e.IsModerator || e.IsOwner)
-					return false;
-
-				// Check per user cooldown
-				if (DateTime.UtcNow - user.LastCommandTime < CooldownTime)
-				{
-					_logger.LogWarning("Ignoring command {0} from {1} on {2}. Cooldown active", namedCommand, e.UserName, e.ServiceName);
-					var remain = cooldown.GetValueOrDefault() - (DateTime.UtcNow - user.LastCommandTime);
-					chatService.SendMessageAsync($"Ignoring command {namedCommand} from {e.UserName}.  Cooldown is active for {e.UserName} for {remain.TotalSeconds}");
-					return true;
-				}
-
-				// Check per command cooldown
-				if (_commandExecutedTimeMap.TryGetValue(namedCommand, out var dt))
-				{
-					var now = DateTime.UtcNow;
-					if (now - dt < cooldown.GetValueOrDefault())
-					{
-						var remain = cooldown.GetValueOrDefault() - (now - dt);
-						_logger.LogWarning("Ignoring command {0} from {1} on {2}. In cooldown for {3} more secs", namedCommand, e.UserName, e.ServiceName,
-							(int) remain.TotalSeconds);
-						chatService.SendMessageAsync($"Ignoring command {namedCommand} from {e.UserName}.  Cooldown is active for {e.UserName} for {remain.TotalSeconds}");
-						return true;
-					}
-				}
-
-				return false;
-			}
-
-			void AfterExecute(string command)
-			{
-				Debug.Assert(user != null);
-
-				// Remember last command time
-				user.LastCommandTime = DateTime.UtcNow;
-				_commandExecutedTimeMap[command] = DateTime.UtcNow;
 			}
 		}
 
-		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+		private async ValueTask<bool> HandleBasicCommands(IChatService chatService, ChatMessageEventArgs chatMessageArgs, ChatUserInfo user)
+		{
+			Debug.Assert(_basicCommands != null);
+			Debug.Assert(!string.IsNullOrEmpty(chatMessageArgs.Message) && chatMessageArgs.Message[0] == '!');
 
-		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger.LogTrace($"{e.UserName} left {e.ServiceName} chat");
+			var trigger = chatMessageArgs.Message.AsMemory(1);
+			var rhs = ReadOnlyMemory<char>.Empty;
+			var n = trigger.Span.IndexOf(' ');
+			if (n != -1)
+			{
+				rhs = trigger.Slice(n + 1);
+				trigger = trigger.Slice(0, n);
+			}
 
+			foreach (var cmd in _basicCommands)
+			{
+				Debug.Assert(!string.IsNullOrEmpty(cmd.Trigger));
+
+				if (trigger.Span.Equals(cmd.Trigger.AsSpan(), StringComparison.OrdinalIgnoreCase))
+				{
+					// Ignore if the normal user is sending commands to fast, or command is in cooldown
+					if (CommandsTooFast(chatMessageArgs, user, cmd.Trigger, cmd.Cooldown))
+					{
+						return true;
+					}
+
+					if (cmd is IBasicCommand2)
+					{
+						await (cmd as IBasicCommand2).Execute(chatService, chatMessageArgs.UserName, chatMessageArgs.IsModerator, chatMessageArgs.IsOwner, rhs);
+					}
+					else
+					{
+						await cmd.Execute(chatService, chatMessageArgs.UserName, rhs);
+					}
+
+					AfterExecute(user, cmd.Trigger);
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private async ValueTask<bool> HandleExtendedCommands(IChatService chatService, ChatMessageEventArgs chatMessageArgs, ChatUserInfo user)
+		{
+			Debug.Assert(_extendedCommands != null);
+
+			foreach (var cmd in _extendedCommands)
+			{
+				Debug.Assert(!string.IsNullOrEmpty(cmd.Name));
+
+				if (cmd.CanExecute(chatMessageArgs.UserName, chatMessageArgs.Message))
+				{
+					// Ignore if the normal user is sending commands to fast, or command is in cooldown
+					if (CommandsTooFast(chatMessageArgs, user, cmd.Name, cmd.Cooldown))
+					{
+						return false;
+					}
+
+					await cmd.Execute(chatService, chatMessageArgs.UserName, chatMessageArgs.Message);
+
+					AfterExecute(user, cmd.Name);
+
+					return cmd.Final;
+				}
+			}
+
+			return false;
+		}
+
+		private bool CommandsTooFast(ChatMessageEventArgs chatMessageArgs, ChatUserInfo user, string namedCommand, TimeSpan? cooldown = null)
+		{
+			Debug.Assert(user != null);
+
+			if (chatMessageArgs.IsModerator || chatMessageArgs.IsOwner)
+			{
+				return false;
+			}
+
+			var now = DateTime.UtcNow;
+			if (now - user.LastCommandTime < CooldownTime)
+			{
+				_logger?.LogWarning($"Ignoring command {namedCommand} from {chatMessageArgs.UserName} on {chatMessageArgs.ServiceName}. Cooldown active");
+
+				return true;
+			}
+
+			if (_commandExecutedTimeMap.TryGetValue(namedCommand, out var dt)
+						&&
+					now - dt < cooldown.GetValueOrDefault())
+			{
+				var remain = cooldown.GetValueOrDefault() - (now - dt);
+				_logger?.LogWarning($"Ignoring command {namedCommand} from {chatMessageArgs.UserName} on {chatMessageArgs.ServiceName}. In cooldown for {(int)remain.TotalSeconds} more secs");
+
+				return true;
+			}
+
+			return false;
+		}
+
+		private void AfterExecute(ChatUserInfo user, string command)
+		{
+			Debug.Assert(user != null);
+
+			// Remember last command time
+			user.LastCommandTime = DateTime.UtcNow;
+			_commandExecutedTimeMap[command] = DateTime.UtcNow;
+		}
+
+		private void Chat_UserJoined(object sender, ChatUserInfoEventArgs e) => _logger?.LogTrace($"{e.UserName} joined {e.ServiceName} chat");
+
+		private void Chat_UserLeft(object sender, ChatUserInfoEventArgs e) => _logger?.LogTrace($"{e.UserName} left {e.ServiceName} chat");
 	}
 }

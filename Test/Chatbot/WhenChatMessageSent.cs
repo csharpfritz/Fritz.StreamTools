@@ -1,6 +1,6 @@
-﻿using Fritz.Chatbot.Commands;
+﻿using Fritz.Chatbot;
+using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
@@ -27,7 +27,7 @@ namespace Test.Chatbot
 			_logger = new Mock<ILogger>();
 			_loggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>())).Returns(_logger.Object);
 			_config = new Mock<IConfiguration>();
-			_config.SetupGet(s => s[FritzBot.CONFIGURATION_ROOT + ":CooldownTime"]).Returns("1");
+			_config.SetupGet(s => s[FritzBot.ConfigurationRoot + ":CooldownTime"]).Returns("1");
 			_chatservice = new Mock<IChatService>();
 			_chatservice.SetupGet(x => x.IsAuthenticated).Returns(true);
 

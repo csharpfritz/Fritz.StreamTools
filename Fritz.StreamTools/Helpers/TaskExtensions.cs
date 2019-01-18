@@ -15,9 +15,7 @@ namespace System.Threading.Tasks
 		private const int s_defaultTimeout = 5000;
 
 		public static Task OrTimeout(this Task task, int milliseconds = s_defaultTimeout)
-		{
-			return OrTimeout(task, new TimeSpan(0, 0, 0, 0, milliseconds));
-		}
+			=> OrTimeout(task, new TimeSpan(0, 0, 0, 0, milliseconds));
 
 		public static async Task OrTimeout(this Task task, TimeSpan timeout)
 		{
@@ -30,12 +28,10 @@ namespace System.Threading.Tasks
 			await task;
 		}
 
-		public static Task<T> OrTimeout<T>(this Task<T> task, int milliseconds = s_defaultTimeout)
-		{
-			return OrTimeout(task, new TimeSpan(0, 0, 0, 0, milliseconds));
-		}
+	public static Task<T> OrTimeout<T>(this Task<T> task, int milliseconds = s_defaultTimeout) 
+      => OrTimeout(task, new TimeSpan(0, 0, 0, 0, milliseconds));
 
-		public static async Task<T> OrTimeout<T>(this Task<T> task, TimeSpan timeout)
+	public static async Task<T> OrTimeout<T>(this Task<T> task, TimeSpan timeout)
 		{
 			var completed = await Task.WhenAny(task, Task.Delay(timeout));
 			if (completed != task)

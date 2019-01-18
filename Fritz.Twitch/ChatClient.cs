@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -27,6 +27,7 @@ namespace Fritz.Twitch
 		private MemoryStream _ReceiveStream = new MemoryStream();
 
 		internal static readonly Regex reUserName = new Regex(@"!([^@]+)@");
+		internal static readonly Regex reBadges = new Regex(@"@badges=([^;]*)");
 		internal static Regex reChatMessage;
 		internal static Regex reWhisperMessage;
 
@@ -59,8 +60,9 @@ namespace Fritz.Twitch
 		~ChatClient()
 		{
 
-			Logger.LogError("GC the ChatClient");
-
+			try {
+				Logger?.LogError("GC the ChatClient");
+			} catch {}
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(false);
 		}
@@ -229,6 +231,9 @@ namespace Fritz.Twitch
 			var message = "";
 
 			userName = ChatClient.reUserName.Match(msg).Groups[1].Value;
+			if (userName == Settings.ChatBotName) return; // Exit and do not process if the bot posted this message
+
+			var badges = ChatClient.reBadges.Match(msg).Groups[1].Value.Split(',');
 
 			if (!string.IsNullOrEmpty(userName) && msg.Contains($" JOIN #{ChannelName}"))
 			{
@@ -244,7 +249,8 @@ namespace Fritz.Twitch
 				NewMessage?.Invoke(this, new NewMessageEventArgs
 				{
 					UserName = userName,
-					Message = message
+					Message = message,
+					Badges = badges
 				});
 
 			} else if (reWhisperMessage.IsMatch(msg))
@@ -257,6 +263,7 @@ namespace Fritz.Twitch
 				{
 					UserName = userName,
 					Message = message,
+					Badges = (badges ?? new string[] { }),
 					IsWhisper = true
 				});
 
@@ -288,7 +295,9 @@ namespace Fritz.Twitch
 		protected virtual void Dispose(bool disposing)
 		{
 
-			Logger.LogWarning("Disposing of ChatClient");
+			try {
+				Logger?.LogWarning("Disposing of ChatClient");
+			} catch {}
 
 			if (!disposedValue)
 			{
@@ -297,7 +306,7 @@ namespace Fritz.Twitch
 					_Shutdown.Cancel();
 				}
 
-				_TcpClient.Dispose();
+				_TcpClient?.Dispose();
 				disposedValue = true;
 			}
 		}

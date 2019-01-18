@@ -9,6 +9,8 @@ namespace Fritz.Twitch
 
 		public string Message { get; set; }
 
+		public string[] Badges { get; set; }
+
 		public bool IsWhisper { get; set; } = false;
 
 	}

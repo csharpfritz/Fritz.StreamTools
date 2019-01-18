@@ -5,4 +5,4 @@ services:
     image: fritz.streamtools
     build:
       context: .
-      dockerfile: Fritz.StreamTools/Dockerfile
+      dockerfile: ./Fritz.StreamTools/Dockerfile

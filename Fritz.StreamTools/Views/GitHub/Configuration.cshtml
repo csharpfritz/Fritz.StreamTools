@@ -1,0 +1,21 @@
+﻿@model GitHubConfiguration
+
+<h2>GitHubConfiguration</h2>
+
+<form asp-controller="GitHub" asp-action="Configuration" method="post">
+	<div>
+		<div class="col-md-6 mb-3">
+			<label asp-for="RepositoryOwner" class="control-label"></label>
+			<input class="form-control" type="text" asp-for="RepositoryOwner" />
+			<span asp-validation-for="RepositoryOwner" class="text-danger" />
+		</div>
+		<div class="col-md-6 mb-3">
+			<label asp-for="RepositoryName" class="control-label"></label>
+			<input class="form-control" type="text" asp-for="RepositoryName" />
+			<span asp-validation-for="RepositoryName" class="text-danger" />
+		</div>
+		<div class="col-md-6 mb-3">
+			<button type="submit">Save</button>
+		</div>
+	</div>
+</form>

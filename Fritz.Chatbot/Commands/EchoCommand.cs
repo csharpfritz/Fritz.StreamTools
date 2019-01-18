@@ -7,23 +7,17 @@ using Fritz.StreamLib.Core;
 
 namespace Fritz.Chatbot.Commands
 {
-	public class EchoCommand : ICommand
+	public class EchoCommand : IBasicCommand
 	{
-		public IChatService ChatService { get; set; }
-
-		public string Name => "echo";
-
+		public string Trigger => "echo";
 		public string Description => "Repeat the text that was requested by the echo command";
+		public TimeSpan? Cooldown => null;
 
-		public async Task Execute(string userName, string fullCommandText)
+		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
-
-			var segments = fullCommandText.Substring(1).Split(' ');
-
-			if (segments.Length < 2)
+			if (rhs.IsEmpty)
 				return;
-			await ChatService.SendWhisperAsync(userName, "Echo reply: " + string.Join(' ', segments.Skip(1)));
-
+			await chatService.SendWhisperAsync(userName, "Echo reply: " + rhs);
 		}
 	}
 }

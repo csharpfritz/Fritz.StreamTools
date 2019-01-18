@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Fritz.Chatbot;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MixerLib;
+using Octokit;
 
 namespace Fritz.StreamTools.StartupServices
 {
@@ -23,17 +25,59 @@ namespace Fritz.StreamTools.StartupServices
 			IServiceCollection services,
 			IConfiguration configuration)
 		{
+
+			Configuration = configuration;
+
 			services.AddSingleton<RundownRepository>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
 			services.AddStreamingServices(configuration);
+			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddSingleton<FollowerClient>();
 			services.AddAspNetFeatures();
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
+			services.AddSingleton<IAttentionClient, AttentionHub>();
+
 			services.AddSingleton<IHostedService, FritzBot>();
+			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
+	  	FritzBot.RegisterCommands(services);
+
+			services.AddLazyCache();
+
+			RegisterGitHubServices(services, configuration);
+
+		}
+
+		public static IConfiguration Configuration { get; private set; }
+
+		private static void RegisterGitHubServices(IServiceCollection services, IConfiguration configuration)
+		{
+			services.AddSingleton<GitHubRepository>();
+			services.AddSingleton<GithubyMcGithubFaceClient>();
+
+			services.AddTransient(_ => new GitHubClient(new ProductHeaderValue("Fritz.StreamTools"))
+			{
+				Credentials = new Credentials(Configuration["GitHub:User"], Configuration["GitHub:AuthenticationToken"])
+			});
+
+			services.AddHttpClient("GitHub", c =>
+			{
+				c.BaseAddress = new Uri("https://localhost:5001");
+				c.DefaultRequestHeaders.Add("Accept", "applications/json");
+			});
+
+			services.AddHttpClient("DiscoverDotNet");
+
+			services.AddHttpClient("ShoutoutCommand", c =>
+			{
+				c.BaseAddress = new Uri("https://api.twitch.tv/kraken/channels/");
+				c.DefaultRequestHeaders.Add("client-id", configuration["StreamServices:Twitch:ClientId"]);
+			});
+
+			services.AddHostedService<GitHubService>();
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services,
@@ -101,14 +145,14 @@ namespace Fritz.StreamTools.StartupServices
 		/// <param name="services"></param>
 		private static void AddAspNetFeatures(this IServiceCollection services)
 		{
+
 			services.AddSignalR(options =>
 			{
 
 				options.KeepAliveInterval = TimeSpan.FromSeconds(5);
 
-			}).AddJsonProtocol();
+			}).AddMessagePackProtocol();
 
-			//services.AddSingleton<FollowerHub>();
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 

@@ -44,9 +44,9 @@ namespace Fritz.StreamTools.Helpers
 
                 var blend = 1.0;
 
-                if (bgblend != null && bgblend.Length > c)
+                if (bgblend?.Length > c)
                 {
-                    blend = bgblend[c];
+                    blend = bgblend?[c] ?? 1.0;
                 }
 
                 // Mark the end of this color based on its blend %

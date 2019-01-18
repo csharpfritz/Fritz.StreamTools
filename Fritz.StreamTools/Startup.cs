@@ -8,6 +8,7 @@ using Fritz.StreamTools.Services;
 using Fritz.Twitch;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,8 +36,11 @@ namespace Fritz.StreamTools
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, Microsoft.Extensions.Hosting.IHostingEnvironment env)
+		public void Configure(IApplicationBuilder app, Microsoft.Extensions.Hosting.IHostingEnvironment env, IConfiguration config)
 		{
+
+			// Cheer 100 Crazy240sx 12/18/2018
+
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
@@ -54,6 +58,8 @@ namespace Fritz.StreamTools
 			app.UseSignalR(configure =>
 			{
 				configure.MapHub<FollowerHub>("/followerstream");
+				configure.MapHub<GithubyMcGithubFace>("/github");
+				configure.MapHub<AttentionHub>("/attentionhub");
 			});
 
 			app.UseMvc(routes =>

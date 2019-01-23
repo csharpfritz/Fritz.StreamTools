@@ -24,30 +24,42 @@ namespace Fritz.StreamTools.Models
 			new RundownItem {ID=150, Text="Next stream..."}
 		};
 
-		public IEnumerable<RundownItem> Get()
-		{
+		private static string _Title = "Rundown Title";
 
-			return _Items.OrderBy(i => i.ID);
+			public IEnumerable<RundownItem> Get()
+			{
 
-		}
+				return _Items.OrderBy(i => i.ID);
 
-		public void Add(RundownItem item)
-		{
-			_Items.Add(item);
-		}
+			}
 
-		public void Update(int id, RundownItem item)
-		{
-			Delete(id);
-			_Items.Add(item);
-		}
+			public void Add(RundownItem item)
+			{
+				_Items.Add(item);
+			}
 
-		public void Delete(int id)
-		{
+			public void Update(int id, RundownItem item)
+			{
+				Delete(id);
+				_Items.Add(item);
+			}
 
-			_Items.Remove(_Items.FirstOrDefault(i => i.ID == id));
+			public void Delete(int id)
+			{
 
-		}
+				_Items.Remove(_Items.FirstOrDefault(i => i.ID == id));
+
+			}
+
+			public void UpdateTitle(string title)
+			{
+				_Title = title;
+			}
+
+			public string GetTitle()
+			{
+				return _Title;
+			}
 
 	}
 }

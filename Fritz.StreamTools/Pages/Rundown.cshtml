@@ -1,7 +1,8 @@
 ﻿@page
 @model Fritz.StreamTools.Pages.RundownModel
 @{
-    var items = Model.Repository.Get();
+		var items = Model.Repository.Get();
+		var title = Model.Repository.GetTitle();
 }
 <!DOCTYPE html>
 <html>
@@ -29,7 +30,7 @@
 
     <div class="container">
 
-        <h2>Today's Stream</h2>
+        <h2 id="title">@title</h2>
 
         <ul>
             @foreach (var item in items)
@@ -73,12 +74,19 @@
 
                     }
 
+                });
 
-                })
+								$.ajax({
+										url: "/api/rundown/title"
+								}).done(function(data) {
+										var title = document.getElementById("title");
+										title.innerHTML = data;
+								});
+            }, 5000);
 
-            }, 5000)
+			});
 
-        });
+			
 
 //-->
     </script>

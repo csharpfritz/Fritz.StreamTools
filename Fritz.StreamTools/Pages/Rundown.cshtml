@@ -37,7 +37,7 @@
             {
                 <li id="@item.ID">
                     <span id="item_@item.ID" class="glyphicon @(!item.IsCompleted ? "glyphicon-unchecked" : "glyphicon-check")" aria-hidden="true"></span>
-                    <label>@item.Text</label>
+                    <label id="item_text_@item.ID">@item.Text</label>
                 </li>
             }
         </ul>
@@ -72,6 +72,8 @@
                             $(thisItem).addClass("glyphicon-unchecked");
                         }
 
+											var itemText = document.getElementById("item_text_" + item.id);
+											itemText.innerText = item.text;
                     }
 
                 });

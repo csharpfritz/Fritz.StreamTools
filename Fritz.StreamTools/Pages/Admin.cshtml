@@ -11,52 +11,30 @@
 	<style>
 		ul { margin-left: 0px; padding-left: 0px; }
 		li { list-style-type: none; margin-left: 0px; padding-left: 0px;}
+		.itemText { width:500px; }
 	</style>
 </head>
 <body>
-
-	<input class="title" type="text" value="@title"/>
-
+	<button onclick="onEditClick()">edit</button>
+	@*<input class="title" type="text" value="@title"/>*@
+	<h2 id="title" class="title">@title</h2>	
 	<ul>
 	@foreach (var item in items)
 	{
 		<li id="@item.ID">
-		<input type="checkbox" 
+			<input type="checkbox" 
 					 checked="@item.IsCompleted" 
-					 name="item_@item.ID" class="checkItem" /> @item.Text</li>
+					 name="item_@item.ID" class="checkItem" />
+			<text class="itemText">@item.Text</text>
+			@*<input class="itemText" type="text" value="@item.Text"/>*@
+		</li>
 	}
 	</ul>
 
 	<script src="~/lib/jquery.js"></script>
 	<script type="text/javascript"><!--
 
-		$().ready(function () {
-
-			$(".checkItem").change(function () {
-
-				var thisItem = $(this);
-				var thisListItem = thisItem.parent();
-				var itemToUpdate = {
-					ID: thisListItem.attr("id"),
-					Text: thisListItem.text(),
-					IsCompleted: thisItem[0].checked
-				}
-				console.log(thisItem);
-				console.log(thisListItem);
-				console.log('This item: ');
-				console.log(itemToUpdate);
-
-				$.ajax({
-					method: 'PUT',
-					url: '/api/items/' + itemToUpdate.ID,
-					data: JSON.stringify(itemToUpdate),
-					dataType: 'json',
-					contentType: 'text/json'
-				});
-
-			});
-
-			$(".title").on("input", function () {
+		function titleChange() {
 				var title = $(this);
 				console.log(title);
 				console.log(title.val());
@@ -67,10 +45,89 @@
 					dataType: 'json',
 					contentType: 'text/json'
 				});
-			});
+		}
 
+		function itemTextChange() {
+				var text = $(this);
+				var thisListItem = text.parent();
+				var itemToUpdate = {
+					ID: thisListItem.attr("id"),
+					Text: text.val(),
+					IsCompleted: thisListItem.children()[0].checked
+				}
+				console.log(text);
+				console.log(thisListItem);
+				console.log('This item: ');
+				console.log(itemToUpdate);
+				updateListItem(itemToUpdate);
+		}
+
+		$().ready(function () {
+
+			$(".checkItem").change(function () {
+
+				var thisItem = $(this);
+				var thisListItem = thisItem.parent();
+				var itemToUpdate = {
+					ID: thisListItem.attr("id"),
+					Text: thisListItem.children()[1].innerText,
+					IsCompleted: thisItem[0].checked
+				}
+				
+				console.log(thisItem);
+				console.log(thisListItem);
+				console.log('This item: ');
+				console.log(itemToUpdate);
+				updateListItem(itemToUpdate);
+
+			});					
+
+			$(".itemText").on("input", itemTextChange);
 		});
 
+		var updateListItem = function (itemToUpdate) {
+
+				$.ajax({
+					method: 'PUT',
+					url: '/api/items/' + itemToUpdate.ID,
+					data: JSON.stringify(itemToUpdate),
+					dataType: 'json',
+					contentType: 'text/json'
+				});
+		};
+		var editState = false;
+		var onEditClick = function () {
+			var currentTitle = document.getElementById("title");
+			var itemListTexts = document.getElementsByClassName("itemText");
+			var checkboxItems = document.getElementsByClassName("checkItem");
+			if (editState) {
+				currentTitle.outerHTML = '<h2 id="title" class="title">' + currentTitle.value + '</h2>';
+				currentTitle.removeEventListener("input", titleChange);
+				for (var elem of itemListTexts) {
+					elem.outerHTML = '<text class="itemText">' + elem.value + '</text>';
+					elem.removeEventListener("input", itemTextChange);
+				}
+				for (var elem of checkboxItems) {
+					elem.removeAttribute("disabled");
+				}
+				editState = false;
+			}
+			else {
+				currentTitle.outerHTML = '<input id="title" type="text" value="' + currentTitle.innerText + '"/>';
+				document.getElementById("title").addEventListener("input", titleChange);
+				for (var elem of itemListTexts) {
+					elem.outerHTML = '<input class="itemText" type="text" value="' + elem.innerText + '"/>';
+				}
+				itemListTexts = document.getElementsByClassName("itemText");
+				for (var elem of itemListTexts) {
+					elem.addEventListener("input", itemTextChange);
+				};
+				for (var elem of checkboxItems) {
+					elem.setAttribute("disabled", "disabled");
+				}
+				editState = true;
+			}
+		};
 
 		//--></script>
 </body>

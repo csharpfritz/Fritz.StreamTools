@@ -1,0 +1,36 @@
+﻿@page
+@model Fritz.StreamTools.Pages.SentimentModel
+@{
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="width=device-width" />
+	<title>Sentiment</title>
+</head>
+<body>  
+	<div id="currentSentiment"></div>
+
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/streamhub.js"></script>
+	<script>
+		(function () {
+
+			var hub = new StreamHub();
+			var sentimentEl = document.getElementById("currentSentiment");
+
+			hub.onSentiment = (newValue) => {
+
+        console.log(newValue);
+
+				sentimentEl.textContent = `Current Sentiment: ${(newValue * 100).toFixed(1)}`;
+
+			}
+
+			hub.start("sentiment");
+
+		})();
+	</script>
+</body >
+</html >

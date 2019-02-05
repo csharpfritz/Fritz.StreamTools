@@ -36,7 +36,6 @@ namespace Fritz.StreamTools.Services
 			_chatServices = serviceProvider.GetServices<IChatService>().ToArray();
 			_serviceProvider = serviceProvider;
 
-
 			_basicCommands = _serviceProvider.GetServices<IBasicCommand>().ToArray();
 			_extendedCommands = _serviceProvider.GetServices<IExtendedCommand>().OrderBy(k => k.Order).ToArray();
 		}
@@ -108,6 +107,7 @@ namespace Fritz.StreamTools.Services
 			// async void as Event callback
 			try
 			{
+
 				await ProcessChatMessage(sender, e);
 			}
 			catch (Exception ex)
@@ -126,6 +126,7 @@ namespace Fritz.StreamTools.Services
 			var user = _activeUsers.AddOrUpdate(userKey, new ChatUserInfo(), (_, u) => u);
 
 			var chatService = sender as IChatService;
+			if (chatService.BotUserName.Equals(e.UserName, StringComparison.InvariantCultureIgnoreCase)) return; // Don't process my own messages
 
 			var final = await HandleExtendedCommands();
 			if (final)
@@ -137,6 +138,8 @@ namespace Fritz.StreamTools.Services
 				{
 					await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
 				}
+			} else {
+				SentimentSink.RecentChatMessages.Enqueue(e.Message);				
 			}
 
 			return; // Only local functions below

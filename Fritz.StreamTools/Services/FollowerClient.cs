@@ -37,6 +37,12 @@ namespace Fritz.StreamTools.Services
 			FollowerContext.Clients.Group("github").SendAsync("OnGitHubUpdated", contributors);
 		}
 
+		internal void UpdateSentiment(double newSentiment) {
+
+			FollowerContext.Clients.Group("sentiment").SendAsync("OnSentimentUpdated", newSentiment);
+
+		}
+
 	}
 
 }

@@ -68,6 +68,8 @@ namespace Fritz.StreamTools.Services
 
 		public bool IsAuthenticated => true;
 
+		public string BotUserName { get { return _ChatClient.Settings.ChatBotName; } }
+
 		private async Task StartTwitchMonitoring()
 		{
 			try

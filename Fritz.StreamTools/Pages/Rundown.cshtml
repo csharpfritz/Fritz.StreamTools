@@ -20,7 +20,9 @@
             padding-left: 0px;
         }
 
-        .glyphicon-check { color: darkgreen}
+        .glyphicon-check {
+					color: darkgreen
+        }
 
     </style>
     <link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
@@ -32,7 +34,7 @@
 
         <h2 id="title">@title</h2>
 
-        <ul>
+        <ul id="itemsList">
             @foreach (var item in items)
             {
                 <li id="@item.ID">
@@ -61,6 +63,23 @@
                     for (var item of data) {
 
                         var thisItem = document.getElementById("item_" + item.id);
+												if (thisItem === null) {
+													var newNodeItem = document.createElement("LI");
+													newNodeItem.id = item.id;
+													var newInputItem = document.createElement("SPAN");
+													newInputItem.id = "item_" + item.id;
+													var checkUncheck = (item.isCompleted === true) ? "glyphicon-check" : "glyphicon-unchecked";
+													$(newInputItem).addClass("glyphicon " + checkUncheck);
+													newInputItem.setAttribute("aria-hidden", "true");
+													var newTextItem = document.createElement("LABEL");
+													newTextItem.id = "item_text_" + item.id;
+													newTextItem.innerText = item.text;
+													thisItem = document.createElement("LI");
+													thisItem.id = item.id;
+													thisItem.appendChild(newInputItem);
+													thisItem.appendChild(newTextItem);
+													document.getElementById("itemsList").appendChild(thisItem);
+												}
                         if ($(thisItem).hasClass("glyphicon-unchecked") & item.isCompleted) {
 
                             $(thisItem).removeClass("glyphicon-unchecked");

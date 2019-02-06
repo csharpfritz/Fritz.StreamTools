@@ -20,14 +20,14 @@ namespace Fritz.StreamTools.Controllers
 			this.Repository = repo;
 		}
 
-		// GET: api/RundownItem
+		// GET: api/items
 		[HttpGet]
 		public IActionResult Get()
 		{
 			return Ok(Repository.Get());
 		}
 
-		// GET: api/RundownItem/5
+		// GET: api/items/5
 		[HttpGet("{id}", Name = "Get")]
 		public IActionResult Get(int id)
 		{
@@ -36,13 +36,17 @@ namespace Fritz.StreamTools.Controllers
 			return Ok(outValue);
 		}
 
-		// POST: api/RundownItem
+		// POST: api/items
 		[HttpPost]
-		public void Post([FromBody]RundownItem value)
+		public IActionResult Post()
 		{
+				var largestItemId = Repository.Get().Max(i => i.ID);
+				var newItem = new RundownItem() { ID = largestItemId + 10, Text = "New Item" };
+				Repository.Add(newItem);
+				return Ok(newItem);
 		}
 
-		// PUT: api/RundownItem/5
+		// PUT: api/items/5
 		[HttpPut("{id}")]
 		public IActionResult Put(int id, [FromBody]RundownItem value)
 		{
@@ -50,7 +54,7 @@ namespace Fritz.StreamTools.Controllers
 			return Ok(value);
 		}
 
-		// DELETE: api/ApiWithActions/5
+		// DELETE: api/items/5
 		[HttpDelete("{id}")]
 		public IActionResult Delete(int id)
 		{

@@ -15,21 +15,20 @@
 	</style>
 </head>
 <body>
-	<button onclick="onEditClick()">edit</button>
-	@*<input class="title" type="text" value="@title"/>*@
+	<button onclick="onEditClick()">edit</button>	
 	<h2 id="title" class="title">@title</h2>	
-	<ul>
-	@foreach (var item in items)
-	{
-		<li id="@item.ID">
-			<input type="checkbox" 
-					 checked="@item.IsCompleted" 
-					 name="item_@item.ID" class="checkItem" />
-			<text class="itemText">@item.Text</text>
-			@*<input class="itemText" type="text" value="@item.Text"/>*@
-		</li>
-	}
+	<ul id="itemsList">
+		@foreach (var item in items)
+		{
+			<li id="@item.ID">
+				<input type="checkbox" 
+						 checked="@item.IsCompleted" 
+						 name="item_@item.ID" class="checkItem" />
+				<text class="itemText">@item.Text</text>			
+			</li>
+		}
 	</ul>
+	<button id="btnAdd" onclick="onAddItemClick()" hidden>Add</button>
 
 	<script src="~/lib/jquery.js"></script>
 	<script type="text/javascript"><!--
@@ -62,10 +61,7 @@
 				updateListItem(itemToUpdate);
 		}
 
-		$().ready(function () {
-
-			$(".checkItem").change(function () {
-
+		function checkItemChange() {
 				var thisItem = $(this);
 				var thisListItem = thisItem.parent();
 				var itemToUpdate = {
@@ -79,8 +75,11 @@
 				console.log('This item: ');
 				console.log(itemToUpdate);
 				updateListItem(itemToUpdate);
+		}
 
-			});					
+		$().ready(function () {
+
+			$(".checkItem").change(checkItemChange);					
 
 			$(".itemText").on("input", itemTextChange);
 		});
@@ -100,6 +99,7 @@
 			var currentTitle = document.getElementById("title");
 			var itemListTexts = document.getElementsByClassName("itemText");
 			var checkboxItems = document.getElementsByClassName("checkItem");
+			var addButton = document.getElementById("btnAdd");
 			if (editState) {
 				currentTitle.outerHTML = '<h2 id="title" class="title">' + currentTitle.value + '</h2>';
 				currentTitle.removeEventListener("input", titleChange);
@@ -111,6 +111,7 @@
 					elem.removeAttribute("disabled");
 				}
 				editState = false;
+				addButton.setAttribute("hidden");
 			}
 			else {
 				currentTitle.outerHTML = '<input id="title" type="text" value="' + currentTitle.innerText + '"/>';
@@ -126,7 +127,36 @@
 					elem.setAttribute("disabled", "disabled");
 				}
 				editState = true;
+				addButton.removeAttribute("hidden");
 			}
+		};
+
+		var onAddItemClick = function () {
+			$.ajax({
+				method: 'POST',
+				url: '/api/items/',
+				dataType: 'json',
+				contentType: 'text/json'
+			}).done(function (data) {				
+				var newItemNode = document.createElement("LI");
+				newItemNode.id = data.id;
+
+				var newInputNode = document.createElement("INPUT");
+				newInputNode.type = "checkbox";
+				newInputNode.name = "item_" + data.id;
+				newInputNode.checked = data.IsCompleted;
+				newInputNode.className = "checkItem";
+				newInputNode.addEventListener("change", checkItemChange);
+				newInputNode.setAttribute("disabled", "disabled");
+				newItemNode.appendChild(newInputNode);
+
+				var newTextNode = document.createElement("Input");
+				newTextNode.type = "text";
+				newTextNode.value = data.text;
+				newTextNode.className = "itemText";
+				newItemNode.appendChild(newTextNode);
+				document.getElementById("itemsList").appendChild(newItemNode);
+			});
 		};
 
 		//--></script>

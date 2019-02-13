@@ -139,6 +139,10 @@ namespace Fritz.StreamTools.Services
 					await chatService.SendWhisperAsync(e.UserName, "Unknown command.  Try !help for a list of available commands");
 				}
 			} else {
+
+				// TODO: Eliminate some of the common bots
+				// TODO: Capture and transmit the user who sent the message
+
 				SentimentSink.RecentChatMessages.Enqueue(e.Message);				
 			}
 

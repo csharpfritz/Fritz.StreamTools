@@ -21,6 +21,8 @@ namespace Fritz.StreamTools.Services
 		private TextAnalyticsClient _client;
 		private static string _SubscriptionKey;
 
+		private Dictionary<DateTime, (int count, double average)> _Observations = new Dictionary<DateTime, (int count, double average)>();
+
 		private class ApiKeyServiceClientCredentials : ServiceClientCredentials
 		{
 			public override Task ProcessHttpRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -75,13 +77,31 @@ namespace Fritz.StreamTools.Services
 					var avgScore = results.Documents
 						.Where(d => d.Score.HasValue)
 						.Average(d => d.Score).Value;
-					_followerClient.UpdateSentiment(avgScore);
+
+					var now = DateTime.Now;
+					_Observations.Add(now, (results.Documents.Count, avgScore));
+					_followerClient.UpdateSentiment(avgScore,
+						CalculateSentimentOverLastMinutes(1),
+						CalculateSentimentOverLastMinutes(5),
+						CalculateSentimentOverLastMinutes());
+
 
 				}
 
 				await Task.Delay(100);
 
 			}
+
+		}
+
+		private double CalculateSentimentOverLastMinutes(int numMinutes = 0) {
+
+			if (numMinutes > 0) {
+				return _Observations.Where(o => o.Key > DateTime.Now.AddMinutes(-1 * numMinutes))
+					.Average(v => v.Value.average);
+			}
+
+			return _Observations.Average(v => v.Value.average);
 
 		}
 

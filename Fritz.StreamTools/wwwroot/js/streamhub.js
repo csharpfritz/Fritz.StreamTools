@@ -37,9 +37,9 @@ class StreamHub {
 						if (this.debug) console.debug("OnViewersCountUpdated", { serviceName, viewerCount });
 						if (this.onViewers) this.onViewers(serviceName, viewerCount);
 				});
-			this._hub.on('OnSentimentUpdated', (newSentiment) => {
-				if (this.debug) console.debug("OnSentimentUpdated", { newSentiment });
-				if (this.onSentiment) this.onSentiment(newSentiment);
+			this._hub.on('OnSentimentUpdated', (newSentiment, oneMinute, fiveMinute, all) => {
+				if (this.debug) console.debug("OnSentimentUpdated", { newSentiment, oneMinute, fiveMinute, all });
+				if (this.onSentiment) this.onSentiment(newSentiment, oneMinute, fiveMinute, all);
 			});
 
 				return this._hub.start();

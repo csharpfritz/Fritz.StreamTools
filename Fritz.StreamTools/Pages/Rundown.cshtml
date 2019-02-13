@@ -57,47 +57,33 @@
                 $.ajax({
                     url: "/api/items"
                 }).done(function (data) {
-
-                    //console.log("data: " + data);
+									
 										var spacing = `
                     `;
-                    for (var item of data) {
 
-                        var thisItem = document.getElementById("item_" + item.id);
-												if (thisItem === null) {
-													var checkUncheck = (item.isCompleted === true) ? "glyphicon-check" : "glyphicon-unchecked";
-													var newInputItem = $('<span>', {
-														id: 'item_' + item.id,
-														class: 'glyphicon ' + checkUncheck,
-														'aria-hidden': 'true'
-													});
+									$('#itemsList').children().each(function (index, element) {
+										element.remove();
+									});
 
-													var newTextItem = $('<label>', {
-														id: 'item_text_' + item.id
-													}).text(item.text);
+									for (var item of data) {
+										var checkUncheck = (item.isCompleted === true) ? "glyphicon-check" : "glyphicon-unchecked";
+										var newInputItem = $('<span>', {
+											id: 'item_' + item.id,
+											class: 'glyphicon ' + checkUncheck,
+											'aria-hidden': 'true'
+										});
 
-													var newItem = $('<li>', {
-														id: item.id
-													}).append(spacing).append(newInputItem).append(spacing).append(newTextItem).append(spacing);
+										var newTextItem = $('<label>', {
+											id: 'item_text_' + item.id
+										}).text(item.text);
 
-													$("#itemsList").append(newItem);
-													thisItem = newInputItem;
-												}
-                        if ($(thisItem).hasClass("glyphicon-unchecked") & item.isCompleted) {
+										var newItem = $('<li>', {
+											id: item.id
+										}).append(spacing).append(newInputItem).append(spacing).append(newTextItem).append(spacing);
 
-                            $(thisItem).removeClass("glyphicon-unchecked");
-                            $(thisItem).addClass("glyphicon-check");
-
-                        } else if ($(thisItem).hasClass("glyphicon-check") & !item.isCompleted) {
-
-                            $(thisItem).removeClass("glyphicon-check");
-                            $(thisItem).addClass("glyphicon-unchecked");
-                        }
-
-												var itemText = document.getElementById("item_text_" + item.id);
-												itemText.innerText = item.text;
-                    }
-
+										$("#itemsList").append(newItem);
+										thisItem = newInputItem;
+									}
                 });
 
 								$.ajax({

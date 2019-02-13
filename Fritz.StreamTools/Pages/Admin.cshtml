@@ -9,10 +9,23 @@
 <head>
 	<title>Rundown for the Stream</title>
 	<style>
-		ul { margin-left: 0px; padding-left: 0px; }
-		li { list-style-type: none; margin-left: 0px; padding-left: 0px;}
-		.itemText { width:500px; }
+		ul {
+			margin-left: 0px;
+			padding-left: 0px;
+		}
+
+		li {
+			list-style-type: none;
+			margin-left: 0px;
+			padding-left: 0px;
+		}
+
+		.itemText {
+			width: 500px;
+		}
 	</style>
+	<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+	<link href="~/lib/bootstrap/dist/css/bootstrap-theme.css" rel="stylesheet" />
 </head>
 <body>
 	<button onclick="onEditClick()">edit</button>	
@@ -77,6 +90,21 @@
 				updateListItem(itemToUpdate);
 		}
 
+		function deleteItem() {
+			var thisItem = $(this);
+			var thisListItem = thisItem.parent();
+			var id = thisListItem.attr("id");
+			$.ajax({
+					method: 'DELETE',
+					url: '/api/items/' + id,
+					contentType: 'text/json'
+			}).done(function(){
+				$(thisListItem).remove();
+			}
+			)
+
+		}
+
 		$().ready(function () {
 
 			$(".checkItem").change(checkItemChange);					
@@ -112,6 +140,9 @@
 				}
 				editState = false;
 				addButton.setAttribute("hidden", "hidden");
+				$(".deleteItem").each(function (index, element) {
+					$(element).remove();
+				});
 			}
 			else {
 				currentTitle.outerHTML = '<input id="title" type="text" value="' + currentTitle.innerText + '"/>';
@@ -128,6 +159,10 @@
 				}
 				editState = true;
 				addButton.removeAttribute("hidden");
+
+				$("#itemsList").children().each(function (index, element) {
+					$(element).append($('<span>', { class: 'deleteItem glyphicon glyphicon-trash' }).on("click", deleteItem));
+				});
 			}
 		};
 

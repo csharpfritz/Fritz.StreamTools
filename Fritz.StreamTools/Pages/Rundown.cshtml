@@ -65,26 +65,7 @@
 
                         var thisItem = document.getElementById("item_" + item.id);
 												if (thisItem === null) {
-													//var newNodeItem = document.createElement("LI");
-													//newNodeItem.id = item.id;
-													//var newInputItem = document.createElement("SPAN");
-													//newInputItem.id = "item_" + item.id;
 													var checkUncheck = (item.isCompleted === true) ? "glyphicon-check" : "glyphicon-unchecked";
-													//$(newInputItem).addClass("glyphicon " + checkUncheck);
-													//newInputItem.setAttribute("aria-hidden", "true");
-													//var newInputItem = "<span id='item_" + item.id + "' class='glyphicon " + checkUncheck + "' aria-hidden='true'> </span>";
-													//var newTextItem = "<label id='item_text_" + item.id + "'>" + item.text + "</label>";
-													
-													//var newTextItem = document.createElement("LABEL");
-													//newTextItem.id = "item_text_" + item.id;
-													//newTextItem.innerText = item.text;
-													//var newItem = document.createElement("LI");
-													//newItem.id = item.id;
-													//newItem.appendChild(newInputItem);
-													//newItem.appendChild(newTextItem);
-													//var newItem = "<li id='" + item.id + "'>" + spacing + newInputItem + spacing + newTextItem + spacing + "</li>";
-													
-													//document.getElementById("itemsList").appendChild(newItem);
 													var newInputItem = $('<span>', {
 														id: 'item_' + item.id,
 														class: 'glyphicon ' + checkUncheck,

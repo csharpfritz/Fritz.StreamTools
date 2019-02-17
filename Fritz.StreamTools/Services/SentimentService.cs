@@ -85,7 +85,6 @@ namespace Fritz.StreamTools.Services
 						CalculateSentimentOverLastMinutes(5),
 						CalculateSentimentOverLastMinutes());
 
-
 				}
 
 				await Task.Delay(100);
@@ -95,6 +94,12 @@ namespace Fritz.StreamTools.Services
 		}
 
 		private double CalculateSentimentOverLastMinutes(int numMinutes = 0) {
+
+			/*
+			 * roberttables cheer 100 February 12, 2019
+			 * ozcoder cheer 100 February 12, 2019
+			 * jamesmontemagno cheer 100 February 12, 2019
+			 */
 
 			if (numMinutes > 0) {
 				return _Observations.Where(o => o.Key > DateTime.Now.AddMinutes(-1 * numMinutes))

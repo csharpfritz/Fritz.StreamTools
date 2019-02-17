@@ -13,7 +13,7 @@
 </head>
 <body>  
 	<div>
-		<span id="currentSentiment"></span><i id="trend"></i>
+		<i id="face" style="margin-right: 5px;"></i><span id="currentSentimentLabel">Current Sentiment:</span><span id="currentSentiment"></span><i id="trend"></i>
 	</div>
 	<div id="allSentiment"></div>
 
@@ -26,6 +26,11 @@
 			var sentimentEl = document.getElementById("currentSentiment");
 			var allEl = document.getElementById("allSentiment");
 			var trend = document.getElementById("trend");
+			var face = document.getElementById("face");
+
+			const frown = "fas fa-frown";
+			const smile = "fas fa-smile";
+
 
 			hub.onSentiment = (instant, oneMinute, fiveMinute, all) => {
 
@@ -36,9 +41,11 @@
 					all: all
 				});
 
-				sentimentEl.textContent = `Current Sentiment: ${(oneMinute * 100).toFixed(1)}`;
+				face.className = instant >= 0.5 ? smile : frown;
+
+				sentimentEl.textContent = `${(oneMinute * 100).toFixed(1)}`;
 				allEl.textContent = `Since start: ${(all * 100).toFixed(1)}`;
-				trend.className = (fiveMinute < oneMinute) ? "fas fa-arrow-up" : (fiveMinute != oneMinute) ? "fas fa-arrow-down" : "fas arrows-alt-h";
+				trend.className = (fiveMinute < oneMinute) ? "fas fa-arrow-up" : (fiveMinute != oneMinute) ? "fas fa-arrow-down" : "fa fa-arrows-h";
 
 			}
 

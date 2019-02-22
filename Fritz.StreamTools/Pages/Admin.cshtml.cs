@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Interfaces;
 using Fritz.StreamTools.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,12 +12,12 @@ namespace Fritz.StreamTools.Pages
 	public class AdminModel : PageModel
 	{
 
-		public AdminModel(Models.RundownRepository repo)
+		public AdminModel(IRundownService service)
 		{
-			this.Repository = repo;
+			this.Service = service;
 		}
 
-		public RundownRepository Repository { get; private set; }
+		public IRundownService Service { get; private set; }
 
 		public void OnGet()
 		{

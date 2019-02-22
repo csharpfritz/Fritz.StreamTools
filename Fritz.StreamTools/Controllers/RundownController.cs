@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Interfaces;
 using Fritz.StreamTools.Models;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,24 +14,25 @@ namespace Fritz.StreamTools.Controllers
   [Route("api/rundown")]
   public class RundownController : Controller
 	{
-		public RundownRepository Repository { get; private set; }
-		
-		public RundownController(RundownRepository repo)
+
+		private IRundownService rundownService;
+
+		public RundownController(IRundownService rundownService)
 		{
-			this.Repository = repo;
+			this.rundownService = rundownService;
 		}
 
 		[HttpGet("title")]
 		public IActionResult Get()
 		{
-			return Ok(Repository.GetTitle());
+			return Ok(rundownService.GetRundownTitle());
 		}
 
 		// PUT: api/Rundown/Title/
 		[HttpPut("title")]
 		public IActionResult Put([FromBody]string value)
 		{
-			Repository.UpdateTitle(value);
+			rundownService.UpdateTitle(value);
 			return Ok(value);
 		}
 	}

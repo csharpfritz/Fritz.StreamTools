@@ -4,6 +4,7 @@ using System.Linq;
 using Fritz.Chatbot;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
+using Fritz.StreamTools.Interfaces;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.TagHelpers;
@@ -28,7 +29,9 @@ namespace Fritz.StreamTools.StartupServices
 
 			Configuration = configuration;
 
+			services.AddSingleton<RundownItemRepository>();
 			services.AddSingleton<RundownRepository>();
+			services.AddSingleton<IRundownService, RundownService>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
 			services.AddStreamingServices(configuration);

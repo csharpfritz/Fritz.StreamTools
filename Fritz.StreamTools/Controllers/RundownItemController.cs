@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Fritz.StreamTools.Interfaces;
 using Fritz.StreamTools.Models;
+using Fritz.StreamTools.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,25 +15,26 @@ namespace Fritz.StreamTools.Controllers
 	[Route("api/items")]
 	public class RundownItemController : Controller
 	{
-		public RundownRepository Repository { get; private set; }
 
-		public RundownItemController(RundownRepository repo)
+		private IRundownService rundownService;
+
+		public RundownItemController(IRundownService rundownService)
 		{
-			this.Repository = repo;
+			this.rundownService = rundownService;
 		}
 
 		// GET: api/items
 		[HttpGet]
 		public IActionResult Get()
 		{
-			return Ok(Repository.Get());
+			return Ok(rundownService.GetAllItems());
 		}
 
 		// GET: api/items/5
 		[HttpGet("{id}", Name = "Get")]
 		public IActionResult Get(int id)
 		{
-			var outValue = Repository.Get().FirstOrDefault(i => i.ID == id);
+			var outValue = rundownService.GetItem(id);
 			if (outValue == null) return NotFound();
 			return Ok(outValue);
 		}
@@ -40,9 +43,7 @@ namespace Fritz.StreamTools.Controllers
 		[HttpPost]
 		public IActionResult Post()
 		{
-				var largestItemId = Repository.Get().Max(i => i.ID);
-				var newItem = new RundownItem() { ID = largestItemId + 10, Text = "New Item" };
-				Repository.Add(newItem);
+				var newItem = rundownService.AddNewRundownItem();
 				return Ok(newItem);
 		}
 
@@ -50,7 +51,8 @@ namespace Fritz.StreamTools.Controllers
 		[HttpPut("{id}")]
 		public IActionResult Put(int id, [FromBody]RundownItem value)
 		{
-			Repository.Update(id, value);
+			rundownService.UpdateRundownItem(id, value);
+			
 			return Ok(value);
 		}
 
@@ -58,7 +60,7 @@ namespace Fritz.StreamTools.Controllers
 		[HttpDelete("{id}")]
 		public IActionResult Delete(int id)
 		{
-			Repository.Delete(id);
+			rundownService.DeleteRundownItem(id);			
 			return NoContent();
 		}
 	}

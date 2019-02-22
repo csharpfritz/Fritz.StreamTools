@@ -1,8 +1,8 @@
 ﻿@page
 @model Fritz.StreamTools.Pages.RundownModel
 @{
-		var items = Model.Repository.Get();
-		var title = Model.Repository.GetTitle();
+		var items = Model.Service.GetAllItems();
+		var title = Model.Service.GetRundownTitle();
 }
 <!DOCTYPE html>
 <html>

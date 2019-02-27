@@ -230,8 +230,10 @@
 				});
 
 				var newItemNode = $('<li>', {
-					id: data.id
-				}).append(spacing).append(newInputNode).append(spacing).append(newTextNode);
+					id: data.id,
+					class: "listItem",
+				}).append(spacing).append(newInputNode).append(spacing).append(newTextNode).append(spacing)
+					.append($('<span>', { class: 'deleteItem glyphicon glyphicon-trash' }).on("click", deleteItem));;
 
 				$("#itemsList").append(newItemNode);
 				$(newTextNode).on("input", itemTextChange);

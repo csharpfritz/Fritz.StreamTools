@@ -33,33 +33,49 @@
 
 		.main {
 			margin-top: 20px;
+			width: 600px;
 		}
 
-		.listItem{
+		.listItem {
 			padding-top: 5px;
 			padding-bottom: 5px;
+		}
+
+		.addButton {
+			border-radius: 100%;
+			border: none;
+			font-weight: 700;
+			font-size: 28px;
+			height: 50px;
+			width: 50px;
+			background-color: lightblue;
+			float: right;
+			margin-right: 50px;
+			outline: none;
 		}
 	</style>
 	<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
 	<link href="~/lib/bootstrap/dist/css/bootstrap-theme.css" rel="stylesheet" />
 </head>
 <body>
-	<div class="main container">
-		<button onclick="onEditClick()">edit</button>
-		<br />
-		<h2 id="title" class="title">@title</h2>
-		<ul id="itemsList">
-			@foreach (var item in items)
-			{
-				<li id="@item.ID">
-				<input type="checkbox"
-								checked="@item.IsCompleted"
-								name="item_@item.ID" class="checkItem" />
-				<text class="itemText">@item.Text</text>
-				</li>
-			}
-		</ul>
-		<button id="btnAdd" onclick="onAddItemClick()" hidden>Add</button>
+	<div class="container">
+		<div class="main">
+			<button onclick="onEditClick()">edit</button>
+			<br />
+			<h2 id="title" class="title">@title</h2>
+			<ul id="itemsList">
+				@foreach (var item in items)
+				{
+					<li id="@item.ID">
+					<input type="checkbox"
+									checked="@item.IsCompleted"
+									name="item_@item.ID" class="checkItem" />
+					<text class="itemText">@item.Text</text>
+					</li>
+				}
+			</ul>
+			<button id="btnAdd" class="addButton" onclick="onAddItemClick()" hidden>+</button>
+		</div>
 	</div>
 	<script src="~/lib/jquery.js"></script>
 	<script type="text/javascript"><!--

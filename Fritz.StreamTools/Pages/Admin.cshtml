@@ -23,12 +23,20 @@
 		.itemText {
 			width: 500px;
 		}
+
+		.title {
+			margin-top: 20px;
+			margin-bottom: 10px;
+			font-size: 30px;
+			font-weight: 500;
+		}
 	</style>
 	<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
 	<link href="~/lib/bootstrap/dist/css/bootstrap-theme.css" rel="stylesheet" />
 </head>
 <body>
-	<button onclick="onEditClick()">edit</button>	
+	<button onclick="onEditClick()">edit</button>
+	<br />
 	<h2 id="title" class="title">@title</h2>	
 	<ul id="itemsList">
 		@foreach (var item in items)
@@ -145,7 +153,7 @@
 				});
 			}
 			else {
-				currentTitle.outerHTML = '<input id="title" type="text" value="' + currentTitle.innerText + '"/>';
+				currentTitle.outerHTML = '<input id="title" type="text" class="title" value="' + currentTitle.innerText + '"/>';
 				document.getElementById("title").addEventListener("input", titleChange);
 				for (var elem of itemListTexts) {
 					elem.outerHTML = '<input class="itemText" type="text" value="' + elem.innerText + '"/>';

@@ -30,27 +30,37 @@
 			font-size: 30px;
 			font-weight: 500;
 		}
+
+		.main {
+			margin-top: 20px;
+		}
+
+		.listItem{
+			padding-top: 5px;
+			padding-bottom: 5px;
+		}
 	</style>
 	<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
 	<link href="~/lib/bootstrap/dist/css/bootstrap-theme.css" rel="stylesheet" />
 </head>
 <body>
-	<button onclick="onEditClick()">edit</button>
-	<br />
-	<h2 id="title" class="title">@title</h2>	
-	<ul id="itemsList">
-		@foreach (var item in items)
-		{
-			<li id="@item.ID">
-				<input type="checkbox" 
-						 checked="@item.IsCompleted" 
-						 name="item_@item.ID" class="checkItem" />
-				<text class="itemText">@item.Text</text>			
-			</li>
-		}
-	</ul>
-	<button id="btnAdd" onclick="onAddItemClick()" hidden>Add</button>
-
+	<div class="main container">
+		<button onclick="onEditClick()">edit</button>
+		<br />
+		<h2 id="title" class="title">@title</h2>
+		<ul id="itemsList">
+			@foreach (var item in items)
+			{
+				<li id="@item.ID">
+				<input type="checkbox"
+								checked="@item.IsCompleted"
+								name="item_@item.ID" class="checkItem" />
+				<text class="itemText">@item.Text</text>
+				</li>
+			}
+		</ul>
+		<button id="btnAdd" onclick="onAddItemClick()" hidden>Add</button>
+	</div>
 	<script src="~/lib/jquery.js"></script>
 	<script type="text/javascript"><!--
 
@@ -151,6 +161,9 @@
 				$(".deleteItem").each(function (index, element) {
 					$(element).remove();
 				});
+				$(".listItem").each(function (index, element) {
+					$(element).removeClass("listItem");
+				});
 			}
 			else {
 				currentTitle.outerHTML = '<input id="title" type="text" class="title" value="' + currentTitle.innerText + '"/>';
@@ -169,6 +182,7 @@
 				addButton.removeAttribute("hidden");
 
 				$("#itemsList").children().each(function (index, element) {
+					$(element).addClass("listItem");
 					$(element).append($('<span>', { class: 'deleteItem glyphicon glyphicon-trash' }).on("click", deleteItem));
 				});
 			}

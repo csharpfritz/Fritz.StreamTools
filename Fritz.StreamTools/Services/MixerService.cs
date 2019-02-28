@@ -36,6 +36,9 @@ namespace Fritz.StreamTools.Services
 		#region Properties
 
 		public string Name { get => SERVICE_NAME; }
+
+		public string BotUserName { get { return _Mixer.UserName; } }
+
 		public int CurrentFollowerCount { get; set; }
 		public int CurrentViewerCount { get; set; }
 		public bool IsAuthenticated => _Mixer.IsAuthenticated;

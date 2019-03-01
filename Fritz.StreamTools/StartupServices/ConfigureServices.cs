@@ -76,6 +76,7 @@ namespace Fritz.StreamTools.StartupServices
 			});
 
 			services.AddHttpClient("DiscoverDotNet");
+	  services.AddHttpClient("ImageDescriptor");
 
 			services.AddHttpClient("ShoutoutCommand", c =>
 			{

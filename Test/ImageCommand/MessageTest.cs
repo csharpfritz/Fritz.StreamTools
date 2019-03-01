@@ -60,9 +60,12 @@ namespace Test.ImageCommand
 				})
 				.Returns(Task.FromResult(true));
 
-			var sut = new ImageDescriptorCommand("testlocation", "testkey");
+			var sut = new ImageDescriptorCommand(
+							"testlocation",
+							"testkey");
 
-			// Act
+	  // Act
+	  //var urlToTest = "https://media.discordapp.net/attachments/336580722653528075/550152641632534558/unknown.png?width=1020&height=574";
 			await sut.Execute(chatService.Object, "test", url);
 
 			// Assert
@@ -70,6 +73,6 @@ namespace Test.ImageCommand
 
 		}
 
+  }
 
-	}
 }

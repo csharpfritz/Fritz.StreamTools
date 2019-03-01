@@ -213,7 +213,7 @@ namespace Fritz.Chatbot
 
 		  AfterExecute(user, cmd.Name);
 
-		  return cmd.Final;
+		  if (cmd.Final) break;
 		}
 	  }
 

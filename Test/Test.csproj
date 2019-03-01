@@ -11,7 +11,7 @@
     <PackageReference Include="AutoFixture.AutoMoq" Version="4.5.1" />
     <PackageReference Include="AutoFixture.Xunit2" Version="4.5.0" />
     <PackageReference Include="FluentAssertions" Version="5.5.3" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0-preview-20180610-02" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.0" />
     <PackageReference Include="Moq" Version="4.10.0" />
     <PackageReference Include="System.IO.Abstractions" Version="2.1.0.256" />
     <PackageReference Include="xunit" Version="2.4.1" />

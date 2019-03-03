@@ -29,6 +29,7 @@ namespace Test.Chatbot
 			_config = new Mock<IConfiguration>();
 			_config.SetupGet(s => s[FritzBot.ConfigurationRoot + ":CooldownTime"]).Returns("1");
 			_chatservice = new Mock<IChatService>();
+			_chatservice.SetupGet(s => s.BotUserName).Returns("MockedChatSerivce");
 			_chatservice.SetupGet(x => x.IsAuthenticated).Returns(true);
 
 			var chatServices = new List<IChatService> { _chatservice.Object };

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -123,17 +124,28 @@ namespace Fritz.Chatbot
 			var userKey = $"{chatMessageArgs.ServiceName}:{chatMessageArgs.UserName}";
 			var user = _activeUsers.AddOrUpdate(userKey, new ChatUserInfo(), (_, u) => u);
 			var chatService = sender as IChatService;
+			if (chatService.BotUserName.Equals(chatMessageArgs.UserName, StringComparison.InvariantCultureIgnoreCase)) return; // Don't process my own messages
 
 			if (await HandleExtendedCommands(chatService, chatMessageArgs, user))
 			{
 				return;
 			}
 
-			if (chatMessageArgs.Message.FirstOrDefault() == '!')
+			if (chatMessageArgs.Message.FirstOrDefault() == '!' && !TextCommand.IsCommand(chatMessageArgs.Message.Substring(1).Split(' ')[0]))
 			{
 				if (!await HandleBasicCommands(chatService, chatMessageArgs, user))
 				{
 					await chatService.SendWhisperAsync(chatMessageArgs.UserName, UnknownCommandMessage);
+				}
+			}
+			else
+			{
+
+				// TODO: Capture and transmit the user who sent the message
+				var otherBots = new[] { "nightbot", "fritzbot", "streamelements" };
+				if (!otherBots.Contains(chatMessageArgs.UserName.ToLowerInvariant()))
+				{
+					SentimentSink.RecentChatMessages.Enqueue(chatMessageArgs.Message);
 				}
 			}
 		}
@@ -202,7 +214,7 @@ namespace Fritz.Chatbot
 
 					AfterExecute(user, cmd.Name);
 
-					return cmd.Final;
+					if (cmd.Final) break;
 				}
 			}
 

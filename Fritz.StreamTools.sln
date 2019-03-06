@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2020
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28527.54
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{520B1405-AC30-493A-8F04-6AA9B8FE2CDD}"
 EndProject
@@ -29,7 +29,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Chatbot", "Fritz.Chat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Twitch", "Fritz.Twitch\Fritz.Twitch.csproj", "{28D6D34A-3F6E-40B3-B62A-20F90D281C7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleChatbot", "ConsoleChatbot\ConsoleChatbot.csproj", "{A9F1860F-163B-44AC-A935-C1B584D3CB8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleChatbot", "ConsoleChatbot\ConsoleChatbot.csproj", "{A9F1860F-163B-44AC-A935-C1B584D3CB8A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

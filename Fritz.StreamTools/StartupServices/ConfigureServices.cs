@@ -44,13 +44,19 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddSingleton<IAttentionClient, AttentionHub>();
 
+			// Add the SentimentSink
+			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
+
+			services.AddSingleton<IHostedService, SentimentService>();
 			services.AddSingleton<IHostedService, FritzBot>();
+
 			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
 	  	FritzBot.RegisterCommands(services);
 
 			services.AddLazyCache();
 
 			RegisterGitHubServices(services, configuration);
+
 
 		}
 
@@ -73,6 +79,7 @@ namespace Fritz.StreamTools.StartupServices
 			});
 
 			services.AddHttpClient("DiscoverDotNet");
+	  services.AddHttpClient("ImageDescriptor");
 
 			services.AddHttpClient("ShoutoutCommand", c =>
 			{

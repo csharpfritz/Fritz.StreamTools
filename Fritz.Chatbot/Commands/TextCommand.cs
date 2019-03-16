@@ -18,15 +18,25 @@ namespace Fritz.Chatbot.Commands
 		public bool Final => true;
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(5);
 
-		private static readonly Dictionary<string, string> _Commands = new Dictionary<string, string>
+		internal static readonly Dictionary<string, string> _Commands = new Dictionary<string, string>
 		{
 			{ "music", "Jeff plays 'Music to Code By' from Carl Franklin: http://mtcb.pwop.com" },
 			{ "discord", "Join us on the Fritz and Friends Discord server at: https://discord.gg/RnJhrJq" },
 			{ "github", "Checkout Jeff's GitHub at: https://github.com/csharpfritz" },
 			{ "keyboard", "Jeff uses a Vortex Race 3 with Cherry MX Blue switches, details on his blog at: https://jeffreyfritz.com/2018/07/mechanical-keyboards-i-just-got-one-and-why-you-need-one-too/"  },
 			{ "blog", "Jeff's blog is at: https://jeffreyfritz.com" },
-			{ "lurk", "is stepping away from keyboard and lurking" }
+			{ "lurk", "is stepping away from keyboard and lurking" },
+			{ "defend", "csharpNo csharpGritty We shall defend the channel! csharpNo csharpGritty" },
+			{ "raid", @"Prepare to RAID!  Copy this text to use when we reach our raid target: ------------ Subscribers copy ------------- csharpRaid csharpRaid csharpRaid CsharpFritz's Coding Squad is Here! All your base are belong to us! csharpRaid csharpRaid csharpRaid " +
+				" ------------ Non-Subscribers copy ------------- twitchRaid twitchRaid twitchRaid CsharpFritz's Coding Squad is Here! All your base are belong to us! twitchRaid twitchRaid twitchRaid  " }
 		};
+
+		internal static bool IsCommand(string commandText)
+		{
+
+			return _Commands.ContainsKey(commandText);
+
+		}
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{

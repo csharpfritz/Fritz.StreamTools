@@ -31,9 +31,6 @@
 		<PackageReference Include="System.Memory" Version="4.5.1" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="wwwroot\contents\hey_listen.wav">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Include="wwwroot\js\GoalConfiguration\GoalConfiguration.js" />
 		<None Include="wwwroot\js\GoalConfiguration\GoogleFonts.js" />
 		<None Include="wwwroot\js\GoalConfiguration\Preview.js" />

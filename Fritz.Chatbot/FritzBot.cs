@@ -214,7 +214,7 @@ namespace Fritz.Chatbot
 
 					AfterExecute(user, cmd.Name);
 
-					if (cmd.Final) break;
+					if (cmd.Final) return true;
 				}
 			}
 

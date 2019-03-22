@@ -31,6 +31,7 @@ namespace Test.Chatbot
 			_config = new Mock<IConfiguration>();
 			_chatservice = new Mock<IChatService>();
 			_chatservice.SetupGet(x => x.IsAuthenticated).Returns(true);
+			_chatservice.SetupGet(s => s.BotUserName).Returns("MockedChatSerivce");
 
 			var chatServices = new List<IChatService> { _chatservice.Object };
 			_serviceProvider = new Mock<IServiceProvider>();

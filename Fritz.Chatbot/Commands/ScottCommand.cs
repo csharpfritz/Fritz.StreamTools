@@ -16,6 +16,7 @@ namespace Fritz.Chatbot.Commands
 		private readonly IConfiguration Configuration;
 
 		public ILogger Logger { get; }
+
 		public IHubContext<AttentionHub, IAttentionHubClient> HubContext { get; }
 
 		public ScottCommand(IConfiguration configuration, IHubContext<AttentionHub, IAttentionHubClient> hubContext, ILoggerFactory loggerFactory)
@@ -27,17 +28,11 @@ namespace Fritz.Chatbot.Commands
 
 		}
 
-		//protected HubConnection Client { get; }
-
 		public string Trigger => "scott";
 
 		public string Description => "Request Frau Farbissina to summon Scott";
 
-#if DEBUG
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(60);
-#else
-	public TimeSpan? Cooldown => TimeSpan.Parse(Configuration["FritzBot:AttentionCommand:Cooldown"]);
-#endif
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{

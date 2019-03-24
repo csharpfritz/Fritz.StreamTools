@@ -99,9 +99,15 @@ namespace Fritz.LiveCoding2
 			MyOutputPane = thisPane;
 			WriteToPane("Code Suggestions from Twitch will appear here  \n");
 
-			this.Proxy = new CodeSuggestionProxy();
-			Proxy.OnNewCode += Proxy_OnNewCode;
-			await Proxy.StartAsync();
+			try
+			{
+				this.Proxy = new CodeSuggestionProxy();
+				Proxy.OnNewCode += Proxy_OnNewCode;
+				await Proxy.StartAsync();
+			} catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception starting Proxy: {ex.Message}");
+			}
 
 		}
 

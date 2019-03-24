@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Services;
 
 namespace Fritz.Chatbot.Commands
 {

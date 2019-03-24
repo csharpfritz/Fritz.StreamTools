@@ -9,6 +9,8 @@ namespace Fritz.StreamLib.Core
 		string Name { get; }
 		bool IsAuthenticated { get; }
 
+		string BotUserName { get; }
+
 		event EventHandler<ChatMessageEventArgs> ChatMessage;
 		event EventHandler<ChatUserInfoEventArgs> UserJoined;
 		event EventHandler<ChatUserInfoEventArgs> UserLeft;

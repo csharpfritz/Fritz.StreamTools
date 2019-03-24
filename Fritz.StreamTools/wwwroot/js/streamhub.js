@@ -2,7 +2,8 @@
 class StreamHub {
 		constructor() {
 				this.onFollowers = null;
-				this.onViewers = null;
+			this.onViewers = null;
+			this.onSentiment = null;
 				this.debug = true;
 				this._hub = null;
 		}
@@ -40,6 +41,11 @@ class StreamHub {
 			this._hub.on('OnNewCode', (newCode) => {
 				if (this.debug) console.debug("OnNewCode");
 				if (this.onNewCode) this.onNewCode(newCode);
+			});
+
+			this._hub.on('OnSentimentUpdated', (newSentiment, oneMinute, fiveMinute, all) => {
+				if (this.debug) console.debug("OnSentimentUpdated", { newSentiment, oneMinute, fiveMinute, all });
+				if (this.onSentiment) this.onSentiment(newSentiment, oneMinute, fiveMinute, all);
 			});
 
 				return this._hub.start();

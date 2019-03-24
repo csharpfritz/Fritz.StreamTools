@@ -13,11 +13,16 @@
 	<script src="~/js/attentionhub.js"></script>
 
 	<script>
-		var audio = new Audio('@Url.Content(@"~/contents/hey_listen.wav")');
-		
+		var audio = new Audio('@Url.Content(@"~/contents/hey_listen.mp3")');
+		var scottAudio = new Audio('@Url.Content(@"~/contents/Scott!!.mp3")');
+
 		var hub = new AttentionHub();
 		hub.onAlertFritz = () => {
 			alertFritz();
+		}
+
+		hub.onSummonScott = () => {
+			scottAudio.play();
 		}
 
 		function alertFritz() {

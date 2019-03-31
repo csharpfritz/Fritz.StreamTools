@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.StartupServices;
@@ -22,18 +24,20 @@ namespace Test.Startup
 							{
 								{ "FakeConfiguration:PropertyOne", "RandomValue" },
 								{ "FakeConfiguration:PropertyTwo", "RandomValue" }
-							});
+							}).Build();
 
 			var serviceCollection = new ServiceCollection();
+			serviceCollection.AddSingleton<IConfiguration>(configuration);
+
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
 			{
 				{ typeof(FakeConfigurationRequiredService), new [] { "FakeConfiguration:PropertyOne", "FakeConfiguration:PropertyTwo", }}
 			};
 
-			ConfigureServices.Execute(serviceCollection, configuration.Build(), serviceRequriedConfiguration);
+			ConfigureServices.Execute(serviceCollection, configuration, serviceRequriedConfiguration);
 
 			var provider = serviceCollection.BuildServiceProvider();
-			Assert.Equal(typeof(FakeConfigurationRequiredService), provider.GetServices<FakeConfigurationRequiredService>().Select(x => x.GetType()).SingleOrDefault());
+			Assert.Contains(provider.GetServices<IHostedService>().Select(x => x.GetType()), type => type == typeof(FakeConfigurationRequiredService));
 	}
 
 		[Fact]
@@ -43,18 +47,20 @@ namespace Test.Startup
 								new Dictionary<string, string>()
 								{
 									{ "FakeConfiguration:PropertyOne", "RandomValue" },
-								});
+								}).Build();
 
 			var serviceCollection = new ServiceCollection();
+			serviceCollection.AddSingleton<IConfiguration>(configuration);
+
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
 				{
 					{ typeof(FakeConfigurationRequiredService), new [] { "FakeConfiguration:PropertyOne", "MissingFakeConfiguration:MissingPropertyTwo", }}
 				};
 
-			ConfigureServices.Execute(serviceCollection, configuration.Build(), serviceRequriedConfiguration);
+			ConfigureServices.Execute(serviceCollection, configuration, serviceRequriedConfiguration);
 
 			var provider = serviceCollection.BuildServiceProvider();
-			Assert.Null(provider.GetServices<FakeConfigurationRequiredService>().Select(x => x.GetType()).SingleOrDefault());
+			Assert.DoesNotContain(provider.GetServices<IHostedService>().Select(x => x.GetType()), type => type == typeof(FakeConfigurationRequiredService));
 		}
 
 		[Theory, MemberData(nameof(Configurations))]
@@ -100,6 +106,17 @@ namespace Test.Startup
 			};
 		}
 
-		private class FakeConfigurationRequiredService { }
-	}
+		private class FakeConfigurationRequiredService : IHostedService
+		{
+			public Task StartAsync(CancellationToken cancellationToken)
+			{
+				return null;
+			}
+
+			public Task StopAsync(CancellationToken cancellationToken)
+			{
+			return null;
+			}
+		}
+  }
 }

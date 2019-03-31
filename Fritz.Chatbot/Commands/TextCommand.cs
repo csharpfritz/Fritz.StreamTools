@@ -22,9 +22,10 @@ namespace Fritz.Chatbot.Commands
 		{
 			{ "music", "Jeff plays 'Music to Code By' from Carl Franklin: http://mtcb.pwop.com" },
 			{ "discord", "Join us on the Fritz and Friends Discord server at: https://discord.gg/RnJhrJq" },
-			{ "github", "Checkout Jeff's GitHub at: https://github.com/csharpfritz" },
+			{ "github", "Checkout Jeff's GitHub at: https://github.com/csharpfritz and the FritzAndFriends GitHub organization at: https://github.com/FritzAndFriends" },
 			{ "keyboard", "Jeff uses a Vortex Race 3 with Cherry MX Blue switches, details on his blog at: https://jeffreyfritz.com/2018/07/mechanical-keyboards-i-just-got-one-and-why-you-need-one-too/"  },
 			{ "blog", "Jeff's blog is at: https://jeffreyfritz.com" },
+			{ "youtube", "Find the archive of videos from our channel at:  https://youtube.com/csharpfritz" },
 			{ "lurk", "is stepping away from keyboard and lurking" },
 			{ "defend", "csharpNo csharpGritty We shall defend the channel! csharpNo csharpGritty" },
 			{ "raid", @"Prepare to RAID!  Copy this text to use when we reach our raid target: ------------ Subscribers copy ------------- csharpRaid csharpRaid csharpRaid CsharpFritz's Coding Squad is Here! All your base are belong to us! csharpRaid csharpRaid csharpRaid " +

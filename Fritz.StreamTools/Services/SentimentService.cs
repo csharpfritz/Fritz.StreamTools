@@ -35,6 +35,11 @@ namespace Fritz.StreamTools.Services
 		public SentimentService(FollowerClient followerClient, IConfiguration config)
 		{
 
+			if (string.IsNullOrEmpty(config["FritzBot:SentimentAnalysisKey"]))
+			{
+				return;
+			}
+
 			_SubscriptionKey = config["FritzBot:SentimentAnalysisKey"].ToString();
 			_followerClient = followerClient;
 			_client = new TextAnalyticsClient(new ApiKeyServiceClientCredentials())
@@ -46,7 +51,7 @@ namespace Fritz.StreamTools.Services
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
-			Task.Run(async () => await Run());
+			if (!string.IsNullOrEmpty(_SubscriptionKey)) Task.Run(async () => await Run());
 			return Task.CompletedTask;
 		}
 

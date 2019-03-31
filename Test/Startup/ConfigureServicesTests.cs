@@ -8,28 +8,68 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MixerLib;
 using Xunit;
 
 namespace Test.Startup
 {
-	
-	public class ConfigureServicesTests
+  public class ConfigureServicesTests
 	{
+		[Fact]
+		public void Execute_ShouldRegitserService_WhenAllRequiredConfigurationDone()
+		{
+			var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+							new Dictionary<string, string>()
+							{
+								{ "FakeConfiguration:PropertyOne", "RandomValue" },
+								{ "FakeConfiguration:PropertyTwo", "RandomValue" }
+							});
+
+			var serviceCollection = new ServiceCollection();
+			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
+			{
+				{ typeof(FakeConfigurationRequiredService), new [] { "FakeConfiguration:PropertyOne", "FakeConfiguration:PropertyTwo", }}
+			};
+
+			ConfigureServices.Execute(serviceCollection, configuration.Build(), serviceRequriedConfiguration);
+
+			var provider = serviceCollection.BuildServiceProvider();
+			Assert.Equal(typeof(FakeConfigurationRequiredService), provider.GetServices<FakeConfigurationRequiredService>().Select(x => x.GetType()).SingleOrDefault());
+	}
+
+		[Fact]
+		public void Execute_ShouldSkipRegisterServices_IfAnyOfRequiredConfigurationNotPass()
+		{
+			var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+								new Dictionary<string, string>()
+								{
+									{ "FakeConfiguration:PropertyOne", "RandomValue" },
+								});
+
+			var serviceCollection = new ServiceCollection();
+			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
+				{
+					{ typeof(FakeConfigurationRequiredService), new [] { "FakeConfiguration:PropertyOne", "MissingFakeConfiguration:MissingPropertyTwo", }}
+				};
+
+			ConfigureServices.Execute(serviceCollection, configuration.Build(), serviceRequriedConfiguration);
+
+			var provider = serviceCollection.BuildServiceProvider();
+			Assert.Null(provider.GetServices<FakeConfigurationRequiredService>().Select(x => x.GetType()).SingleOrDefault());
+		}
+
 		[Theory, MemberData(nameof(Configurations))]
 		public void Execute_RegisterStreamServicesWithVariousConfigurations_ReturnExpected(Dictionary<string, string> configurations, Type[] expected)
 		{
 			// arrange
-			var configuration = new ConfigurationBuilder()
-				.AddInMemoryCollection(configurations)
-				.Build();
+			var configuration = new ConfigurationBuilder().AddInMemoryCollection(configurations)
+																										.Build();
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<ILoggerFactory>(new LoggerFactory());
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 				
 			// act
-			ConfigureServices.Execute(serviceCollection, configuration);
+			ConfigureServices.Execute(serviceCollection, configuration, new Dictionary<Type, string[]>());
 
 			// assert
 			var provider = serviceCollection.BuildServiceProvider();
@@ -49,9 +89,7 @@ namespace Test.Startup
 			}
 		}
 
-		private static Dictionary<string, string> MakeFakeConfiguration(string twitchClientId,
-			string mixerClientId,
-			bool enableFake)
+		private static Dictionary<string, string> MakeFakeConfiguration(string twitchClientId, string mixerClientId, bool enableFake)
 		{
 			return new Dictionary<string, string>
 			{
@@ -62,5 +100,6 @@ namespace Test.Startup
 			};
 		}
 
+		private class FakeConfigurationRequiredService { }
 	}
 }

@@ -1,23 +1,23 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Fritz.StreamTools.Hubs;
-using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Fritz.Twitch;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Fritz.StreamTools
 {
-	public class Startup
+  public class Startup
 	{
+		private static Dictionary<Type, string[]> _servicesRequiredConfiguration = new Dictionary<Type, string[]>()
+		{
+			{ typeof(SentimentService), new [] { "FritzBot:SentimentAnalysisKey" } }
+		};
+
 		public Startup(IConfiguration configuration)
 		{
 			Configuration = configuration;
@@ -28,11 +28,9 @@ namespace Fritz.StreamTools
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-
 			services.AddTwitchClient();
 
-			StartupServices.ConfigureServices.Execute(services, Configuration);
-
+			StartupServices.ConfigureServices.Execute(services, Configuration, _servicesRequiredConfiguration);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

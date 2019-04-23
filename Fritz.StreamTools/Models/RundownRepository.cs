@@ -1,53 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Models
 {
-	public class RundownRepository
-	{
+  public class RundownRepository
+  {
+		private static string _Title = "Rundown Title";
 
-		private static readonly List<RundownItem> _Items = new List<RundownItem>()
+		public void UpdateTitle(string title)
 		{
-			new RundownItem {ID=10, Text="PRE-SHOW: Set stream titles"},
-			new RundownItem {ID=20, Text="PRE-SHOW: Send 'Stream starting soon' tweet"},
-			new RundownItem {ID=30, Text="PRE-SHOW: Set background to 'Starting shortly' and start music"},
-			new RundownItem {ID=40, Text="Start Stream!"},
-			new RundownItem {ID=50, Text="Introduction"},
-			new RundownItem {ID=60, Text="Music to Code By"},
-			new RundownItem {ID=70, Text="Today's Hat"},
-			new RundownItem {ID=80, Text="Housekeeping"},
-			new RundownItem {ID=90, Text="Follower Goals"},
-			new RundownItem {ID=110, Text="Pull Requests"},
-			new RundownItem {ID=120, Text="New Code!"},
-			new RundownItem {ID=130, Text="Log issue with last update"},
-			new RundownItem {ID=140, Text="Commit and push source code"},
-			new RundownItem {ID=150, Text="Next stream..."}
-		};
-
-		public IEnumerable<RundownItem> Get()
-		{
-
-			return _Items.OrderBy(i => i.ID);
-
+			_Title = title;
 		}
 
-		public void Add(RundownItem item)
+		public string GetTitle()
 		{
-			_Items.Add(item);
+			return _Title;
 		}
 
-		public void Update(int id, RundownItem item)
-		{
-			Delete(id);
-			_Items.Add(item);
-		}
-
-		public void Delete(int id)
-		{
-
-			_Items.Remove(_Items.FirstOrDefault(i => i.ID == id));
-
-		}
-
-	}
+  }
 }

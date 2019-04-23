@@ -1,49 +1,152 @@
 ﻿@page
 @model Fritz.StreamTools.Pages.AdminModel
 @{ 
-	var items = Model.Repository.Get();
+		var items = Model.Service.GetAllItems();
+		var title = Model.Service.GetRundownTitle();
 }
 <!DOCTYPE html>
 <html>
 <head>
 	<title>Rundown for the Stream</title>
 	<style>
-		ul { margin-left: 0px; padding-left: 0px; }
-		li { list-style-type: none; margin-left: 0px; padding-left: 0px;}
+		ul {
+			margin-left: 0px;
+			padding-left: 0px;
+		}
+
+		li {
+			list-style-type: none;
+			margin-left: 0px;
+			padding-left: 0px;
+		}
+
+		.itemText {
+			width: 500px;
+		}
+
+		.title {
+			margin-top: 20px;
+			margin-bottom: 10px;
+			font-size: 30px;
+			font-weight: 500;
+		}
+
+		.main {
+			margin-top: 20px;
+			width: 600px;
+		}
+
+		.listItem {
+			padding-top: 5px;
+			padding-bottom: 5px;
+		}
+
+		.addButton {
+			border-radius: 100%;
+			border: none;
+			font-weight: 700;
+			font-size: 28px;
+			height: 50px;
+			width: 50px;
+			background-image: linear-gradient(to bottom, #5bc0de 0%, #2aabd2 100%);
+			float: right;
+			margin-right: 50px;
+			outline: none;
+		}
 	</style>
+	<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+	<link href="~/lib/bootstrap/dist/css/bootstrap-theme.css" rel="stylesheet" />
 </head>
 <body>
-
-	<h2>Today's Stream</h2>
-
-	<ul>
-	@foreach (var item in items)
-	{
-		<li id="@item.ID">
-		<input type="checkbox" 
-					 checked="@item.IsCompleted" 
-					 name="item_@item.ID" class="checkItem" /> @item.Text</li>
-	}
-	</ul>
-
+	<div class="container">
+		<div class="main">
+			<button onclick="onEditClick()" class="btn btn-info btn-s">Edit <span class="glyphicon glyphicon-edit"></span></button>
+			<br />
+			<h2 id="title" class="title">@title</h2>
+			<ul id="itemsList">
+				@foreach (var item in items)
+				{
+					<li id="@item.ID">
+					<input type="checkbox"
+									checked="@item.IsCompleted"
+									name="item_@item.ID" class="checkItem" />
+					<text class="itemText">@item.Text</text>
+					</li>
+				}
+			</ul>
+			<button id="btnAdd" class="addButton" onclick="onAddItemClick()" hidden>+</button>
+		</div>
+	</div>
 	<script src="~/lib/jquery.js"></script>
 	<script type="text/javascript"><!--
 
-		$().ready(function () {
+		function titleChange() {
+				var title = $(this);
+				console.log(title);
+				console.log(title.val());
+				$.ajax({
+					method: 'PUT',
+					url: '/api/rundown/title',
+					data: JSON.stringify(title.val()),
+					dataType: 'json',
+					contentType: 'text/json'
+				});
+		}
 
-			$(".checkItem").change(function () {
+		function itemTextChange() {
+				var text = $(this);
+				var thisListItem = text.parent();
+				var itemToUpdate = {
+					ID: thisListItem.attr("id"),
+					Text: text.val(),
+					IsCompleted: thisListItem.children()[0].checked
+				}
+				console.log(text);
+				console.log(thisListItem);
+				console.log('This item: ');
+				console.log(itemToUpdate);
+				updateListItem(itemToUpdate);
+		}
 
+		function checkItemChange() {
 				var thisItem = $(this);
 				var thisListItem = thisItem.parent();
 				var itemToUpdate = {
 					ID: thisListItem.attr("id"),
-					Text: thisListItem.text(),
+					Text: thisListItem.children()[1].innerText,
 					IsCompleted: thisItem[0].checked
 				}
+				
 				console.log(thisItem);
 				console.log(thisListItem);
 				console.log('This item: ');
 				console.log(itemToUpdate);
+				updateListItem(itemToUpdate);
+		}
+
+		function deleteItem() {
+			var thisItem = $(this);
+			var thisListItem = thisItem.parent();
+			var id = thisListItem.attr("id");
+			$.ajax({
+					method: 'DELETE',
+					url: '/api/items/' + id,
+					contentType: 'text/json'
+			}).done(function(){
+				$(thisListItem).remove();
+			}
+			)
+
+		}
+
+		$().ready(function () {
+
+			$(".checkItem").change(checkItemChange);					
+
+			$(".itemText").on("input", itemTextChange);
+		});
+
+		var updateListItem = function (itemToUpdate) {
 
 				$.ajax({
 					method: 'PUT',
@@ -52,11 +155,91 @@
 					dataType: 'json',
 					contentType: 'text/json'
 				});
+		};
+		var editState = false;
+		var onEditClick = function () {
+			var currentTitle = document.getElementById("title");
+			var itemListTexts = document.getElementsByClassName("itemText");
+			var checkboxItems = document.getElementsByClassName("checkItem");
+			var addButton = document.getElementById("btnAdd");
+			if (editState) {
+				currentTitle.outerHTML = '<h2 id="title" class="title">' + currentTitle.value + '</h2>';
+				currentTitle.removeEventListener("input", titleChange);
+				for (var elem of itemListTexts) {
+					elem.outerHTML = '<text class="itemText">' + elem.value + '</text>';
+					elem.removeEventListener("input", itemTextChange);
+				}
+				for (var elem of checkboxItems) {
+					elem.removeAttribute("disabled");
+				}
+				editState = false;
+				addButton.setAttribute("hidden", "hidden");
+				$(".deleteItem").each(function (index, element) {
+					$(element).remove();
+				});
+				$(".listItem").each(function (index, element) {
+					$(element).removeClass("listItem");
+				});
+			}
+			else {
+				currentTitle.outerHTML = '<input id="title" type="text" class="title" value="' + currentTitle.innerText + '"/>';
+				document.getElementById("title").addEventListener("input", titleChange);
+				for (var elem of itemListTexts) {
+					elem.outerHTML = '<input class="itemText" type="text" value="' + elem.innerText + '"/>';
+				}
+				itemListTexts = document.getElementsByClassName("itemText");
+				for (var elem of itemListTexts) {
+					elem.addEventListener("input", itemTextChange);
+				};
+				for (var elem of checkboxItems) {
+					elem.setAttribute("disabled", "disabled");
+				}
+				editState = true;
+				addButton.removeAttribute("hidden");
 
+				$("#itemsList").children().each(function (index, element) {
+					$(element).addClass("listItem");
+					$(element).append($('<span>', { class: 'deleteItem glyphicon glyphicon-trash' }).on("click", deleteItem));
+				});
+			}
+		};
+
+		var onAddItemClick = function () {
+			$.ajax({
+				method: 'POST',
+				url: '/api/items/',
+				dataType: 'json',
+				contentType: 'text/json'
+			}).done(function (data) {
+
+				var spacing = `
+                    `;
+
+				var newInputNode = $('<input>', {
+					type: "checkbox",
+					checked: data.isCompleted,
+					"disabled": "disabled",
+					name: "item_" + data.id,
+					class: "checkItem"
+				});
+
+				var newTextNode = $('<input>', {
+					type: "text",
+					value: data.text,
+					class: "itemText"
+				});
+
+				var newItemNode = $('<li>', {
+					id: data.id,
+					class: "listItem",
+				}).append(spacing).append(newInputNode).append(spacing).append(newTextNode).append(spacing)
+					.append($('<span>', { class: 'deleteItem glyphicon glyphicon-trash' }).on("click", deleteItem));;
+
+				$("#itemsList").append(newItemNode);
+				$(newTextNode).on("input", itemTextChange);
+				$(newInputNode).change(checkItemChange);
 			});
-
-		});
-
+		};
 
 		//--></script>
 </body>

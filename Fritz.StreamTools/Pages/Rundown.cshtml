@@ -1,7 +1,8 @@
 ﻿@page
 @model Fritz.StreamTools.Pages.RundownModel
 @{
-    var items = Model.Repository.Get();
+		var items = Model.Service.GetAllItems();
+		var title = Model.Service.GetRundownTitle();
 }
 <!DOCTYPE html>
 <html>
@@ -19,7 +20,9 @@
             padding-left: 0px;
         }
 
-        .glyphicon-check { color: darkgreen}
+        .glyphicon-check {
+					color: darkgreen
+        }
 
     </style>
     <link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
@@ -29,14 +32,14 @@
 
     <div class="container">
 
-        <h2>Today's Stream</h2>
+        <h2 id="title">@title</h2>
 
-        <ul>
+        <ul id="itemsList">
             @foreach (var item in items)
             {
                 <li id="@item.ID">
                     <span id="item_@item.ID" class="glyphicon @(!item.IsCompleted ? "glyphicon-unchecked" : "glyphicon-check")" aria-hidden="true"></span>
-                    <label>@item.Text</label>
+                    <label id="item_text_@item.ID">@item.Text</label>
                 </li>
             }
         </ul>
@@ -54,31 +57,46 @@
                 $.ajax({
                     url: "/api/items"
                 }).done(function (data) {
+									
+										var spacing = `
+                    `;
 
-                    //console.log("data: " + data);
+									$('#itemsList').children().each(function (index, element) {
+										element.remove();
+									});
 
-                    for (var item of data) {
+									for (var item of data) {
+										var checkUncheck = (item.isCompleted === true) ? "glyphicon-check" : "glyphicon-unchecked";
+										var newInputItem = $('<span>', {
+											id: 'item_' + item.id,
+											class: 'glyphicon ' + checkUncheck,
+											'aria-hidden': 'true'
+										});
 
-                        var thisItem = document.getElementById("item_" + item.id);
-                        if ($(thisItem).hasClass("glyphicon-unchecked") & item.isCompleted) {
+										var newTextItem = $('<label>', {
+											id: 'item_text_' + item.id
+										}).text(item.text);
 
-                            $(thisItem).removeClass("glyphicon-unchecked");
-                            $(thisItem).addClass("glyphicon-check");
+										var newItem = $('<li>', {
+											id: item.id
+										}).append(spacing).append(newInputItem).append(spacing).append(newTextItem).append(spacing);
 
-                        } else if ($(thisItem).hasClass("glyphicon-check") & !item.isCompleted) {
+										$("#itemsList").append(newItem);
+										thisItem = newInputItem;
+									}
+                });
 
-                            $(thisItem).removeClass("glyphicon-check");
-                            $(thisItem).addClass("glyphicon-unchecked");
-                        }
+								$.ajax({
+										url: "/api/rundown/title"
+								}).done(function(data) {
+										var title = document.getElementById("title");
+										title.innerHTML = data;
+								});
+            }, 5000);
 
-                    }
+			});
 
-
-                })
-
-            }, 5000)
-
-        });
+			
 
 //-->
     </script>

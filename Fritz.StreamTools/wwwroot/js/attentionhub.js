@@ -2,7 +2,8 @@
 class AttentionHub {
 	constructor() {
 		this.onAlertFritz = null;
-		this.onSummonScott = null;
+	  this.onSummonScott = null;
+	  this.onPlaySoundEffect = null;
 		this.debug = true;
 		this._hub = null;
 	}
@@ -39,6 +40,12 @@ class AttentionHub {
 			if (this.debug) console.debug("Summoning Scott!");
 			if (this.onSummonScott) this.onSummonScott();
 		});
+
+	  this._hub.on("PlaySoundEffect", (fileName) => {
+			if (this.debug) console.debug(`Playing file: ${fileName}`);
+			if (this.onPlaySoundEffect) this.onPlaySoundEffect(fileName);
+	  });
+
 
 		return this._hub.start();
 	}

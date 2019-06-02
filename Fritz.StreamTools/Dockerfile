@@ -1,8 +1,8 @@
-FROM microsoft/dotnet:2.1.6-aspnetcore-runtime AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:2.2 AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/dotnet:2.1.401-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS build
 WORKDIR /src
 COPY global.json .
 COPY Fritz.StreamTools/Fritz.StreamTools.csproj Fritz.StreamTools/

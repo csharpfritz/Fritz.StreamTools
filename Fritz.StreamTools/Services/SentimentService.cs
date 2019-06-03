@@ -75,7 +75,7 @@ namespace Fritz.StreamTools.Services
 					var messageList = SentimentSink.RecentChatMessages.Select((value, index) => new MultiLanguageInput { Text = value, Id = index.ToString(), Language = "en" }).ToList();
 					SentimentSink.RecentChatMessages.Clear();
 
-					SentimentBatchResult results = await _client.SentimentAsync(
+					SentimentBatchResult results = await _client.SentimentAsync(null,
 						new MultiLanguageBatchInput(messageList)
 					);
 

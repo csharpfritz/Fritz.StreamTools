@@ -24,7 +24,7 @@
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.7.0" />
 		<PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.6" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="1.0.4" />
-		<PackageReference Include="Microsoft.Azure.CognitiveServices.Language.TextAnalytics" Version="2.8.0-preview" />
+		<PackageReference Include="Microsoft.Azure.CognitiveServices.Language.TextAnalytics" Version="3.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.6" />
 		<PackageReference Include="Octokit" Version="0.32.0" />
 		<PackageReference Include="System.IO.Abstractions" Version="4.2.17" />

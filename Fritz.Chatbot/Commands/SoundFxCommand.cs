@@ -31,6 +31,7 @@ namespace Fritz.Chatbot.Commands
 	  { "ohmy", ("Oh my... something strange is happening", "ohmy.mp3", TimeSpan.FromSeconds(30) ) },
 	  { "andthen", ("... and then ...", "andthen#.mp3", TimeSpan.FromSeconds(120) ) },
 	  { "javascript", ("Horses LOVE JavaScript!", "javascript.mp3", TimeSpan.FromSeconds(30) ) },
+		{ "rimshot", ("Ba Dum Tish!", "rimshot.mp3", TimeSpan.FromSeconds(60)) }
 	};
 
 	private static readonly List<string> AndThens = new List<string>();

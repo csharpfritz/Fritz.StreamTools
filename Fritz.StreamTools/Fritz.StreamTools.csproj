@@ -21,7 +21,7 @@
 		<PackageReference Include="BuildBundlerMinifier" Version="2.9.406" />
 		<PackageReference Include="Bundgaard.MixerLib" Version="1.2.65" />
 		<PackageReference Include="LazyCache.AspNetCore" Version="2.0.1" />
-		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.7.0" />
+		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.7.1" />
 		<PackageReference Include="Microsoft.AspNetCore.App" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="1.1.5" />
 		<PackageReference Include="Microsoft.Azure.CognitiveServices.Language.TextAnalytics" Version="3.0.0" />

@@ -34,7 +34,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<IRundownService, RundownService>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
-			services.Configure<SoundFxConfig>(configuration.GetSection("FritzBot:SoundFxCommands"));
+			services.Configure<Dictionary<string, SoundFxDefinition>>(configuration.GetSection("FritzBot:SoundFxCommands"));
 			services.AddStreamingServices(configuration);
 			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddSingleton<FollowerClient>();

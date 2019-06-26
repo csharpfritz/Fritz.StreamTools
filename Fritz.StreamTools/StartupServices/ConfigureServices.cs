@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Fritz.Chatbot;
+using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Interfaces;
@@ -33,6 +34,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<IRundownService, RundownService>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
+			services.Configure<SoundFxConfig>(configuration.GetSection("FritzBot:SoundFxCommands"));
 			services.AddStreamingServices(configuration);
 			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddSingleton<FollowerClient>();

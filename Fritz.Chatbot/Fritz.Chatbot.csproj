@@ -24,11 +24,11 @@
     <ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- ItemGroup>
     <Reference Include="Microsoft.VisualStudio.Web.CodeGeneration.Utils">
       <HintPath>..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.visualstudio.web.codegeneration.utils\2.1.6\lib\netstandard2.0\Microsoft.VisualStudio.Web.CodeGeneration.Utils.dll</HintPath>
     </Reference>
-  </ItemGroup>
+  </ItemGroup -->
 
   <ItemGroup>
     <None Update="hey_listen.wav">

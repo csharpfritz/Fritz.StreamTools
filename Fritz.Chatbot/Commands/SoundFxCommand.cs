@@ -6,17 +6,35 @@ using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Fritz.Chatbot.Commands
 {
   public class SoundFxCommand : IExtendedCommand
   {
 
-	public SoundFxCommand(IHubContext<AttentionHub, IAttentionHubClient> hubContext)
+	public SoundFxCommand(IHubContext<AttentionHub, IAttentionHubClient> hubContext, IConfiguration configuration)
 	{
 	  this.HubContext = hubContext;
+
+	  LoadConfiguration(configuration);
+
 	}
 
+	private void LoadConfiguration(IConfiguration configuration)
+	{
+
+	  var sounds = configuration.GetSection("FritzBot:SoundFxCommands").GetChildren();
+
+	  Effects = sounds.ToDictionary(s => s.Key, s => new SoundFxDefinition {
+		Cooldown = s.GetValue<int>("cooldown"),
+		Response = s.GetValue<string>("response"),
+		File = s.GetValue<string>("file")
+	  });
+
+
+	}
 
 	public IHubContext<AttentionHub, IAttentionHubClient> HubContext { get; }
 
@@ -26,13 +44,15 @@ namespace Fritz.Chatbot.Commands
 	public bool Final => true;
 	public TimeSpan? Cooldown => TimeSpan.FromSeconds(0);
 
-	internal static readonly Dictionary<string, (string text, string fileName, TimeSpan cooldown)> Effects = new Dictionary<string, (string text, string fileName, TimeSpan cooldown)>
+	internal static Dictionary<string, SoundFxDefinition> Effects = new Dictionary<string, SoundFxDefinition>();
+		/*
 	{
 	  { "ohmy", ("Oh my... something strange is happening", "ohmy.mp3", TimeSpan.FromSeconds(30) ) },
 	  { "andthen", ("... and then ...", "andthen#.mp3", TimeSpan.FromSeconds(120) ) },
 	  { "javascript", ("Horses LOVE JavaScript!", "javascript.mp3", TimeSpan.FromSeconds(30) ) },
 		{ "rimshot", ("Ba Dum Tish!", "rimshot.mp3", TimeSpan.FromSeconds(60)) }
 	};
+	*/
 
 	private static readonly List<string> AndThens = new List<string>();
 
@@ -58,10 +78,10 @@ namespace Fritz.Chatbot.Commands
 
 	  SoundCooldowns[cmdText] = (cmdText == "andthen" ? CalculateAndThenCooldownTime() : DateTime.Now);
 
-	  var fileToPlay = cmdText == "andthen" ? IdentifyAndThenFilename() : cmd.fileName;
+	  var fileToPlay = cmdText == "andthen" ? IdentifyAndThenFilename() : cmd.File;
 
 	  var soundTask = this.HubContext.Clients.All.PlaySoundEffect(fileToPlay);
-	  var textTask = chatService.SendMessageAsync($"@{userName} - {cmd.text}");
+	  var textTask = chatService.SendMessageAsync($"@{userName} - {cmd.Response}");
 
 	  return Task.WhenAll(soundTask, textTask);
 
@@ -80,7 +100,7 @@ namespace Fritz.Chatbot.Commands
 			}
 
 			if (!SoundCooldowns.ContainsKey(cmdText)) return true;
-			var cooldown = Effects[cmdText].cooldown;
+			var cooldown = TimeSpan.FromSeconds(Effects[cmdText].Cooldown);
 			return (SoundCooldowns[cmdText].Add(cooldown) < DateTime.Now);
 
 	  }
@@ -101,7 +121,7 @@ namespace Fritz.Chatbot.Commands
 	private bool CheckAndThenCooldown()
 	{
 
-	  var cooldown = Effects["andthen"].cooldown;
+	  var cooldown = TimeSpan.FromSeconds( Effects["andthen"].Cooldown);
 
 	  if (SoundCooldowns.ContainsKey("andthen"))
 	  {
@@ -137,5 +157,23 @@ namespace Fritz.Chatbot.Commands
 	  return theFile;
 
 	}
+  }
+
+	public class SoundFxConfig
+  {
+		public SoundFxDefinition[] SoundFx { get; set; }
+  }
+
+  public class SoundFxDefinition
+  {
+
+	public string Response { get; set; }
+
+	public string File { get; set; }
+
+	public string[] Files { get; set; }
+
+	public int Cooldown { get; set; }
+
   }
 }

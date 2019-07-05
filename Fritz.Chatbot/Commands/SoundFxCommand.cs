@@ -14,26 +14,11 @@ namespace Fritz.Chatbot.Commands
   public class SoundFxCommand : IExtendedCommand
   {
 
-	public SoundFxCommand(IHubContext<AttentionHub, IAttentionHubClient> hubContext, IConfiguration configuration)
+	public SoundFxCommand(IHubContext<AttentionHub, IAttentionHubClient> hubContext, IOptions<Dictionary<string, SoundFxDefinition>> soundEffects)
 	{
 	  this.HubContext = hubContext;
 
-	  LoadConfiguration(configuration);
-
-	}
-
-	private void LoadConfiguration(IConfiguration configuration)
-	{
-
-	  var sounds = configuration.GetSection("FritzBot:SoundFxCommands").GetChildren();
-
-	  Effects = sounds.ToDictionary(s => s.Key, s => new SoundFxDefinition {
-		Cooldown = s.GetValue<int>("cooldown"),
-		Response = s.GetValue<string>("response"),
-		File = s.GetValue<string>("file")
-	  });
-
-
+	  Effects = soundEffects.Value;
 	}
 
 	public IHubContext<AttentionHub, IAttentionHubClient> HubContext { get; }

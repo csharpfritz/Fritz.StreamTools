@@ -178,7 +178,7 @@ namespace Fritz.Chatbot
 
 					if (cmd is IBasicCommand2)
 					{
-						await (cmd as IBasicCommand2).Execute(chatService, chatMessageArgs.UserName, chatMessageArgs.IsModerator, chatMessageArgs.IsOwner, rhs);
+						await (cmd as IBasicCommand2).Execute(chatService, chatMessageArgs.UserName, chatMessageArgs.IsModerator, chatMessageArgs.IsVip, chatMessageArgs.IsOwner, rhs);
 					}
 					else
 					{

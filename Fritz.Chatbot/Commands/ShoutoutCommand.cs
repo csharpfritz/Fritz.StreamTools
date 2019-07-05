@@ -24,10 +24,10 @@ namespace Fritz.Chatbot.Commands
 
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(5);
 
-		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isBroadcaster, ReadOnlyMemory<char> rhs)
+		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{
 
-			if (!(isModerator || isBroadcaster)) return;
+			if (!(isModerator || isVip || isBroadcaster)) return;
 
 			var rhsTest = rhs.ToString();
 			if (rhsTest.StartsWith("@")) rhsTest = rhsTest.Substring(1);

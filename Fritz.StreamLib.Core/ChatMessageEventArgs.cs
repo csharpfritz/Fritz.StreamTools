@@ -17,6 +17,7 @@ namespace Fritz.StreamLib.Core
 		public bool IsWhisper { get; set; }
 		public bool IsOwner { get; set; }
 		public bool IsModerator { get; set; }
+		public bool IsVip { get; set; }
 		public string Message { get; set; }
 	}
 }

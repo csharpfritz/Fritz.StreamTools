@@ -132,7 +132,7 @@ namespace Test.Chatbot
 			var sut = new FritzBot(_config.Object, _serviceProvider.Object, _loggerFactory.Object);
 			Task.WaitAll(sut.StartAsync(new CancellationToken()));
 
-			var command = "skeet";
+			var command = "jonskeet";
 			var args = new ChatMessageEventArgs
 			{
 				Message = $"!help {command}",

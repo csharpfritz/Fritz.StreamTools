@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
@@ -11,25 +12,25 @@ using Microsoft.Extensions.Options;
 
 namespace Fritz.Chatbot.Commands
 {
-  public class SoundFxCommand : IExtendedCommand
-  {
-
-	public SoundFxCommand(IHubContext<AttentionHub, IAttentionHubClient> hubContext, IOptions<Dictionary<string, SoundFxDefinition>> soundEffects)
+	public class SoundFxCommand : IExtendedCommand
 	{
-	  this.HubContext = hubContext;
 
-	  Effects = soundEffects.Value;
-	}
+		public SoundFxCommand(IHubContext<AttentionHub, IAttentionHubClient> hubContext, IOptions<Dictionary<string, SoundFxDefinition>> soundEffects)
+		{
+			this.HubContext = hubContext;
 
-	public IHubContext<AttentionHub, IAttentionHubClient> HubContext { get; }
+			Effects = soundEffects.Value;
+		}
 
-	public string Name => "SoundFxCommand";
-	public string Description => "Play a fun sound effect in the stream";
-	public int Order => 1;
-	public bool Final => true;
-	public TimeSpan? Cooldown => TimeSpan.FromSeconds(0);
+		public IHubContext<AttentionHub, IAttentionHubClient> HubContext { get; }
 
-	internal static Dictionary<string, SoundFxDefinition> Effects = new Dictionary<string, SoundFxDefinition>();
+		public string Name => "SoundFxCommand";
+		public string Description => "Play a fun sound effect in the stream";
+		public int Order => 1;
+		public bool Final => true;
+		public TimeSpan? Cooldown => TimeSpan.FromSeconds(0);
+
+		internal static Dictionary<string, SoundFxDefinition> Effects = new Dictionary<string, SoundFxDefinition>();
 		/*
 	{
 	  { "ohmy", ("Oh my... something strange is happening", "ohmy.mp3", TimeSpan.FromSeconds(30) ) },
@@ -39,126 +40,134 @@ namespace Fritz.Chatbot.Commands
 	};
 	*/
 
-	private static readonly List<string> AndThens = new List<string>();
+		private static readonly Dictionary<string, List<string>> MultipleFileTriggers = new Dictionary<string, List<string>>();
 
-	private static readonly Dictionary<string, DateTime> SoundCooldowns = new Dictionary<string, DateTime>();
+		private static readonly Dictionary<string, DateTime> SoundCooldowns = new Dictionary<string, DateTime>();
 
-	public bool CanExecute(string userName, string fullCommandText)
-	{
+		public bool CanExecute(string userName, string fullCommandText)
+		{
 
-	  if (!fullCommandText.StartsWith("!")) return false;
-	  var cmd = fullCommandText.Substring(1).ToLowerInvariant();
-	  return Effects.ContainsKey(cmd);
+			if (!fullCommandText.StartsWith("!")) return false;
+			var cmd = fullCommandText.Substring(1).ToLowerInvariant();
+			return Effects.ContainsKey(cmd);
 
-	}
+		}
 
-	public Task Execute(IChatService chatService, string userName, string fullCommandText)
-	{
+		public Task Execute(IChatService chatService, string userName, string fullCommandText)
+		{
 
-	  var cmdText = fullCommandText.Substring(1).ToLowerInvariant();
+			var cmdText = fullCommandText.Substring(1).ToLowerInvariant();
+			var cmd = Effects[cmdText];
 
-	  if (!InternalCooldownCheck()) return Task.CompletedTask;
+			if (!InternalCooldownCheck()) return Task.CompletedTask;
 
-	  var cmd = Effects[cmdText];
+			SoundCooldowns[cmdText] = (cmd.Files != null ? CalculateMultipleFileCooldownTime(cmd, cmdText) : DateTime.Now);
 
-	  SoundCooldowns[cmdText] = (cmdText == "andthen" ? CalculateAndThenCooldownTime() : DateTime.Now);
 
-	  var fileToPlay = cmdText == "andthen" ? IdentifyAndThenFilename() : cmd.File;
+			var fileToPlay = cmd.Files != null ? IdentifyMultipleEffectsFilename(cmd, cmdText) : cmd.File;
 
-	  var soundTask = this.HubContext.Clients.All.PlaySoundEffect(fileToPlay);
-	  var textTask = chatService.SendMessageAsync($"@{userName} - {cmd.Response}");
+			var soundTask = this.HubContext.Clients.All.PlaySoundEffect(fileToPlay);
+			var textTask = chatService.SendMessageAsync($"@{userName} - {cmd.Response}");
 
-	  return Task.WhenAll(soundTask, textTask);
+			return Task.WhenAll(soundTask, textTask);
 
-		bool InternalCooldownCheck()
-	  {
-
-			if (cmdText == "andthen")
+			bool InternalCooldownCheck()
 			{
-				if (!CheckAndThenCooldown())
+
+				if (cmdText == "andthen")
 				{
-					chatService.SendMessageAsync($"@{userName} - No AND THEN!");
-					return false;
+					if (!CheckMultipleFilesCooldown(cmd, cmdText))
+					{
+						chatService.SendMessageAsync($"@{userName} - No AND THEN!");
+						return false;
+					}
+
+					return true;
+				}
+				else if (cmd.Files != null)
+				{
+					if (!CheckMultipleFilesCooldown(cmd, cmdText))
+					{
+						// TODO: Something witty to indicate the message isn't available
+						chatService.SendMessageAsync($"@{userName} - Scott is taking a break.. check back soon!");
+						return false;
+					}
+					return true;
 				}
 
-				return true;
+				if (!SoundCooldowns.ContainsKey(cmdText)) return true;
+				var cooldown = TimeSpan.FromSeconds(Effects[cmdText].Cooldown);
+				return (SoundCooldowns[cmdText].Add(cooldown) < DateTime.Now);
+
 			}
 
-			if (!SoundCooldowns.ContainsKey(cmdText)) return true;
+		}
+
+		private DateTime CalculateMultipleFileCooldownTime(SoundFxDefinition cmd, string cmdTrigger)
+		{
+
+			if (!SoundCooldowns.ContainsKey(cmdTrigger))
+			{
+				MultipleFileTriggers.Add(cmdTrigger, new List<string>());
+				return DateTime.Now;
+			}
+
+			if (MultipleFileTriggers[cmdTrigger].Count < cmd.Files.Length) return SoundCooldowns[cmdTrigger];
+
+			return DateTime.Now;
+
+		}
+
+		private bool CheckMultipleFilesCooldown(SoundFxDefinition cmd, string cmdText)
+		{
+
 			var cooldown = TimeSpan.FromSeconds(Effects[cmdText].Cooldown);
-			return (SoundCooldowns[cmdText].Add(cooldown) < DateTime.Now);
 
-	  }
-
-	}
-
-	private DateTime CalculateAndThenCooldownTime()
-	{
-
-	  if (!SoundCooldowns.ContainsKey("andthen")) return DateTime.Now;
-
-	  if (AndThens.Count < 6) return SoundCooldowns["andthen"];
-
-	  return DateTime.Now;
-
-	}
-
-	private bool CheckAndThenCooldown()
-	{
-
-	  var cooldown = TimeSpan.FromSeconds( Effects["andthen"].Cooldown);
-
-	  if (SoundCooldowns.ContainsKey("andthen"))
-	  {
-			if (SoundCooldowns["andthen"].Add(cooldown) < DateTime.Now)
+			if (SoundCooldowns.ContainsKey(cmdText))
 			{
-				SoundCooldowns["andthen"] = DateTime.Now;
-				AndThens.Clear();
-				return true;
-			} else
-			{
-				return (AndThens.Count != 6);
+				if (SoundCooldowns[cmdText].Add(cooldown) < DateTime.Now)
+				{
+					SoundCooldowns[cmdText] = DateTime.Now;
+					MultipleFileTriggers[cmdText].Clear();
+					return true;
+				}
+				else
+				{
+					return (MultipleFileTriggers[cmdText].Count != cmd.Files.Length);
+				}
 			}
-	  }
-	  return true;
+			return true;
+		}
+
+
+		private string IdentifyMultipleEffectsFilename(SoundFxDefinition fxDefinition, string cmdText)
+		{
+
+			var available = new List<string>();
+			fxDefinition.Files.ToList().ForEach(a => { if (!MultipleFileTriggers[cmdText].Contains(a)) available.Add(a); });
+			var random = new Random().Next(0, available.Count - 1);
+			var theFile = available.Skip(random).First();
+			MultipleFileTriggers[cmdText].Add(theFile);
+			return theFile;
+
+		}
 	}
-
-	private static readonly string[] AndThenFiles = new string[] {
-	  "andthen1.mp3",
-	  "andthen2.mp3",
-	  "andthen3.mp3",
-	  "andthen4.mp3",
-	  "andthen5.mp3",
-	  "andthen6.mp3" };
-
-	private string IdentifyAndThenFilename()
-	{
-
-	  var available = new List<string>();
-	  AndThenFiles.ToList().ForEach(a => { if (!AndThens.Contains(a)) available.Add(a); });
-	  var random = new Random().Next(0, available.Count-1);
-	  var theFile = available.Skip(random).First();
-	  AndThens.Add(theFile);
-	  return theFile;
-
-	}
-  }
 
 	public class SoundFxConfig
-  {
+	{
 		public SoundFxDefinition[] SoundFx { get; set; }
-  }
+	}
 
-  public class SoundFxDefinition
-  {
+	public class SoundFxDefinition
+	{
 
-	public string Response { get; set; }
+		public string Response { get; set; }
 
-	public string File { get; set; }
+		public string File { get; set; }
 
-	public string[] Files { get; set; }
+		public string[] Files { get; set; }
 
-	public int Cooldown { get; set; }
+		public int Cooldown { get; set; }
 
-  }
+	}
 }

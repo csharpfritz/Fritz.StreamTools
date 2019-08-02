@@ -85,9 +85,14 @@ namespace Fritz.StreamTools.Services
 
 					var now = DateTime.Now;
 					_Observations.Add(now, (results.Documents.Count, avgScore));
-					_followerClient.UpdateSentiment(avgScore,
-						CalculateSentimentOverLastMinutes(1),
-						CalculateSentimentOverLastMinutes(5),
+
+					SentimentSink.SentimentInstant = avgScore;
+					SentimentSink.Sentiment1Minute = CalculateSentimentOverLastMinutes(1);
+					SentimentSink.Sentiment5Minute = CalculateSentimentOverLastMinutes(5);
+
+					_followerClient.UpdateSentiment(SentimentSink.SentimentInstant,
+						SentimentSink.Sentiment1Minute,
+						SentimentSink.Sentiment5Minute,
 						CalculateSentimentOverLastMinutes());
 
 				}

@@ -31,14 +31,6 @@ namespace Fritz.Chatbot.Commands
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(0);
 
 		internal static Dictionary<string, SoundFxDefinition> Effects = new Dictionary<string, SoundFxDefinition>();
-		/*
-	{
-	  { "ohmy", ("Oh my... something strange is happening", "ohmy.mp3", TimeSpan.FromSeconds(30) ) },
-	  { "andthen", ("... and then ...", "andthen#.mp3", TimeSpan.FromSeconds(120) ) },
-	  { "javascript", ("Horses LOVE JavaScript!", "javascript.mp3", TimeSpan.FromSeconds(30) ) },
-		{ "rimshot", ("Ba Dum Tish!", "rimshot.mp3", TimeSpan.FromSeconds(60)) }
-	};
-	*/
 
 		private static readonly Dictionary<string, List<string>> MultipleFileTriggers = new Dictionary<string, List<string>>();
 
@@ -74,22 +66,13 @@ namespace Fritz.Chatbot.Commands
 			bool InternalCooldownCheck()
 			{
 
-				if (cmdText == "andthen")
+				if (cmd.Files != null)
 				{
-					if (!CheckMultipleFilesCooldown(cmd, cmdText))
-					{
-						chatService.SendMessageAsync($"@{userName} - No AND THEN!");
-						return false;
-					}
-
-					return true;
-				}
-				else if (cmd.Files != null)
-				{
-					if (!CheckMultipleFilesCooldown(cmd, cmdText))
+					TimeSpan cooldownRemaining;
+					if (!CheckMultipleFilesCooldown(cmd, cmdText, out cooldownRemaining))
 					{
 						// TODO: Something witty to indicate the message isn't available
-						chatService.SendMessageAsync($"@{userName} - Scott is taking a break.. check back soon!");
+						chatService.SendMessageAsync($"@{userName} - {cmd.CooldownMessage} - Please wait another {Math.Round(cooldownRemaining.TotalSeconds)} seconds");
 						return false;
 					}
 					return true;
@@ -97,7 +80,10 @@ namespace Fritz.Chatbot.Commands
 
 				if (!SoundCooldowns.ContainsKey(cmdText)) return true;
 				var cooldown = TimeSpan.FromSeconds(Effects[cmdText].Cooldown);
-				return (SoundCooldowns[cmdText].Add(cooldown) < DateTime.Now);
+
+				var cooldownWaiting = (SoundCooldowns[cmdText].Add(cooldown).Subtract(DateTime.Now));
+				if (cooldownWaiting.TotalSeconds > 0) chatService.SendMessageAsync($"The !{cmdText} is not available for another {Math.Round(cooldownWaiting.TotalSeconds)} seconds");
+				return cooldownWaiting.TotalSeconds <= 0;
 
 			}
 
@@ -118,10 +104,11 @@ namespace Fritz.Chatbot.Commands
 
 		}
 
-		private bool CheckMultipleFilesCooldown(SoundFxDefinition cmd, string cmdText)
+		private bool CheckMultipleFilesCooldown(SoundFxDefinition cmd, string cmdText, out TimeSpan cooldownRemaining)
 		{
 
 			var cooldown = TimeSpan.FromSeconds(Effects[cmdText].Cooldown);
+			cooldownRemaining = TimeSpan.Zero;
 
 			if (SoundCooldowns.ContainsKey(cmdText))
 			{
@@ -133,6 +120,7 @@ namespace Fritz.Chatbot.Commands
 				}
 				else
 				{
+					cooldownRemaining = SoundCooldowns[cmdText].Add(cooldown).Subtract(DateTime.Now);
 					return (MultipleFileTriggers[cmdText].Count != cmd.Files.Length);
 				}
 			}
@@ -168,6 +156,8 @@ namespace Fritz.Chatbot.Commands
 		public string[] Files { get; set; }
 
 		public int Cooldown { get; set; }
+
+		public string CooldownMessage { get; set; }
 
 	}
 }

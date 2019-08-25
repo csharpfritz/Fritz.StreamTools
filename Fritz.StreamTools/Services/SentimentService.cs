@@ -75,9 +75,11 @@ namespace Fritz.StreamTools.Services
 					var messageList = SentimentSink.RecentChatMessages.Select((value, index) => new MultiLanguageInput { Text = value, Id = index.ToString(), Language = "en" }).ToList();
 					SentimentSink.RecentChatMessages.Clear();
 
-					SentimentBatchResult results = await _client.SentimentAsync(null,
-						new MultiLanguageBatchInput(messageList)
-					);
+					// Cheer 100 goranhal 25/8/19
+					// Cheer 100 cadmus 25/8/19
+					// Cheer 100 eternaldevcoder 25/8/19 
+
+					SentimentBatchResult results = await _client.SentimentBatchAsync(new MultiLanguageBatchInput(messageList));
 
 					var avgScore = results.Documents
 						.Where(d => d.Score.HasValue)

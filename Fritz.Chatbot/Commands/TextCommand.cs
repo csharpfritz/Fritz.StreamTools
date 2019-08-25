@@ -64,9 +64,32 @@ namespace Fritz.Chatbot.Commands
 	  if (cmd == "lurk")
 		return chatService.SendMessageAsync($"@{userName} {_Commands[cmd]}");
 
-	  return chatService.SendMessageAsync($"@{userName} - {_Commands[cmd]}");
+			if (!_Commands[cmd].Contains('\n'))
+			{
+				return chatService.SendMessageAsync($"@{userName} - {_Commands[cmd]}");
+			} else {
+				var messages = _Commands[cmd].Split('\n');
 
-	}
+				Task firstTask = null;
+				Task previousTask = null;
+				foreach (var msg in messages)
+				{
+					if (firstTask == null)
+					{
+						firstTask = chatService.SendMessageAsync(msg);
+						previousTask = firstTask;
+					}
+					else
+					{
+						var thisTask = chatService.SendMessageAsync(msg);
+						previousTask.ContinueWith((o) => thisTask);
+						previousTask = thisTask;
+					}
+				}
+				return firstTask;
+			}
+
+		}
   }
 
 

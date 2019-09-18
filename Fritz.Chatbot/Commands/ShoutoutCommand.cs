@@ -3,17 +3,22 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
+using Microsoft.Extensions.Logging;
 
 namespace Fritz.Chatbot.Commands
 {
 	public class ShoutoutCommand : IBasicCommand2
 	{
 		private readonly HttpClient _HttpClient;
+		private readonly ILogger _Logger;
 
-		public ShoutoutCommand(IHttpClientFactory httpClientFactory)
+		public ShoutoutCommand(IHttpClientFactory httpClientFactory, ILogger logger)
 		{
 
 			_HttpClient = httpClientFactory.CreateClient("ShoutoutCommand");
+			_HttpClient.BaseAddress = new Uri("https://api.twitch.tv/helix/users");
+
+			_Logger = logger;
 
 		}
 
@@ -35,8 +40,12 @@ namespace Fritz.Chatbot.Commands
 			if (rhsTest.Contains(" ")) return;
 
 			rhsTest = WebUtility.UrlEncode(rhsTest);
-			var result = await _HttpClient.GetAsync(rhsTest);
-			if (result.StatusCode != HttpStatusCode.OK) return;
+			var result = await _HttpClient.GetAsync($"?login={rhsTest}");
+			if (result.StatusCode != HttpStatusCode.OK)
+			{
+				_Logger.LogWarning($"Unable to verify Shoutout for {rhsTest}");
+				return;
+			}
 
 			await chatService.SendMessageAsync($"Please follow @{rhsTest} at: https://twitch.tv/{rhsTest}");
 

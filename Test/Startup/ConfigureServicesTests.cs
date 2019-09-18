@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.StartupServices;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Test.Startup
@@ -28,6 +30,8 @@ namespace Test.Startup
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
+			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+
 
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
 			{
@@ -51,6 +55,8 @@ namespace Test.Startup
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
+			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+
 
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
 				{
@@ -73,7 +79,8 @@ namespace Test.Startup
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<ILoggerFactory>(new LoggerFactory());
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
-				
+			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+
 			// act
 			ConfigureServices.Execute(serviceCollection, configuration, new Dictionary<Type, string[]>());
 

@@ -18,14 +18,17 @@ namespace Test.Chatbot
 		private readonly MockRepository _Mockery;
 		private readonly Mock<IHttpClientFactory> _ClientFactory;
 		private readonly Mock<IChatService> _ChatService;
-		private readonly ILogger _Logger;
+		private readonly ILoggerFactory _Logger;
 
 		public ShoutoutCommandFixture(ITestOutputHelper output)
 		{
 			_Mockery = new MockRepository(MockBehavior.Default);
 			_ClientFactory = new Mock<IHttpClientFactory>();
 			_ChatService = new Mock<IChatService>();
-			_Logger = new XunitLogger<ShoutoutCommand>(output);
+
+			var thisLogger = new Mock<ILoggerFactory>();
+			thisLogger.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns( new XunitLogger<ShoutoutCommand>(output));
+			_Logger = thisLogger.Object;
 
 		}
 

@@ -12,13 +12,13 @@ namespace Fritz.Chatbot.Commands
 		private readonly HttpClient _HttpClient;
 		private readonly ILogger _Logger;
 
-		public ShoutoutCommand(IHttpClientFactory httpClientFactory, ILogger logger)
+		public ShoutoutCommand(IHttpClientFactory httpClientFactory, ILoggerFactory logger)
 		{
 
 			_HttpClient = httpClientFactory.CreateClient("ShoutoutCommand");
 			_HttpClient.BaseAddress = new Uri("https://api.twitch.tv/helix/users");
 
-			_Logger = logger;
+			_Logger = logger.CreateLogger(nameof(ShoutoutCommand));
 
 		}
 

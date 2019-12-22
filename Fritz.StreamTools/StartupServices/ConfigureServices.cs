@@ -10,6 +10,7 @@ using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.TagHelpers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,10 +36,10 @@ namespace Fritz.StreamTools.StartupServices
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
 			services.Configure<Dictionary<string, SoundFxDefinition>>(configuration.GetSection("FritzBot:SoundFxCommands"));
-			services.AddStreamingServices(configuration);
 			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddSingleton<FollowerClient>();
 			services.AddAspNetFeatures();
+			services.AddStreamingServices(configuration);
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
@@ -137,6 +138,10 @@ namespace Fritz.StreamTools.StartupServices
 				return;
 			}
 
+			if (typeof(TStreamService) == typeof(TwitchService)) {
+				services.AddSingleton<Twitch.PubSub.Proxy>();
+			}
+
 			// Configure and grab a logger so that we can log information
 			// about the creation of the services
 			var provider = services.BuildServiceProvider();   // Build a 'temporary' instance of the DI container
@@ -148,10 +153,22 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton(service as IStreamService);
 			services.AddSingleton(service);
 
+			if (typeof(TStreamService) == typeof(TwitchService))
+			{
+				var pubSub = new TwitchPubSubService(
+				provider.GetRequiredService<IHubContext<AttentionHub, IAttentionHubClient>>(),
+				provider.GetRequiredService<Twitch.PubSub.Proxy>(),
+				provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
+				services.AddSingleton(pubSub as IHostedService);
+				services.AddSingleton(pubSub);
+			}
+
+
 			if (service is IChatService chatService)
 			{
 				services.AddSingleton(chatService);
 			}
+
 		}
 
 		/// <summary>

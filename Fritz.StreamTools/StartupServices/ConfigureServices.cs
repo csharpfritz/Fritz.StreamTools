@@ -1,40 +1,45 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using Fritz.Chatbot;
+using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
+using Fritz.StreamTools.Interfaces;
 using Fritz.StreamTools.Models;
 using Fritz.StreamTools.Services;
 using Fritz.StreamTools.TagHelpers;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MixerLib;
 using Octokit;
 
 namespace Fritz.StreamTools.StartupServices
 {
-	public static class ConfigureServices
+  public static class ConfigureServices
 	{
-		public static void Execute(
-			IServiceCollection services,
-			IConfiguration configuration)
+		private static Dictionary<Type, string[]> _ServicesRequiredConfiguration;
+		private static IConfiguration _Configuration;
+
+		public static void Execute(IServiceCollection services, IConfiguration configuration, Dictionary<Type, string[]> servicesRequiredConfiguration)
 		{
+			_Configuration = configuration;
+			_ServicesRequiredConfiguration = servicesRequiredConfiguration;
 
-			Configuration = configuration;
-
+			services.AddSingleton<RundownItemRepository>();
 			services.AddSingleton<RundownRepository>();
+			services.AddSingleton<IRundownService, RundownService>();
 			services.Configure<FollowerGoalConfiguration>(configuration.GetSection("FollowerGoal"));
 			services.Configure<FollowerCountConfiguration>(configuration.GetSection("FollowerCount"));
-			services.AddStreamingServices(configuration);
+			services.Configure<Dictionary<string, SoundFxDefinition>>(configuration.GetSection("FritzBot:SoundFxCommands"));
 			services.Configure<GitHubConfiguration>(configuration.GetSection("GitHub"));
 			services.AddSingleton<FollowerClient>();
 			services.AddAspNetFeatures();
+			services.AddStreamingServices(configuration);
 
 			services.AddSingleton<IConfigureOptions<SignalrTagHelperOptions>, ConfigureSignalrTagHelperOptions>();
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
@@ -44,7 +49,6 @@ namespace Fritz.StreamTools.StartupServices
 			// Add the SentimentSink
 			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
 
-			services.AddSingleton<IHostedService, SentimentService>();
 			services.AddSingleton<IHostedService, FritzBot>();
 
 			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
@@ -52,12 +56,24 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddLazyCache();
 
+			services.RegisterTwitchPubSub();
+
+			RegisterConfiguredServices(services, configuration);
 			RegisterGitHubServices(services, configuration);
 
 
 		}
 
-		public static IConfiguration Configuration { get; private set; }
+		private static void RegisterConfiguredServices(IServiceCollection services, IConfiguration configuration)
+		{
+			foreach (var configuredService in _ServicesRequiredConfiguration)
+			{
+				if (!configuredService.Value.Any(cs => configuration[cs] == null))
+				{
+					services.AddSingleton(typeof(IHostedService), configuredService.Key);
+				}
+			}
+		}
 
 		private static void RegisterGitHubServices(IServiceCollection services, IConfiguration configuration)
 		{
@@ -66,7 +82,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddTransient(_ => new GitHubClient(new ProductHeaderValue("Fritz.StreamTools"))
 			{
-				Credentials = new Credentials(Configuration["GitHub:User"], Configuration["GitHub:AuthenticationToken"])
+				Credentials = new Credentials(_Configuration["GitHub:User"], _Configuration["GitHub:AuthenticationToken"])
 			});
 
 			services.AddHttpClient("GitHub", c =>
@@ -76,21 +92,18 @@ namespace Fritz.StreamTools.StartupServices
 			});
 
 			services.AddHttpClient("DiscoverDotNet");
-	  services.AddHttpClient("ImageDescriptor");
+			services.AddHttpClient("ImageDescriptor");
 
 			services.AddHttpClient("ShoutoutCommand", c =>
 			{
-				c.BaseAddress = new Uri("https://api.twitch.tv/kraken/channels/");
 				c.DefaultRequestHeaders.Add("client-id", configuration["StreamServices:Twitch:ClientId"]);
 			});
 
 			services.AddHostedService<GitHubService>();
 		}
 
-		private static void AddStreamingServices(this IServiceCollection services,
-			IConfiguration configuration)
+		private static void AddStreamingServices(this IServiceCollection services, IConfiguration configuration)
 		{
-
 			services.Configure<Twitch.ConfigurationSettings>(configuration.GetSection("StreamServices:Twitch"));
 
 			var provider = services.BuildServiceProvider();
@@ -144,6 +157,7 @@ namespace Fritz.StreamTools.StartupServices
 			{
 				services.AddSingleton(chatService);
 			}
+
 		}
 
 		/// <summary>
@@ -163,6 +177,25 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
+		}
+
+		private static void RegisterTwitchPubSub(this IServiceCollection services) {
+
+			services.AddSingleton<Twitch.PubSub.Proxy>();
+			services.AddHostedService<TwitchPubSubService>();
+			//var provider = services.BuildServiceProvider();
+
+			//var pubSub = new TwitchPubSubService(
+			//provider,
+			//provider.GetRequiredService<Twitch.PubSub.Proxy>(),
+			//provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
+			//services.AddSingleton(pubSub as IHostedService);
+			//services.AddSingleton(pubSub);
+
+		}
+
+		private static bool IsTwitchEnabled {
+			get { return string.IsNullOrEmpty(_Configuration["StreamServices:Twitch:ClientId"]); }
 		}
 
 	}

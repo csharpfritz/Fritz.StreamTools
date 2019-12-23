@@ -27,7 +27,7 @@ namespace Fritz.Twitch
 		private MemoryStream _ReceiveStream = new MemoryStream();
 
 		internal static readonly Regex reUserName = new Regex(@"!([^@]+)@");
-		internal static readonly Regex reBadges = new Regex(@"@badges=([^;]*)");
+		internal static readonly Regex reBadges = new Regex(@"badges=([^;]*)");
 		internal static Regex reChatMessage;
 		internal static Regex reWhisperMessage;
 

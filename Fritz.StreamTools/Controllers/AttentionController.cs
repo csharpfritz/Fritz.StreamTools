@@ -13,6 +13,10 @@ namespace Fritz.StreamTools.Controllers
 			return View();
 		}
 
+		public IActionResult Points() {
+			return View();
+		}
+
 		public IActionResult TestClient()
 		{
 			return View();

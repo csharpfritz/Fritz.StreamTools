@@ -292,3 +292,6 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# Ignore mp3 files
+*.mp3

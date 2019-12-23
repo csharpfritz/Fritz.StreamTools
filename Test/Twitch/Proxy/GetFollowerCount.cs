@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Fritz.Twitch;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Xunit;

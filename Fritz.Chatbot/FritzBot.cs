@@ -128,6 +128,7 @@ namespace Fritz.Chatbot
 
 			if (await HandleExtendedCommands(chatService, chatMessageArgs, user))
 			{
+				_logger.LogDebug($"Handled with extended command: {chatMessageArgs.Message}");
 				return;
 			}
 
@@ -173,12 +174,13 @@ namespace Fritz.Chatbot
 					// Ignore if the normal user is sending commands to fast, or command is in cooldown
 					if (CommandsTooFast(chatMessageArgs, user, cmd.Trigger, cmd.Cooldown))
 					{
+						_logger.LogDebug($"CommandTooFast: {cmd.Trigger}");
 						return true;
 					}
 
 					if (cmd is IBasicCommand2)
 					{
-						await (cmd as IBasicCommand2).Execute(chatService, chatMessageArgs.UserName, chatMessageArgs.IsModerator, chatMessageArgs.IsOwner, rhs);
+						await (cmd as IBasicCommand2).Execute(chatService, chatMessageArgs.UserName, chatMessageArgs.IsModerator, chatMessageArgs.IsVip, chatMessageArgs.IsOwner, rhs);
 					}
 					else
 					{

@@ -22,7 +22,7 @@ namespace Fritz.Chatbot.Commands
 
 		private static string CurrentProject = null;
 
-		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isBroadcaster, ReadOnlyMemory<char> rhs)
+		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{
 			if ((isModerator || isBroadcaster) && !rhs.IsEmpty)
 			{

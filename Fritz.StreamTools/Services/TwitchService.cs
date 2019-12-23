@@ -21,7 +21,7 @@ namespace Fritz.StreamTools.Services
 		private IConfiguration Configuration { get; }
 		public ILogger Logger { get; }
 
-		private readonly Proxy Proxy;
+		private readonly Proxy _Proxy;
 
 		private ChatClient _ChatClient;
 
@@ -37,7 +37,7 @@ namespace Fritz.StreamTools.Services
 		{
 			this.Configuration = config;
 			this.Logger = loggerFactory.CreateLogger("StreamServices");
-			this.Proxy = proxy;
+			this._Proxy = proxy;
 			this._ChatClient = chatClient;
 		}
 
@@ -64,7 +64,7 @@ namespace Fritz.StreamTools.Services
 
 		public string Name { get { return "Twitch"; } }
 
-		public ValueTask<TimeSpan?> Uptime() => Proxy.Uptime();
+		public ValueTask<TimeSpan?> Uptime() => _Proxy.Uptime();
 
 		public bool IsAuthenticated => true;
 
@@ -79,13 +79,13 @@ namespace Fritz.StreamTools.Services
 				_ChatClient.UserJoined += _ChatClient_UserJoined;
 				_ChatClient.Init();
 
-				_CurrentFollowerCount = await Proxy.GetFollowerCountAsync();
-				Proxy.NewFollowers += Proxy_NewFollowers;
-				Proxy.WatchFollowers(10000);
+				_CurrentFollowerCount = await _Proxy.GetFollowerCountAsync();
+				_Proxy.NewFollowers += Proxy_NewFollowers;
+				_Proxy.WatchFollowers(10000);
 
-				_CurrentViewerCount = await Proxy.GetViewerCountAsync();
-				Proxy.NewViewers += Proxy_NewViewers;
-				Proxy.WatchViewers();
+				_CurrentViewerCount = await _Proxy.GetViewerCountAsync();
+				_Proxy.NewViewers += Proxy_NewViewers;
+				_Proxy.WatchViewers();
 
 				Logger.LogInformation($"Now monitoring Twitch with {_CurrentFollowerCount} followers and {_CurrentViewerCount} Viewers");
 			}
@@ -110,6 +110,7 @@ namespace Fritz.StreamTools.Services
 			ChatMessage?.Invoke(this, new ChatMessageEventArgs
 			{
 				IsModerator = e.Badges?.Contains(@"moderator/1") ?? false,
+				IsVip = e.Badges?.Contains(@"vip/1") ?? false,
 				IsOwner = (_ChatClient.ChannelName == e.UserName),
 				IsWhisper = e.IsWhisper,
 				Message = e.Message,
@@ -215,7 +216,7 @@ namespace Fritz.StreamTools.Services
 		private Task StopTwitchMonitoring()
 		{
 
-			Proxy.Dispose();
+			_Proxy.Dispose();
 			_ChatClient.Dispose();
 
 			return Task.CompletedTask;

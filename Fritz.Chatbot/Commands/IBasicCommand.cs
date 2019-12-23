@@ -43,7 +43,7 @@ namespace Fritz.Chatbot.Commands
 		/// <param name="userName">User that invoked the command</param>
 		/// <param name="badges">Badges carried by the user</param>
 		/// <param name="rhs">The remaining text after the trigger keyword</param>
-		Task Execute(IChatService chatService, string userName, bool isModerator, bool isBroadcaster, ReadOnlyMemory<char> rhs);
+		Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs);
 
 	}
 

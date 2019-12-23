@@ -26,7 +26,7 @@ namespace Fritz.Chatbot.Commands
 			_quotes = quotes;
 		}
 
-		public string Trigger => "skeet";
+		public string Trigger => "jonskeet";
 		public string Description => "Return a random quote about Jon Skeet to the chat room";
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)

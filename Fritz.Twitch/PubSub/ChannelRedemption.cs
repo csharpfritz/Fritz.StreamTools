@@ -3,6 +3,8 @@
 namespace Fritz.Twitch.PubSub
 {
 
+	public class PubSubRedemptionMessage : PubSubMessage<ChannelRedemption> { }
+
 	public class ChannelRedemption : EventArgs, IPubSubData
 	{
 		public string timestamp { get; set; }

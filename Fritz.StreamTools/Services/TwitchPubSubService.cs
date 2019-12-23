@@ -3,6 +3,7 @@ using Fritz.Twitch;
 using Fritz.Twitch.PubSub;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System;
@@ -16,13 +17,13 @@ namespace Fritz.StreamTools.Services
 	public class TwitchPubSubService : IHostedService
 	{
 
-		private readonly IHubContext<AttentionHub, IAttentionHubClient> _HubContext;
+		private IServiceProvider _ServiceProvider;
 		private readonly Twitch.PubSub.Proxy _Proxy;
 		private readonly ConfigurationSettings _Configuration;
 
-		public TwitchPubSubService(IHubContext<AttentionHub, IAttentionHubClient> hubContext, Twitch.PubSub.Proxy proxy, IOptions<ConfigurationSettings> settings)
+		public TwitchPubSubService(IServiceProvider serviceProvider, Twitch.PubSub.Proxy proxy, IOptions<ConfigurationSettings> settings)
 		{
-			_HubContext = hubContext;
+			_ServiceProvider = serviceProvider;
 			_Proxy = proxy;
 			_Configuration = settings.Value;
 		}
@@ -35,7 +36,11 @@ namespace Fritz.StreamTools.Services
 
 		private void _Proxy_OnChannelPointsRedeemed(object sender, ChannelRedemption e)
 		{
-			_HubContext.Clients.All.PlaySoundEffect("pointsredeemed.mp3");
+			using (var scope = _ServiceProvider.CreateScope())
+			{
+				var context = scope.ServiceProvider.GetRequiredService<IHubContext<AttentionHub, IAttentionHubClient>>();
+				context.Clients.All.PlaySoundEffect("pointsredeemed.mp3");
+			}
 		}
 
 		public Task StopAsync(CancellationToken cancellationToken)

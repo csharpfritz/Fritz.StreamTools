@@ -22,13 +22,13 @@ namespace Fritz.StreamTools.StartupServices
 {
   public static class ConfigureServices
 	{
-		private static Dictionary<Type, string[]> _servicesRequiredConfiguration;
-		private static IConfiguration _configuration;
+		private static Dictionary<Type, string[]> _ServicesRequiredConfiguration;
+		private static IConfiguration _Configuration;
 
 		public static void Execute(IServiceCollection services, IConfiguration configuration, Dictionary<Type, string[]> servicesRequiredConfiguration)
 		{
-			_configuration = configuration;
-			_servicesRequiredConfiguration = servicesRequiredConfiguration;
+			_Configuration = configuration;
+			_ServicesRequiredConfiguration = servicesRequiredConfiguration;
 
 			services.AddSingleton<RundownItemRepository>();
 			services.AddSingleton<RundownRepository>();
@@ -56,13 +56,17 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddLazyCache();
 
+			services.RegisterTwitchPubSub();
+
 			RegisterConfiguredServices(services, configuration);
 			RegisterGitHubServices(services, configuration);
+
+
 		}
 
 		private static void RegisterConfiguredServices(IServiceCollection services, IConfiguration configuration)
 		{
-			foreach (var configuredService in _servicesRequiredConfiguration)
+			foreach (var configuredService in _ServicesRequiredConfiguration)
 			{
 				if (!configuredService.Value.Any(cs => configuration[cs] == null))
 				{
@@ -78,7 +82,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddTransient(_ => new GitHubClient(new ProductHeaderValue("Fritz.StreamTools"))
 			{
-				Credentials = new Credentials(_configuration["GitHub:User"], _configuration["GitHub:AuthenticationToken"])
+				Credentials = new Credentials(_Configuration["GitHub:User"], _Configuration["GitHub:AuthenticationToken"])
 			});
 
 			services.AddHttpClient("GitHub", c =>
@@ -138,10 +142,6 @@ namespace Fritz.StreamTools.StartupServices
 				return;
 			}
 
-			if (typeof(TStreamService) == typeof(TwitchService)) {
-				services.AddSingleton<Twitch.PubSub.Proxy>();
-			}
-
 			// Configure and grab a logger so that we can log information
 			// about the creation of the services
 			var provider = services.BuildServiceProvider();   // Build a 'temporary' instance of the DI container
@@ -152,17 +152,6 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton(service as IHostedService);
 			services.AddSingleton(service as IStreamService);
 			services.AddSingleton(service);
-
-			if (typeof(TStreamService) == typeof(TwitchService))
-			{
-				var pubSub = new TwitchPubSubService(
-				provider.GetRequiredService<IHubContext<AttentionHub, IAttentionHubClient>>(),
-				provider.GetRequiredService<Twitch.PubSub.Proxy>(),
-				provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
-				services.AddSingleton(pubSub as IHostedService);
-				services.AddSingleton(pubSub);
-			}
-
 
 			if (service is IChatService chatService)
 			{
@@ -188,6 +177,25 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
+		}
+
+		private static void RegisterTwitchPubSub(this IServiceCollection services) {
+
+			services.AddSingleton<Twitch.PubSub.Proxy>();
+			services.AddHostedService<TwitchPubSubService>();
+			//var provider = services.BuildServiceProvider();
+
+			//var pubSub = new TwitchPubSubService(
+			//provider,
+			//provider.GetRequiredService<Twitch.PubSub.Proxy>(),
+			//provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
+			//services.AddSingleton(pubSub as IHostedService);
+			//services.AddSingleton(pubSub);
+
+		}
+
+		private static bool IsTwitchEnabled {
+			get { return string.IsNullOrEmpty(_Configuration["StreamServices:Twitch:ClientId"]); }
 		}
 
 	}

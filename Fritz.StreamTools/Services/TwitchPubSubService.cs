@@ -1,4 +1,5 @@
-﻿using Fritz.StreamTools.Hubs;
+﻿using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Hubs;
 using Fritz.Twitch;
 using Fritz.Twitch.PubSub;
 using Microsoft.AspNetCore.SignalR;
@@ -39,7 +40,20 @@ namespace Fritz.StreamTools.Services
 			using (var scope = _ServiceProvider.CreateScope())
 			{
 				var context = scope.ServiceProvider.GetRequiredService<IHubContext<AttentionHub, IAttentionHubClient>>();
-				context.Clients.All.PlaySoundEffect("pointsredeemed.mp3");
+				//context.Clients.All.PlaySoundEffect("pointsredeemed.mp3");
+				var redemption = new ChannelPointRedemption
+				{
+					RedeemingUserName = e.redemption.user.display_name,
+					RedeemingUserId = e.redemption.user.id,
+					RewardName = e.redemption.reward.title,
+					RewardValue = e.redemption.reward.cost,
+					RewardPrompt = e.redemption.user_input,
+					BackgroundColor = e.redemption.reward.background_color,
+					Image_1x = new Uri(e.redemption.reward.image?.url_1x ?? e.redemption.reward.default_image.url_1x),
+					Image_2x = new Uri(e.redemption.reward.image?.url_2x ?? e.redemption.reward.default_image.url_2x),
+					Image_4x = new Uri(e.redemption.reward.image?.url_4x ?? e.redemption.reward.default_image.url_4x)
+				};
+				context.Clients.All.NotifyChannelPoints(redemption);
 			}
 		}
 

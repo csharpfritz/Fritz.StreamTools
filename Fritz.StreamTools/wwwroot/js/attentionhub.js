@@ -44,7 +44,12 @@ class AttentionHub {
 	  this._hub.on("PlaySoundEffect", (fileName) => {
 			if (this.debug) console.debug(`Playing file: ${fileName}`);
 			if (this.onPlaySoundEffect) this.onPlaySoundEffect(fileName);
-	  });
+		});
+
+		this._hub.on("NotifyChannelPoints", redemption => {
+			if (this.debug) console.debug(`Redeemed: ${redemption}`);
+			if (this.onRedemption) this.onRedemption(redemption);
+		});
 
 
 		return this._hub.start();

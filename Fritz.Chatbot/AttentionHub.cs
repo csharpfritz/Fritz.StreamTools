@@ -12,11 +12,13 @@ namespace Fritz.StreamTools.Hubs
 
 	// Cheer 200 parithon 12/18/2018
 	// Cheer 500 pharewings 12/18/2018
-	Task AlertFritz();
-	Task ClientConnected(string connectionId);
-	Task SummonScott();
+		Task AlertFritz();
+		Task ClientConnected(string connectionId);
+		Task SummonScott();
 
-	Task PlaySoundEffect(string fileName);
+		Task PlaySoundEffect(string fileName);
+
+		Task NotifyChannelPoints(ChannelPointRedemption redemption);
 
   }
 

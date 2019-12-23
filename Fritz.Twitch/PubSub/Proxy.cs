@@ -189,6 +189,7 @@ namespace Fritz.Twitch.PubSub
 				_PingAcknowledged = true;
 				_PongTimer.Stop();
 				_PongTimer.Dispose();
+				_Logger.LogDebug("TwitchPubSub PONG received successfully");
 				return true;
 			}
 
@@ -225,6 +226,7 @@ namespace Fritz.Twitch.PubSub
 					_Logger.LogError(e, "Error while deserializing the message");
 					_Logger.LogInformation("Message contents: " + innerMessage);
 				}
+				_Logger.LogWarning($"Channel Points redeemed: {innerMessage}");
 				OnChannelPointsRedeemed?.Invoke(null, messageObj?.data);
 				return true;
 

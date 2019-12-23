@@ -1,0 +1,110 @@
+﻿@{
+	Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>Channel Points Alert</title>
+	<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+	<style>
+
+		#Alert * {
+			font-family: 'Roboto', Arial;
+			font-weight: bold;
+			font-size: 42px;
+			color: #FFF;
+			text-shadow: 1px 1px 1px #000;
+		}
+
+		@@keyframes fadeIn {
+			0% {
+				opacity: 0;
+			}
+
+			100% {
+				opacity: 1;
+			}
+		}
+
+		@@keyframes fadeOut {
+			0% {
+				opacity: 1;
+			}
+
+			100% {
+				opacity: 0;
+			}
+		}
+
+		.fadeIn {
+			animation-name: fadeIn;
+			animation-duration: 1s;
+			animation-fill-mode: both;
+		}
+
+		.fadeOut {
+			animation-name: fadeOut;
+			animation-duration: 1s;
+			animation-fill-mode: both;
+		}
+	</style>
+
+</head>
+<body>
+
+	<div id="Alert">
+
+		<table>
+			<tr>
+				<td>
+					<div id="alertImgBg"><img id="alertImg" /></div>
+				</td>
+				<td>
+					<p><span id="user"></span> has just redeemed</p>
+					<p><span id="reward"></span> for <span id="rewardValue"></span> Fritz Bitz</p>
+					<p id="rewardPrompt"></p>
+				</td>
+			</tr>
+		</table>
+
+	</div>
+
+
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/attentionhub.js"></script>
+
+	<script>
+		var audio = new Audio('@Url.Content(@"~/contents/pointsredeemed.mp3")');
+
+		var alertEl = document.getElementById("Alert");
+
+		var hub = new AttentionHub();
+		hub.onRedemption = (redemption) => {
+
+			document.getElementById("user").textContent = redemption.RedeemingUserName;
+			document.getElementById("reward").textContent = redemption.RewardName;
+			document.getElementById("rewardValue").textContent = redemption.RewardValue;
+			document.getElementById("rewardPrompt").textContent = redemption.RewardPrompt;
+			document.getElementById("alertImg").src = redemption.Image_4x;
+			document.getElementById("alertImgBg").style.backgroundColor = redemption.BackgroundColor;
+
+			alertEl.classList.remove("fadeOut");
+			alertEl.classList.add("fadeIn");
+			audio.play();
+
+			window.setTimeout(function () {
+				alertEl.classList.remove("fadeIn");
+				alertEl.classList.add("fadeOut");
+			}, 5000);
+		}
+
+		(function () {
+			alertEl.classList.add("fadeOut");
+			hub.start();
+		})();
+
+	</script>
+</body>
+</html>

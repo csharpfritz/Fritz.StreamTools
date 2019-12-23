@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Fritz.StreamTools.TagHelpers;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,10 +13,10 @@ namespace Fritz.StreamTools.StartupServices
 	public class ConfigureSignalrTagHelperOptions : IConfigureOptions<SignalrTagHelperOptions>
 	{
 
-		private readonly IHostingEnvironment Env;
+		private readonly IHostEnvironment Env;
 		private readonly ILogger Logger;
 
-		public ConfigureSignalrTagHelperOptions(IHostingEnvironment env, ILogger<ConfigureSignalrTagHelperOptions> logger)
+		public ConfigureSignalrTagHelperOptions(IHostEnvironment env, ILogger<ConfigureSignalrTagHelperOptions> logger)
 		{
 
 			Env = env;
@@ -26,7 +27,7 @@ namespace Fritz.StreamTools.StartupServices
 		public void Configure(SignalrTagHelperOptions options)
 		{
 
-			var folder = new DirectoryInfo(Path.Combine(Env.WebRootPath, "lib", "signalr"));
+			var folder = new DirectoryInfo(Path.Combine(Env.ContentRootPath, "lib", "signalr"));
 
 			var fileInfo = folder.Exists
 				? folder.GetFiles("signalr-client-*.min.js").OrderByDescending(f => f.Name).FirstOrDefault()

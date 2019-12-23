@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Fritz.StreamTools.Controllers
@@ -25,7 +26,7 @@ namespace Fritz.StreamTools.Controllers
 						StreamService streamService,
 						IOptions<FollowerGoalConfiguration> config,
 						IOptions<FollowerCountConfiguration> countConfig,
-						IHostingEnvironment env,
+						IHostEnvironment env,
 						FollowerClient followerClient,
 						IConfiguration appConfig)
 		{
@@ -43,7 +44,7 @@ namespace Fritz.StreamTools.Controllers
 		public StreamService StreamService { get; }
 		public FollowerGoalConfiguration GoalConfiguration { get; }
 		public FollowerCountConfiguration CountConfiguration { get; }
-		public IHostingEnvironment HostingEnvironment { get; }
+		public IHostEnvironment HostingEnvironment { get; }
 		public FollowerClient FollowerClient { get; }
 		public IConfiguration AppConfig { get; }
 

@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Fritz.Twitch;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
@@ -106,10 +105,10 @@ namespace Test.Twitch.Proxy
 		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
 		{
 
-			var logValues = state as FormattedLogValues;
+			//var logValues = state as FormattedLogValues;
 
-			OutputHelper.WriteLine(logValues[0].Value.ToString());
-			Debug.WriteLine(logValues[0].Value.ToString());
+			//OutputHelper.WriteLine(logValues[0].Value.ToString());
+			//Debug.WriteLine(logValues[0].Value.ToString());
 
 		}
 	}

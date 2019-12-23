@@ -34,7 +34,7 @@ namespace Fritz.StreamTools
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, Microsoft.Extensions.Hosting.IHostingEnvironment env, IConfiguration config)
+		public void Configure(IApplicationBuilder app, IHostEnvironment env, IConfiguration config)
 		{
 
 			// Cheer 100 Crazy240sx 12/18/2018
@@ -53,19 +53,17 @@ namespace Fritz.StreamTools
 
 			app.UseStaticFiles();
 
-			app.UseSignalR(configure =>
+			app.UseEndpoints(endpoints =>
 			{
-				configure.MapHub<FollowerHub>("/followerstream");
-				configure.MapHub<GithubyMcGithubFace>("/github");
-				configure.MapHub<AttentionHub>("/attentionhub");
+
+				endpoints.MapHub<FollowerHub>("/followerstream");
+				endpoints.MapHub<GithubyMcGithubFace>("/github");
+				endpoints.MapHub<AttentionHub>("/attentionhub");
+
+				endpoints.MapDefaultControllerRoute();
+
 			});
 
-			app.UseMvc(routes =>
-			{
-				routes.MapRoute(
-									name: "default",
-									template: "{controller=Home}/{action=Index}/{id?}");
-			});
 		}
 	}
 }

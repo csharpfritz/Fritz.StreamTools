@@ -18,7 +18,7 @@
 	  <Content Remove="wwwroot\hey_listen.wav" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BuildBundlerMinifier" Version="2.9.406" />
+		<PackageReference Include="BuildBundlerMinifier" Version="3.2.435" />
 		<PackageReference Include="Bundgaard.MixerLib" Version="1.2.65" />
 		<PackageReference Include="LazyCache.AspNetCore" Version="2.0.1" />
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.7.1" />

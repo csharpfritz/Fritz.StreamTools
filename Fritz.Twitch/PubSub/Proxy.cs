@@ -250,7 +250,7 @@ namespace Fritz.Twitch.PubSub
 				if (disposing)
 				{
 					_PingTimer.Dispose();
-					_PongTimer.Dispose();
+					_PongTimer?.Dispose();
 				}
 
 				_Socket.Dispose();

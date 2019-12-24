@@ -53,6 +53,8 @@ namespace Fritz.StreamTools
 
 			app.UseStaticFiles();
 
+			app.UseRouting();
+
 			app.UseEndpoints(endpoints =>
 			{
 

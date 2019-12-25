@@ -23,9 +23,14 @@ namespace Fritz.Twitch.PubSub
 		private ClientWebSocket _Socket;
 		private System.Timers.Timer _PingTimer;
 		private System.Timers.Timer _PongTimer;
+		private System.Timers.Timer _ReconnectTimer = new System.Timers.Timer();
 		private ConfigurationSettings _Configuration;
 		private ILogger _Logger;
 		private static bool _Reconnect;
+
+		private static readonly TimeSpan[] _ReconnectTimeouts = new TimeSpan[] {
+			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5)
+		};
 
 		public Proxy(IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory)
 		{
@@ -41,6 +46,7 @@ namespace Fritz.Twitch.PubSub
 		{
 
 			_Topics = topics;
+			_Reconnect = false;
 
 			// Start a timer to manage the connection over the websocket
 			_PingTimer = new System.Timers.Timer(TimeSpan.FromSeconds(30).TotalMilliseconds);
@@ -83,12 +89,34 @@ namespace Fritz.Twitch.PubSub
 				}
 
 				if (_Reconnect) {
+					if (!_ReconnectTimeouts.Any(t => t.TotalMilliseconds == _ReconnectTimer.Interval)) {
+						_ReconnectTimer.Interval = _ReconnectTimeouts[0].TotalMilliseconds;
+						_Logger.LogError($"Unable to connect to Twitch PubSub.  Reconnecting in {_ReconnectTimeouts[0].TotalSeconds} seconds");
+					}
+					else if (_ReconnectTimeouts.Last().TotalMilliseconds == _ReconnectTimer.Interval) {
+						_Reconnect = false;
+						_Logger.LogError("Unable to connect to Twitch PubSub.  Ceasing attempting to connect");
+					} else {
+
+						for (var i=0; i<_ReconnectTimeouts.Length; i++) {
+							if (_ReconnectTimeouts[i].TotalMilliseconds == _ReconnectTimer.Interval) {
+								_Logger.LogError($"Unable to connect to Twitch PubSub.  Reconnecting in {_ReconnectTimeouts[i + 1].TotalSeconds} seconds");
+								_ReconnectTimer.Interval = _ReconnectTimeouts[i + 1].TotalMilliseconds;
+								break;
+							}
+						}
+
+
+					}
+
+					await Task.Delay((int)_ReconnectTimer.Interval);
 					break;
+
 				}
 
 			}
 
-			if (_Reconnect) _ = Task.Run(() => StartAsync(topics, token));
+			// if (_Reconnect) _ = Task.Run(() => StartAsync(topics, token));
 
 		}
 
@@ -126,7 +154,7 @@ namespace Fritz.Twitch.PubSub
 			{
 				data = new PubSubListen.PubSubListenData
 				{
-					auth_token = _Configuration.OAuthToken,
+					auth_token = _Configuration.PubSubAuthToken,
 					topics = topics.Select(t => t.TopicString).ToArray()
 				}
 			};

@@ -17,6 +17,8 @@ namespace Fritz.Twitch
 
 		public virtual string OAuthToken { get; set; }
 
+		public virtual string PubSubAuthToken { get; set; }
+
 		[Obsolete]
 		public string Channel { get => ChannelName; set => ChannelName = value; }
 

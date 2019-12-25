@@ -49,7 +49,7 @@ namespace Fritz.StreamTools.StartupServices
 			// Add the SentimentSink
 			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
 
-			services.AddSingleton<IHostedService, FritzBot>();
+			services.AddHostedService<FritzBot>();
 
 			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
 	  	FritzBot.RegisterCommands(services);
@@ -119,6 +119,7 @@ namespace Fritz.StreamTools.StartupServices
 				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
 
 			services.AddSingleton<StreamService>();
+
 		}
 
 		/// <summary>
@@ -133,7 +134,7 @@ namespace Fritz.StreamTools.StartupServices
 			IConfiguration configuration,
 			Func<IConfiguration, ILoggerFactory, TStreamService> factory,
 			Func<IConfiguration, bool> isDisabled)
-			where TStreamService : class, IStreamService
+			where TStreamService : class, IStreamService, IHostedService
 		{
 
 			// Don't configure this service if it is disabled
@@ -174,6 +175,8 @@ namespace Fritz.StreamTools.StartupServices
 
 			}).AddMessagePackProtocol();
 
+			services.AddRazorPages();
+
 			services.AddMvc()
 				.SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
@@ -182,7 +185,9 @@ namespace Fritz.StreamTools.StartupServices
 		private static void RegisterTwitchPubSub(this IServiceCollection services) {
 
 			services.AddSingleton<Twitch.PubSub.Proxy>();
+
 			services.AddHostedService<TwitchPubSubService>();
+
 			//var provider = services.BuildServiceProvider();
 
 			//var pubSub = new TwitchPubSubService(

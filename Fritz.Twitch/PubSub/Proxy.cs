@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +10,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
-namespace Fritz.Twitch.PubSub
-{
+namespace Fritz.Twitch.PubSub {
 
 	/// <summary>
 	/// Manage interactions with the Twitch pubsub API
 	/// </summary>
-	public class Proxy : IDisposable
-	{
+	public class Proxy : IDisposable {
 
 		private ClientWebSocket _Socket;
 		private System.Timers.Timer _PingTimer;
@@ -42,8 +39,7 @@ namespace Fritz.Twitch.PubSub
 
 		}
 
-		public async Task StartAsync(IEnumerable<TwitchTopic> topics, CancellationToken token)
-		{
+		public async Task StartAsync(IEnumerable<TwitchTopic> topics, CancellationToken token) {
 
 			_Topics = topics;
 			_Reconnect = false;
@@ -55,8 +51,7 @@ namespace Fritz.Twitch.PubSub
 
 			await StartListening(topics);
 
-			while (!token.IsCancellationRequested)
-			{
+			while (!token.IsCancellationRequested) {
 
 				var buffer = new byte[1024];
 				var messageBuffer = new ArraySegment<byte>(buffer);
@@ -64,8 +59,7 @@ namespace Fritz.Twitch.PubSub
 
 				var result = await _Socket.ReceiveAsync(messageBuffer, token);
 				completeMessage.Append(Encoding.UTF8.GetString(messageBuffer));
-				while (!result.EndOfMessage)
-				{
+				while (!result.EndOfMessage) {
 					buffer = new byte[1024];
 					messageBuffer = new ArraySegment<byte>(buffer);
 					result = await _Socket.ReceiveAsync(messageBuffer, token);
@@ -77,12 +71,13 @@ namespace Fritz.Twitch.PubSub
 					break;
 				}
 
-				try
-				{
+				try {
 					HandleMessage(completeMessage.ToString());
-				} catch (UnhandledPubSubMessageException) {
+				}
+				catch (UnhandledPubSubMessageException) {
 					// do nothing
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					_Logger.LogError(e, "Error while parsing message from Twitch: " + completeMessage.ToString());
 					_Logger.LogError("Reconnecting...");
 					_Reconnect = true;
@@ -121,33 +116,29 @@ namespace Fritz.Twitch.PubSub
 		}
 
 
-		private delegate bool OnReceivedMessage(string message);
-		private List<OnReceivedMessage> _Strategies = new List<OnReceivedMessage>();
+		private delegate bool OnReceivedMessage(IPubSubReceiveMessage message);
+		private readonly List<OnReceivedMessage> _Strategies = new List<OnReceivedMessage>();
 
-		private void HandleMessage(string receivedMessage)
-		{
+		private void HandleMessage(string receivedMessage) {
+			var message = JsonConvert.DeserializeObject<IPubSubReceiveMessage>(receivedMessage);
 
-			var jDoc = JObject.Parse(receivedMessage);
-			var messageType = jDoc["type"].Value<string>();
-			if (messageType == "RESPONSE" && jDoc["error"].Value<string>() != "")
-			{
-				throw new Exception("Unable to connect");
-			} else if (messageType == "RESPONSE") {
+			if (message is ResponseReceiveMessage response) {
+				if (!string.IsNullOrWhiteSpace(response.Error)) {
+					throw new Exception($"Unable to connect: {response.Error}");
+				}
 				return;
 			}
 
-			foreach (var strategy in _Strategies)
-			{
-				if (strategy(receivedMessage)) return;
+			foreach (var strategy in _Strategies) {
+				if (strategy(message)) {
+					return;
+				}
 			}
 
 			throw new UnhandledPubSubMessageException();
-
 		}
 
-		private async Task StartListening(IEnumerable<TwitchTopic> topics)
-		{
-
+		private async Task StartListening(IEnumerable<TwitchTopic> topics) {
 			_Socket = new ClientWebSocket();
 
 			var message = new PubSubListen
@@ -164,8 +155,7 @@ namespace Fritz.Twitch.PubSub
 
 		}
 
-		private void _PingTimer_Elapsed(object sender, ElapsedEventArgs e)
-		{
+		private void _PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
 			var message = @"{ ""type"": ""PING"" }";
 			SendMessageOnSocket(message).GetAwaiter().GetResult();
 			_PongTimer = new System.Timers.Timer(TimeSpan.FromSeconds(10).TotalMilliseconds);
@@ -173,22 +163,22 @@ namespace Fritz.Twitch.PubSub
 			_PongTimer.Start();
 			_PingAcknowledged = false;
 
-			// TODO: handle the lack of returned PONG message 
+			// TODO: handle the lack of returned PONG message
 
 		}
 
-		private void _PongTimer_Elapsed(object sender, ElapsedEventArgs e)
-		{
+		private void _PongTimer_Elapsed(object sender, ElapsedEventArgs e) {
 			if (!_PingAcknowledged) {
 				_Reconnect = true;
 				_PongTimer.Dispose();
 			}
 		}
 
-		private Task SendMessageOnSocket(string message)
-		{
+		private Task SendMessageOnSocket(string message) {
 
-			if (_Socket.State != WebSocketState.Open) return Task.CompletedTask;
+			if (_Socket.State != WebSocketState.Open) {
+				return Task.CompletedTask;
+			}
 
 			var byteArray = Encoding.ASCII.GetBytes(message);
 			return _Socket.SendAsync(byteArray, WebSocketMessageType.Text, true, CancellationToken.None);
@@ -211,9 +201,9 @@ namespace Fritz.Twitch.PubSub
 
 		}
 
-		private bool HandlePongMessage(string message) {
+		private bool HandlePongMessage(IPubSubReceiveMessage message) {
 
-			if (message.Contains(@"""PONG""")) {
+			if (message is PongReceiveMessage) {
 				_PingAcknowledged = true;
 				_PongTimer.Stop();
 				_PongTimer.Dispose();
@@ -225,9 +215,9 @@ namespace Fritz.Twitch.PubSub
 
 		}
 
-		private bool HandleReconnectMessage(string message)  {
+		private bool HandleReconnectMessage(IPubSubReceiveMessage message) {
 
-			if (message.Contains(@"""RECONNECT""")) {
+			if (message is ReconnectReceiveMessage) {
 
 				_Reconnect = true;
 
@@ -238,26 +228,12 @@ namespace Fritz.Twitch.PubSub
 
 		}
 
-		private bool HandleChannelPointsMessage(string message) {
+		private bool HandleChannelPointsMessage(IPubSubReceiveMessage message) {
 
-			var jDoc = JObject.Parse(message);
-
-			if (jDoc["type"].Value<string>() == "MESSAGE" && jDoc["data"]["topic"].Value<string>().StartsWith("channel-points-channel-v1") ) {
-
-				var innerMessage = jDoc["data"]["message"].Value<string>();
-
-				PubSubRedemptionMessage messageObj = null;
-				try
-				{
-					messageObj = JsonConvert.DeserializeObject<PubSubRedemptionMessage>(innerMessage);
-				} catch (Exception e) {
-					_Logger.LogError(e, "Error while deserializing the message");
-					_Logger.LogInformation("Message contents: " + innerMessage);
-				}
-				_Logger.LogWarning($"Channel Points redeemed: {innerMessage}");
-				OnChannelPointsRedeemed?.Invoke(null, messageObj?.data);
+			if (message is ChannelPointsReceiveMessage channelPointsMessage) {
+				_Logger.LogWarning($"Channel Points redeemed: {channelPointsMessage.Data.Message}");
+				OnChannelPointsRedeemed?.Invoke(null, channelPointsMessage?.Data?.Message);
 				return true;
-
 			}
 
 			return false;
@@ -267,35 +243,30 @@ namespace Fritz.Twitch.PubSub
 		#endregion
 
 		#region IDisposable Support
-		private bool disposedValue = false; // To detect redundant calls
+		private bool _DisposedValue = false; // To detect redundant calls
 		private bool _PingAcknowledged;
 		private IEnumerable<TwitchTopic> _Topics;
 
-		protected virtual void Dispose(bool disposing)
-		{
-			if (!disposedValue)
-			{
-				if (disposing)
-				{
+		protected virtual void Dispose(bool disposing) {
+			if (!_DisposedValue) {
+				if (disposing) {
 					_PingTimer.Dispose();
 					_PongTimer?.Dispose();
 				}
 
 				_Socket.Dispose();
 
-				disposedValue = true;
+				_DisposedValue = true;
 			}
 		}
 
-		~Proxy()
-		{
+		~Proxy() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(false);
 		}
 
 		// This code added to correctly implement the disposable pattern.
-		public void Dispose()
-		{
+		public void Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
 			// TODO: uncomment the following line if the finalizer is overridden above.

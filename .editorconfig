@@ -11,4 +11,32 @@ insert_final_newline = true
 csharp_style_var_for_built_in_types = true:error
 csharp_style_var_when_type_is_apparent = true:error
 csharp_style_var_elsewhere = true:error
-csharp_prefer_braces = true
+csharp_prefer_braces = true:warning
+csharp_new_line_before_open_brace = none
+
+
+
+######################################################################
+# Start by defining the naming symbols (groups) for fields...
+######################################################################
+# allowed by design guidelines, but naming is not specified by naming guidelines
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, internal, protected_internal
+
+######################################################################
+# Now define the styles that will be applied to those naming symbols...
+######################################################################
+# prefix_with_underscore_pascal_case
+dotnet_naming_style.prefix_with_underscore_pascal_case.capitalization = pascal_case
+dotnet_naming_style.prefix_with_underscore_pascal_case.required_prefix = _
+
+######################################################################
+# Naming Rules are matched in the order listed, and only the first match is applied
+# Use this to match allowed field types, then match all other field types with the invalid style
+# Explicitly mark the field type that is user-preference, to allow simple changing to camelCase
+# or other settings...
+######################################################################
+# Fields that are private can be formatted entirely by user preference
+dotnet_naming_rule.private_fields_rule.symbols  = private_fields
+dotnet_naming_rule.private_fields_rule.style    = prefix_with_underscore_pascal_case
+dotnet_naming_rule.private_fields_rule.severity = warning

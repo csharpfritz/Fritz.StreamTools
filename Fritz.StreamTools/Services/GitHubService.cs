@@ -15,6 +15,8 @@ namespace Fritz.StreamTools.Services
 	{
 
 		public static DateTime LastUpdate = DateTime.MinValue;
+		private CancellationToken _Token;
+		private Task _RunningTask;
 
 		public GitHubService(IServiceProvider services, ILogger<GitHubService> logger)
 		{
@@ -27,7 +29,9 @@ namespace Fritz.StreamTools.Services
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
-			return MonitorUpdates(cancellationToken);
+			_Token = cancellationToken;
+			_RunningTask = MonitorUpdates();
+			return Task.CompletedTask;
 		}
 
 		public Task StopAsync(CancellationToken cancellationToken)
@@ -35,14 +39,14 @@ namespace Fritz.StreamTools.Services
 			return Task.CompletedTask;
 		}
 
-		private async Task MonitorUpdates(CancellationToken cancellationToken)
+		private async Task MonitorUpdates()
 		{
 			var lastRequest = DateTime.Now;
 		  using (var scope = Services.CreateScope())
 		  {
 			  var repo = scope.ServiceProvider.GetService(typeof(GitHubRepository)) as GitHubRepository;
 			  var mcGithubFaceClient = scope.ServiceProvider.GetService(typeof(GithubyMcGithubFaceClient)) as GithubyMcGithubFaceClient;
-				while (!cancellationToken.IsCancellationRequested)
+				while (!_Token.IsCancellationRequested)
 			  {
 				  if (repo != null)
 				  {
@@ -56,7 +60,7 @@ namespace Fritz.StreamTools.Services
 						  mcGithubFaceClient?.UpdateGitHub("", "", 0);
 					  }
 				  }
-				  await Task.Delay(500, cancellationToken);
+				  await Task.Delay(500, _Token);
 			  }
 		  }
 		}

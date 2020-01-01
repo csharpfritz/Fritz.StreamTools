@@ -19,6 +19,8 @@ namespace Fritz.StreamTools.Services
 	{
 
 		private IServiceProvider _ServiceProvider;
+		private CancellationToken _Token;
+		private Task _BackgroundTask;
 		private readonly Twitch.PubSub.Proxy _Proxy;
 		private readonly ConfigurationSettings _Configuration;
 
@@ -32,7 +34,9 @@ namespace Fritz.StreamTools.Services
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
 			_Proxy.OnChannelPointsRedeemed += _Proxy_OnChannelPointsRedeemed;
-			return _Proxy.StartAsync(new TwitchTopic[] { TwitchTopic.ChannelPoints(_Configuration.UserId) }, cancellationToken);
+			_Token = cancellationToken;
+			_BackgroundTask = _Proxy.StartAsync(new TwitchTopic[] { TwitchTopic.ChannelPoints(_Configuration.UserId) }, _Token);
+			return Task.CompletedTask;
 		}
 
 		private void _Proxy_OnChannelPointsRedeemed(object sender, ChannelRedemption e)

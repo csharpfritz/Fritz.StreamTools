@@ -49,9 +49,11 @@ namespace Fritz.StreamTools
 			}
 
 			app.UseHsts();
-			app.UseHttpsRedirection();
+			//app.UseHttpsRedirection();
 
 			app.UseStaticFiles();
+
+			app.UseRouting();
 
 			app.UseEndpoints(endpoints =>
 			{
@@ -59,6 +61,8 @@ namespace Fritz.StreamTools
 				endpoints.MapHub<FollowerHub>("/followerstream");
 				endpoints.MapHub<GithubyMcGithubFace>("/github");
 				endpoints.MapHub<AttentionHub>("/attentionhub");
+
+				endpoints.MapRazorPages();
 
 				endpoints.MapDefaultControllerRoute();
 

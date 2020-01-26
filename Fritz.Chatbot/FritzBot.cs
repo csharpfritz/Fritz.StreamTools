@@ -23,6 +23,7 @@ namespace Fritz.Chatbot
 		private readonly IChatService[] _chatServices;
 		private readonly IBasicCommand[] _basicCommands;
 		private readonly IExtendedCommand[] _extendedCommands;
+		private readonly string[] _OtherBots;
 
 		private readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();
 		private readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();
@@ -50,6 +51,8 @@ namespace Fritz.Chatbot
 
 			var cooldownConfig = configuration[$"{ConfigurationRoot}:CooldownTime"];
 			CooldownTime = !string.IsNullOrEmpty(cooldownConfig) ? TimeSpan.Parse(cooldownConfig) : TimeSpan.Zero;
+
+			_OtherBots = String.IsNullOrEmpty(configuration[$"{ConfigurationRoot}:Otherbots"]) ? new[] { "nightbot","fritzbot","streamelements","pretzelrocks" } : configuration[$"{ConfigurationRoot}:Otherbots"].Split(',');
 
 			_logger?.LogInformation("Command cooldown set to {0}", CooldownTime);
 		}
@@ -143,8 +146,8 @@ namespace Fritz.Chatbot
 			{
 
 				// TODO: Capture and transmit the user who sent the message
-				var otherBots = new[] { "nightbot", "fritzbot", "streamelements" };
-				if (!otherBots.Contains(chatMessageArgs.UserName.ToLowerInvariant()))
+				//var otherBots = new[] { "nightbot", "fritzbot", "streamelements", "pretzelrocks" };
+				if (!_OtherBots.Contains(chatMessageArgs.UserName.ToLowerInvariant()))
 				{
 					SentimentSink.RecentChatMessages.Enqueue(chatMessageArgs.Message);
 				}

@@ -12,100 +12,103 @@ using Microsoft.Extensions.Logging;
 
 namespace Fritz.Chatbot.Commands
 {
-    class HttpPageTitleCommand : IExtendedCommand
-    {
-        private static readonly Regex UrlRegex = new Regex("(https?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex TitleRegex = new Regex("<title>\\s*(.+?)\\s*<\\/title>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private const string LINK_MESSAGE_TEMPLATE = "{{username}}'s linked page title: {{title}}";
+	class HttpPageTitleCommand : IExtendedCommand
+	{
+		private static readonly Regex UrlRegex = new Regex("(https?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex TitleRegex = new Regex("<title>\\s*(.+?)\\s*<\\/title>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+		private const string LINK_MESSAGE_TEMPLATE = "{{username}}'s linked page title: {{title}}";
 
-        public IChatService ChatService { get; private set; }
+		public IChatService ChatService { get; private set; }
 
-        public string Name => "PageTitle";
+		public string Name => "PageTitle";
 
-        public string Description => "Write linked page title to chat";
+		public string Description => "Write linked page title to chat";
 
-        public bool IsInternal => true;
+		public bool IsInternal => true;
 
-        public int Order => 20;
+		public int Order => 20;
 
-        public bool Final => false;
+		public bool Final => false;
 
-        public TimeSpan? Cooldown => null;
+		public TimeSpan? Cooldown => null;
 
-        private async Task Execute(string userName, string fullCommandText)
-        {
-            var urls = GetUrls(fullCommandText);
-            if (urls == null || !urls.Any())
-            {
-                return;
-            }
+		private async Task Execute(string userName, string fullCommandText)
+		{
+			var urls = GetUrls(fullCommandText);
+			if (urls == null || !urls.Any())
+			{
+				return;
+			}
 
-            foreach (var url in urls)
-            {
-                var source = GetSource(url);
-                if (string.IsNullOrEmpty(source))
-                {
-                    continue;
-                }
+			foreach (var url in urls)
+			{
+				var source = GetSource(url);
+				if (string.IsNullOrEmpty(source))
+				{
+					continue;
+				}
 
-                var title = GetTitle(source);
-                if (string.IsNullOrEmpty(title))
-                {
-                    continue;
-                }
+				var title = GetTitle(source);
+				if (string.IsNullOrEmpty(title))
+				{
+					continue;
+				}
 
-                var message = GetMessageFromTemplate(userName, title);
-                await ChatService.SendMessageAsync(message);
-            }
+				var message = GetMessageFromTemplate(userName, title);
+				await ChatService.SendMessageAsync(message);
+			}
 
-            return;
-        }
+			return;
+		}
 
-        private IEnumerable<string> GetUrls(string fullCommandText)
-        {
-            return UrlRegex.Matches(fullCommandText).Select(m => m.Value);
-        }
+		private IEnumerable<string> GetUrls(string fullCommandText)
+		{
+			return UrlRegex.Matches(fullCommandText).Select(m => m.Value);
+		}
 
-        private string GetSource(string url)
-        {
-            var uri = new UriBuilder(url).Uri;
-            var source = new WebClient().DownloadString(uri);
-            return source;
-        }
+		private string GetSource(string url)
+		{
+			var uri = new UriBuilder(url).Uri;
+			var source = new WebClient().DownloadString(uri);
+			return source;
+		}
 
-        private string GetTitle(string source)
-        {
-            var match = TitleRegex.Match(source);
-            if (!match.Success)
-            {
-                return null;
-            }
+		private string GetTitle(string source)
+		{
+			var match = TitleRegex.Match(source);
+			if (!match.Success)
+			{
+				return null;
+			}
 
-            var titleStart = match.Value.IndexOf('>') + 1;
-            var titleLength = match.Value.LastIndexOf('<') - titleStart;
-            var title = match.Value.Substring(titleStart, titleLength);
-            return title;
-        }
+			var titleStart = match.Value.IndexOf('>') + 1;
+			var titleLength = match.Value.LastIndexOf('<') - titleStart;
+			var title = match.Value.Substring(titleStart, titleLength);
+			return title;
+		}
 
-        private string GetMessageFromTemplate(string username, string title)
-        {
-            return LINK_MESSAGE_TEMPLATE.Replace("{{username}}", username).Replace("{{title}}", title);
-        }
+		private string GetMessageFromTemplate(string username, string title)
+		{
+			return LINK_MESSAGE_TEMPLATE.Replace("{{username}}", username).Replace("{{title}}", title);
+		}
 
-        public static bool ContainsLink(string message)
-        {
-            return UrlRegex.IsMatch(message);
-        }
+		public static bool ContainsLink(string message)
+		{
+			return UrlRegex.IsMatch(message);
+		}
 
-        public bool CanExecute(string userName, string fullCommandText)
-        {
-            return HttpPageTitleCommand.ContainsLink(fullCommandText);
-        }
+		public bool CanExecute(string userName, string fullCommandText)
+		{
 
-        public Task Execute(IChatService chatService, string userName, string fullCommandText)
-        {
-            this.ChatService = chatService;
-            return Execute(userName, fullCommandText);
-        }
-    }
+			if (FritzBot._OtherBots.Contains(userName.ToLowerInvariant())) return false;
+
+			return HttpPageTitleCommand.ContainsLink(fullCommandText);
+		}
+
+		public Task Execute(IChatService chatService, string userName, string fullCommandText)
+		{
+			this.ChatService = chatService;
+			return Execute(userName, fullCommandText);
+		}
+	}
 }

@@ -23,7 +23,7 @@ namespace Fritz.Chatbot
 		private readonly IChatService[] _chatServices;
 		private readonly IBasicCommand[] _basicCommands;
 		private readonly IExtendedCommand[] _extendedCommands;
-		private readonly string[] _OtherBots;
+		internal static string[] _OtherBots;
 
 		private readonly ConcurrentDictionary<string, ChatUserInfo> _activeUsers = new ConcurrentDictionary<string, ChatUserInfo>();
 		private readonly ConcurrentDictionary<string, DateTime> _commandExecutedTimeMap = new ConcurrentDictionary<string, DateTime>();

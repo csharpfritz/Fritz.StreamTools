@@ -12,11 +12,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Fritz.Chatbot.Commands
 {
+
+
+	/// <summary>
+	/// This is a command about showing the title of a page references by the <a href="https://github.com/csharpfritz">ChatBot</a>
+	/// 
+	/// </summary>
 	class HttpPageTitleCommand : IExtendedCommand
 	{
 		private static readonly Regex UrlRegex = new Regex("(https?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex TitleRegex = new Regex("<title>\\s*(.+?)\\s*<\\/title>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 		private const string LINK_MESSAGE_TEMPLATE = "{{username}}'s linked page title: {{title}}";
+
+		private static HttpPageTitleCommand cmd;
 
 		public IChatService ChatService { get; private set; }
 
@@ -34,6 +42,7 @@ namespace Fritz.Chatbot.Commands
 
 		private async Task Execute(string userName, string fullCommandText)
 		{
+
 			var urls = GetUrls(fullCommandText);
 			if (urls == null || !urls.Any())
 			{

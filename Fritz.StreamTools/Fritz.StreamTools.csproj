@@ -41,6 +41,7 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
+	  <Folder Include="wwwroot\contents\oldman\" />
 	  <Folder Include="wwwroot\lib\signalr\" />
 	</ItemGroup>
 </Project>

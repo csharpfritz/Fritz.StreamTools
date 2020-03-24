@@ -28,7 +28,7 @@ namespace Fritz.Chatbot.Commands
 		public string Description => "Play a fun sound effect in the stream";
 		public int Order => 1;
 		public bool Final => true;
-		public TimeSpan? Cooldown => TimeSpan.FromSeconds(0);
+		public TimeSpan? Cooldown => TimeSpan.FromSeconds(5);
 
 		internal static Dictionary<string, SoundFxDefinition> Effects = new Dictionary<string, SoundFxDefinition>();
 

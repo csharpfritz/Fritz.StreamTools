@@ -13,7 +13,7 @@ namespace Fritz.StreamTools
 {
   public class Startup
 	{
-		private static Dictionary<Type, string[]> _servicesRequiredConfiguration = new Dictionary<Type, string[]>()
+		private static Dictionary<Type, string[]> _ServicesRequiredConfiguration = new Dictionary<Type, string[]>()
 		{
 			{ typeof(SentimentService), new [] { "FritzBot:SentimentAnalysisKey" } }
 		};
@@ -29,8 +29,9 @@ namespace Fritz.StreamTools
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddTwitchClient();
+			services.AddApplicationInsightsTelemetry();
 
-			StartupServices.ConfigureServices.Execute(services, Configuration, _servicesRequiredConfiguration);
+			StartupServices.ConfigureServices.Execute(services, Configuration, _ServicesRequiredConfiguration);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

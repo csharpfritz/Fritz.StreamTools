@@ -54,8 +54,7 @@ namespace ConsoleChatbot
 
 			FritzBot.RegisterCommands(serviceCollection);
 			var svcProvider = serviceCollection.BuildServiceProvider();
-			var loggerFactory = svcProvider.GetService<ILoggerFactory>()
-				.AddConsole(LogLevel.Information);
+			var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
 			return new FritzBot(config, svcProvider, loggerFactory);
 

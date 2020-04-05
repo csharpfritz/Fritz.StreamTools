@@ -11,6 +11,7 @@ using Fritz.StreamTools.Services;
 using Fritz.StreamTools.TagHelpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -46,8 +47,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddSingleton<IAttentionClient, AttentionHub>();
 
-			// Add the SentimentSink
-			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
+			services.AddQnAFeatures();
 
 			services.AddHostedService<FritzBot>();
 
@@ -196,6 +196,15 @@ namespace Fritz.StreamTools.StartupServices
 			//provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
 			//services.AddSingleton(pubSub as IHostedService);
 			//services.AddSingleton(pubSub);
+
+		}
+
+		private static void AddQnAFeatures(this IServiceCollection services) {
+
+			services.AddDbContext<Fritz.Chatbot.QnA.Data.QnADbContext>(options =>
+			{
+				options.UseNpgsql(_Configuration["FritzBot:QnA:ConnectionString"]);
+			});
 
 		}
 

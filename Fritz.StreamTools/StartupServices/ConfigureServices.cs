@@ -206,6 +206,17 @@ namespace Fritz.StreamTools.StartupServices
 				options.UseNpgsql(_Configuration["FritzBot:QnA:ConnectionString"]);
 			});
 
+			services.AddTransient<Chatbot.QnA.QnAMaker.Proxy>();
+			services.AddHttpClient<Fritz.Chatbot.QnA.QnAMaker.Proxy>(config =>
+			{
+
+				config.BaseAddress = new Uri(_Configuration["FritzBot:QnA:EndPoint"]);
+				config.DefaultRequestHeaders.Add("Authorization", $"Ocp-Apim-Subscription-Key {_Configuration["AzureServices:QnASubscriptionKey"]}");
+				config.DefaultRequestHeaders.Add("Accept", "application/json");
+				config.DefaultRequestHeaders.Add("Content-Type", "application/json");
+
+			});
+
 		}
 
 		private static bool IsTwitchEnabled {

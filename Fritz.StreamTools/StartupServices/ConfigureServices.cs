@@ -207,13 +207,20 @@ namespace Fritz.StreamTools.StartupServices
 			});
 
 			services.AddTransient<Chatbot.QnA.QnAMaker.Proxy>();
-			services.AddHttpClient<Fritz.Chatbot.QnA.QnAMaker.Proxy>(config =>
+			services.AddHttpClient(Fritz.Chatbot.QnA.QnAMaker.Proxy.MaintenanceClientName, config =>
 			{
 
-				config.BaseAddress = new Uri(_Configuration["FritzBot:QnA:EndPoint"]);
+				config.BaseAddress = new Uri(_Configuration["FritzBot:QnA:MaintenanceEndpoint"]);
 				config.DefaultRequestHeaders.Add("Authorization", $"Ocp-Apim-Subscription-Key {_Configuration["AzureServices:QnASubscriptionKey"]}");
 				config.DefaultRequestHeaders.Add("Accept", "application/json");
-				config.DefaultRequestHeaders.Add("Content-Type", "application/json");
+
+			});
+			services.AddHttpClient(Fritz.Chatbot.QnA.QnAMaker.Proxy.QuestionClientName, config =>
+			{
+
+				config.BaseAddress = new Uri(_Configuration["FritzBot:QnA:RuntimeEndpoint"]);
+				config.DefaultRequestHeaders.Add("Authorization", $"Endpointkey {_Configuration["AzureServices:QnASubscriptionKey"]}");
+				config.DefaultRequestHeaders.Add("Accept", "application/json");
 
 			});
 

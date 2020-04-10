@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fritz.Chatbot;
 using Fritz.Chatbot.Commands;
+using Fritz.Chatbot.QnA;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Interfaces;
@@ -223,6 +224,8 @@ namespace Fritz.StreamTools.StartupServices
 				config.DefaultRequestHeaders.Add("Accept", "application/json");
 
 			});
+
+			services.AddSingleton<QuestionCacheService>();
 
 		}
 

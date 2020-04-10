@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Fritz.Chatbot.Helpers;
+using Fritz.Chatbot.QnA;
 using Fritz.Chatbot.QnA.QnAMaker;
 using Fritz.ChatBot.Helpers;
 using Fritz.StreamLib.Core;
@@ -17,6 +19,7 @@ namespace Fritz.Chatbot.Commands
 
 	public class AzureQnACommand : IExtendedCommand
 	{
+
 		public string Name => "AzureQnA";
 		public string Description => "Answer questions using Azure Cognitive Services and Jeff's FAQ on the LiveStream wiki";
 		public int Order => 1;
@@ -26,17 +29,36 @@ namespace Fritz.Chatbot.Commands
 		public Proxy Proxy { get; }
 
 		private readonly ILogger<AzureQnACommand> _logger;
+		private readonly QuestionCacheService _QuestionCacheService;
+		private static readonly Regex _UserNameRegEx = new Regex(@"(@\w+)");
 
-		public AzureQnACommand(QnA.QnAMaker.Proxy proxy, ILogger<AzureQnACommand> logger)
+		public AzureQnACommand(QnA.QnAMaker.Proxy proxy, ILogger<AzureQnACommand> logger, QuestionCacheService questionCacheService)
 		{
 			Proxy = proxy;
 			_logger = logger;
+			_QuestionCacheService = questionCacheService;
 		}
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{
 
-			return fullCommandText.Length >= 10 && fullCommandText.EndsWith("?");
+			var allowedQuestionTargets = new[] { "@csharpfritz", "@thefritzbot" };
+			var firstTests = fullCommandText.Length >= 10 && fullCommandText.EndsWith("?");
+			if (!firstTests) return false;
+
+			var matches = _UserNameRegEx.Matches(fullCommandText);
+			if (matches.Count == 0) return true;
+
+			for (var i=0; i<matches.Count; i++)
+			{
+
+				if (allowedQuestionTargets.Any(s => matches[i].Value.Equals(s, StringComparison.InvariantCultureIgnoreCase))) {
+					return true;
+				}
+
+			}
+
+			return false;
 
 		}
 
@@ -76,11 +98,13 @@ namespace Fritz.Chatbot.Commands
 
 				if (thisAnswer.Score > 50)
 				{
-					await chatService.SendMessageAsync(thisAnswer.Answer);
+					_QuestionCacheService.Add(userName, query, thisAnswer.Id);
+					await chatService.SendMessageAsync($"@{userName}, I know the answer to your question ({thisAnswer.Id}): {thisAnswer.Answer}");
 				}
 				else if (thisAnswer.Score > 30)
 				{
-					await chatService.SendMessageAsync("I'm not certain, but perhaps this will help:  " + thisAnswer.Answer + $@"({thisAnswer.Score.ToString("0.0")}% certainty)");
+					_QuestionCacheService.Add(userName, query, thisAnswer.Id);
+					await chatService.SendMessageAsync($"I'm not certain, @{userName}, but perhaps this will help ({thisAnswer.Id}):  " + thisAnswer.Answer + $@"({thisAnswer.Score.ToString("0.0")}% certainty)");
 
 				}
 				else

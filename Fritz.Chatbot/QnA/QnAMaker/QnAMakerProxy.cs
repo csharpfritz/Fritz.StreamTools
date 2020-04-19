@@ -13,7 +13,6 @@ namespace Fritz.Chatbot.QnA.QnAMaker
 
 	public class Proxy
 	{
-		private readonly HttpClient _Client;
 
 		private readonly string _KnowledgeBaseId;
 		private readonly bool _MissingAzureKey;
@@ -66,7 +65,7 @@ namespace Fritz.Chatbot.QnA.QnAMaker
 
 			var client = _HttpClientFactory.CreateClient(MaintenanceClientName);
 			var content = new ByteArrayContent(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes<UpdatePayload>(payload));
-			var response = await _Client.PatchAsync($"qnamaker/v4.0/knowledgebases/{_KnowledgeBaseId}", content);
+			var response = await client.PatchAsync($"qnamaker/v4.0/knowledgebases/{_KnowledgeBaseId}", content);
 			response.EnsureSuccessStatusCode();
 
 			var jsonBody = await response.Content.ReadAsStringAsync();
@@ -84,7 +83,7 @@ namespace Fritz.Chatbot.QnA.QnAMaker
 			if (_MissingAzureKey) return;
 
 			var client = _HttpClientFactory.CreateClient(MaintenanceClientName);
-			var response = await _Client.PostAsync($"qnamaker/v4.0/knowledgebases/{_KnowledgeBaseId}", new StringContent(""));
+			var response = await client.PostAsync($"qnamaker/v4.0/knowledgebases/{_KnowledgeBaseId}", new StringContent(""));
 			response.EnsureSuccessStatusCode();
 
 		}

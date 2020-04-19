@@ -9,6 +9,8 @@ using Fritz.StreamTools.Services;
 using Fritz.StreamTools.StartupServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -31,6 +33,7 @@ namespace Test.Startup
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+			serviceCollection.AddSingleton<IHostEnvironment>(new StubHostEnvironment());
 
 
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
@@ -56,6 +59,7 @@ namespace Test.Startup
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+			serviceCollection.AddSingleton<IHostEnvironment>(new StubHostEnvironment());
 
 
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
@@ -80,6 +84,7 @@ namespace Test.Startup
 			serviceCollection.AddSingleton<ILoggerFactory>(new LoggerFactory());
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+			serviceCollection.AddSingleton<IHostEnvironment>(new StubHostEnvironment());
 
 			// act
 			ConfigureServices.Execute(serviceCollection, configuration, new Dictionary<Type, string[]>());
@@ -126,4 +131,16 @@ namespace Test.Startup
 			}
 		}
   }
+
+	internal class StubHostEnvironment : IHostEnvironment
+	{
+		public StubHostEnvironment()
+		{
+		}
+
+		public string EnvironmentName { get; set; }
+		public string ApplicationName { get; set; }
+		public string ContentRootPath { get; set; }
+		public IFileProvider ContentRootFileProvider { get; set; }
+	}
 }

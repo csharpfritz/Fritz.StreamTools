@@ -10,6 +10,7 @@ namespace Fritz.Chatbot.QnA
 
 		private MemoryCache _Cache = new MemoryCache(new MemoryCacheOptions()
 		{
+
 			ExpirationScanFrequency = TimeSpan.FromSeconds(5),
 
 		});
@@ -25,6 +26,12 @@ namespace Fritz.Chatbot.QnA
 		{
 
 			return ((string,long))_Cache.Get(userName);
+
+		}
+
+		public void AddQuestionForModerator(string userName, string questionText) {
+
+			_Cache.Set(userName, (questionText, 0), TimeSpan.FromMinutes(5));
 
 		}
 

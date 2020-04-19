@@ -20,7 +20,7 @@ namespace Test.Chatbot
 		public void ShouldBeAnswered(string test)
 		{
 
-			var sut = new AzureQnACommand(null, null, null);
+			var sut = GetEmptyCommand();
 
 			var result = sut.CanExecute(UserName, test);
 			Assert.True(result);
@@ -35,12 +35,14 @@ namespace Test.Chatbot
 		public void ShouldNotBeAnswered(string test)
 		{
 
-			var sut = new AzureQnACommand(null, null, null);
+			var sut = GetEmptyCommand();
 
 			var result = sut.CanExecute(UserName, test);
 			Assert.False(result);
 
 		}
+
+		private AzureQnACommand GetEmptyCommand() => new AzureQnACommand(null, null, null, null);
 
 	}
 }

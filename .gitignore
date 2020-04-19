@@ -14,6 +14,8 @@ package-lock.json
 *.user
 *.userosscache
 *.sln.docstates
+serviceDependencies.*.json
+serviceDependencies.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

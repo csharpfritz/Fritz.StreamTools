@@ -3,15 +3,17 @@ using System;
 using Fritz.Chatbot.QnA.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Fritz.Chatbot.QnA.Migrations
 {
     [DbContext(typeof(QnADbContext))]
-    partial class QnADbContextModelSnapshot : ModelSnapshot
+    [Migration("20200419150731_Add wrong answers")]
+    partial class Addwronganswers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

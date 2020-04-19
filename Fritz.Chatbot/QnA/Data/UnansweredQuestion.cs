@@ -15,5 +15,13 @@ namespace Fritz.Chatbot.QnA.Data
 		[MaxLength(1000)]
 		public string QuestionText { get; set; }
 
+		public decimal? AnswerPct { get; set; }
+
+		[MaxLength(1000)]
+		public string? AnswerTextProvided { get; set; }
+
+		[Required]
+		public DateTime ReviewDate { get; set; } = new DateTime(2079, 6, 1);
+
 	}
 }

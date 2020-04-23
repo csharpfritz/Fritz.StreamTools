@@ -51,6 +51,9 @@ namespace Fritz.Chatbot.Commands
 
 			foreach (var url in urls)
 			{
+
+				if (url.Equals("asp.net", StringComparison.InvariantCultureIgnoreCase)) continue;
+
 				var source = GetSource(url);
 				if (string.IsNullOrEmpty(source))
 				{

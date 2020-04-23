@@ -61,6 +61,8 @@ namespace Fritz.StreamTools.StartupServices
 			RegisterConfiguredServices(services, configuration);
 			RegisterGitHubServices(services, configuration);
 
+			RegisterBotAiServices(services, configuration);
+
 
 		}
 
@@ -196,6 +198,18 @@ namespace Fritz.StreamTools.StartupServices
 			//provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
 			//services.AddSingleton(pubSub as IHostedService);
 			//services.AddSingleton(pubSub);
+
+		}
+
+		private static void RegisterBotAiServices(IServiceCollection services, IConfiguration configuration)
+		{
+
+			var provider = services.BuildServiceProvider();   // Build a 'temporary' instance of the DI container
+			var loggerFactory = provider.GetService<ILoggerFactory>();
+
+			var service = new ScreenshotTrainingService(configuration, loggerFactory);
+			services.AddSingleton(service as IHostedService);
+			services.AddSingleton(service as ITrainHat);
 
 		}
 

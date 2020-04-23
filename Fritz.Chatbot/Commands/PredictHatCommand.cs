@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training;
+using System.Net;
 
 namespace Fritz.Chatbot.Commands
 {
@@ -48,16 +49,34 @@ namespace Fritz.Chatbot.Commands
 				ApiKey = _CustomVisionKey,
 				Endpoint = _AzureEndpoint
 			};
-			var result = await client.DetectImageUrlWithNoStoreAsync(_AzureProjectId, _IterationName, new ImageUrl(TwitchScreenshotUrl));
+
+
+			ImagePrediction result;
+			try
+			{
+				result = await client.DetectImageUrlWithNoStoreAsync(_AzureProjectId, _IterationName, new ImageUrl(TwitchScreenshotUrl));
+			} catch (CustomVisionErrorException ex) {
+
+				
+
+				if (ex.Response.StatusCode == HttpStatusCode.NotFound) {
+					await IdentifyIterationName();
+				}
+
+				await chatService.SendMessageAsync("Unable to detect Fritz's hat right now... please try again in 1 minute");
+				return;
+
+			}
+
 
 			var bestMatch = result.Predictions.OrderByDescending(p => p.Probability).FirstOrDefault();
 			if (bestMatch == null || bestMatch.Probability <= 0.3D) {
-				await chatService.SendMessageAsync("No match found for the current hat");
+				await chatService.SendMessageAsync("csharpAngry 404 Hat Not Found!  Let's ask a moderator to !addhat so we can identify it next time");
 				// do we store the image?
 				return;
 			}
 
-			await chatService.SendMessageAsync($"I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {bestMatch.TagName} hat");
+			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {bestMatch.TagName} hat csharpClip");
 
 		}
 

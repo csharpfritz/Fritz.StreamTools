@@ -9,11 +9,16 @@ Fritz.StreamTools/wwwroot/lib/
 .vscode/
 package-lock.json
 
+#Ignore the lib folder
+lib/
+
 # User-specific files
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
+serviceDependencies.json
+serviceDependencies.local.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

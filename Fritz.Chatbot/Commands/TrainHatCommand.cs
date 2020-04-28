@@ -8,16 +8,12 @@ namespace Fritz.Chatbot.Commands
 {
 	public class TrainHatCommand : IBasicCommand2
 	{
-		private readonly ITrainHat _TrainHat;
+		private readonly ITrainHat _TrainHat = ScreenshotTrainingService.Instance;
 
 		public string Trigger => "trainhat";
 		public string Description => "Moderators can capture 15 screenshots in an effort to help train the hat detection AI";
 		public TimeSpan? Cooldown => TimeSpan.FromMinutes(15);
 
-		public TrainHatCommand(ITrainHat trainHat)
-		{
-			_TrainHat = trainHat;
-		}
 
 		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{

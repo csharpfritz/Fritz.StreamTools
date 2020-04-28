@@ -61,6 +61,7 @@ namespace Fritz.StreamTools
 				endpoints.MapHub<FollowerHub>("/followerstream");
 				endpoints.MapHub<GithubyMcGithubFace>("/github");
 				endpoints.MapHub<AttentionHub>("/attentionhub");
+				endpoints.MapHub<ObsHub>("/obshub");
 
 				endpoints.MapRazorPages();
 

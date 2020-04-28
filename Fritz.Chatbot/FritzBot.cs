@@ -1,5 +1,7 @@
 ﻿using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,7 +32,7 @@ namespace Fritz.Chatbot
 
 		public TimeSpan CooldownTime { get; }
 
-		public FritzBot(IConfiguration configuration, IServiceProvider serviceProvider, ILoggerFactory loggerFactory = null)
+		public FritzBot(IConfiguration configuration, IServiceProvider serviceProvider, ILoggerFactory loggerFactory = null, IHubContext<ObsHub, ITakeScreenshots> hubContext = null)
 		{
 			if (configuration == null)
 			{
@@ -54,7 +56,11 @@ namespace Fritz.Chatbot
 
 			_OtherBots = String.IsNullOrEmpty(configuration[$"{ConfigurationRoot}:Otherbots"]) ? new[] { "nightbot","fritzbot","streamelements","pretzelrocks" } : configuration[$"{ConfigurationRoot}:Otherbots"].Split(',');
 
+			ScreenshotTrainingService.Instance.Initialize(configuration, loggerFactory, serviceProvider);
+			ScreenshotTrainingService.Instance.ObsHubContext = hubContext;
+
 			_logger?.LogInformation("Command cooldown set to {0}", CooldownTime);
+
 		}
 
 		/// <summary>

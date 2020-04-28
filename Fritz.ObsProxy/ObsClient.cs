@@ -4,6 +4,7 @@ using Microsoft.VisualBasic.CompilerServices;
 using OBS.WebSocket.NET;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,9 +16,9 @@ namespace Fritz.ObsProxy
 		private bool _DisposedValue;
 		private ObsWebSocket _OBS;
 
-		private Dictionary<string, string> _SceneCameraSourceLookup = new Dictionary<string, string> {
-			{"v2 Full Face", "Webcam-ChromaKey" },
-			{"v2 Full Code", "NDI - NUC" }
+		private List<string> _CameraSources = new List<string> {
+			{"Webcam-ChromaKey" },
+			{"NDI - NUC" }
 		};
 		private readonly ILogger _Logger;
 		private readonly IConfiguration _Configuration;
@@ -46,19 +47,10 @@ namespace Fritz.ObsProxy
 
 		public string TakeScreenshot() {
 
-			// NOTE: need to update my OBS Websocket plugin to verify that this works
+			var sourceName = _CameraSources.First();
+			var response = _OBS.Api.TakeSourceScreenshot(sourceName,embedPictureFormat: "png");
 
-			var currentScene = _OBS.Api.GetCurrentScene();
-			var sceneName = currentScene.Name;
-
-			if (!_SceneCameraSourceLookup.ContainsKey(sceneName)) {
-				_Logger.LogError($"Unable to identify the camera source in scene '{sceneName}' ");
-				throw new Exception($"Unable to identify the camera source in scene '{sceneName}' ");
-			}
-
-			var sourceName = _SceneCameraSourceLookup[sceneName];
-			var response = _OBS.Api.TakeSourceScreenshot(sceneName);
-			return response.ImageFile;
+			return response.ImageData;
 
 		}
 

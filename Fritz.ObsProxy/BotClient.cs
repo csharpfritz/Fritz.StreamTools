@@ -13,18 +13,20 @@ namespace Fritz.ObsProxy
 
 	public class BotClient : IAsyncDisposable, ITakeScreenshots
 	{
+		private readonly ILogger _Logger;
 		private readonly Uri _BotUrl;
 		private readonly ObsClient _ObsClient;
 		private HubConnection _Client;
 
 		public BotClient(ILoggerFactory loggerFactory, IConfiguration configuration, ObsClient obsClient)
 		{
-
+			_Logger = loggerFactory.CreateLogger("BotClient");
 			_BotUrl = new Uri(configuration["BotUrl"]);
 			_ObsClient = obsClient;
 		}
 
-		public async Task Connect() {
+		public async Task Connect()
+		{
 
 			_Client = new HubConnectionBuilder()
 				.WithUrl(_BotUrl)
@@ -32,21 +34,26 @@ namespace Fritz.ObsProxy
 				.AddJsonProtocol()
 				.Build();
 
-
 			_Client.On("TakeScreenshot", TakeScreenshot);
 
-			await _Client.StartAsync();
+			StartAsync();
 
-			await Task.Delay(100);
-			var i = 0;
-			while (_Client.State != HubConnectionState.Connected)
+			async Task StartAsync(int retryCount = 0)
 			{
-				if (i > 20) { break; }
-				i++;
-				await Task.Delay(100);
 				await _Client.StartAsync();
-			}
 
+				if (_Client.State == HubConnectionState.Connected)
+				{
+					_Logger.LogDebug("Connected to ObsHub");
+
+				} 
+				else if (retryCount < 20) {
+					_Logger.LogWarning($"Retrying connection {retryCount}");
+					retryCount++;
+					await Task.Delay(100);
+					await StartAsync(retryCount);
+				}
+			}
 		}
 
 		public HubConnectionState ConnectedState => _Client.State;
@@ -60,7 +67,7 @@ namespace Fritz.ObsProxy
 		{
 
 			var result = _ObsClient.TakeScreenshot();
-			await _Client.InvokeAsync("PostScreenshot", result);
+			await _Client.SendAsync("PostScreenshot", result);
 
 		}
 	}

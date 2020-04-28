@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Fritz.ObsProxy
 {
-	public class Worker : BackgroundService
+	public class Worker : IHostedService
 	{
 		private readonly ILogger<Worker> _logger;
 		private readonly ObsClient _ObsClient;
@@ -21,17 +21,21 @@ namespace Fritz.ObsProxy
 			_BotClient = botClient;
 		}
 
-		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-
+		
 			await _ObsClient.Connect(4444);
 			await _BotClient.Connect();
 
-			while (!stoppingToken.IsCancellationRequested)
-			{
-				await Task.Delay(1000, stoppingToken);
-				Console.WriteLine($"Current time is: {DateTime.Now} and we are {_BotClient.ConnectedState} to the ChatBot");
-			}
 		}
+
+		public async Task StopAsync(CancellationToken cancellationToken)
+		{
+
+			_ObsClient.Dispose();
+			await _BotClient.DisposeAsync();
+
+		}
+
 	}
 }

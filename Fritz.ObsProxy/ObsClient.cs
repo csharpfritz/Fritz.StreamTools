@@ -17,8 +17,8 @@ namespace Fritz.ObsProxy
 		private ObsWebSocket _OBS;
 
 		private List<string> _CameraSources = new List<string> {
+			{"NDI - NUC" },
 			{"Webcam-ChromaKey" },
-			{"NDI - NUC" }
 		};
 		private readonly ILogger _Logger;
 		private readonly IConfiguration _Configuration;

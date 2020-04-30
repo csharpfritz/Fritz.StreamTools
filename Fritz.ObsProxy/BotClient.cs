@@ -5,7 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Fritz.ObsProxy
@@ -36,11 +39,19 @@ namespace Fritz.ObsProxy
 
 			_Client.On("TakeScreenshot", TakeScreenshot);
 
-			StartAsync();
+			await StartAsync();
+
+			// await _Client.SendAsync("PostScreenshot", "Foo");
 
 			async Task StartAsync(int retryCount = 0)
 			{
-				await _Client.StartAsync();
+
+				try
+				{
+					await _Client.StartAsync();
+				} catch (Exception ex) {
+					// do nothing, we're gonna try again...
+				}
 
 				if (_Client.State == HubConnectionState.Connected)
 				{
@@ -63,11 +74,35 @@ namespace Fritz.ObsProxy
 			await _Client.DisposeAsync();
 		}
 
-		public async Task TakeScreenshot()
+		private Task _PostScreenshotTask;
+		//private string 
+		public Task TakeScreenshot()
 		{
 
 			var result = _ObsClient.TakeScreenshot();
-			await _Client.SendAsync("PostScreenshot", result);
+			//_Client.
+			//_PostScreenshotTask = Task.Run(() => _Client.SendAsync("PostScreenshot", result));
+
+			_Client.SendAsync("PostScreenshot", clientStreamData(result));
+
+			return Task.CompletedTask;
+
+			async IAsyncEnumerable<string> clientStreamData(string imageData)
+			{
+
+				var sr = new StringReader(imageData);
+				Debug.WriteLine($"ImageData ({imageData.Length}): " + imageData.Substring(imageData.Length-20,20));
+
+				var buffer = new char[2000];
+				while (true)
+				{
+					var lengthRead = sr.ReadBlock(buffer, 0, 2000);
+					if (lengthRead == 0) { break; }
+					yield return new string(buffer,0, lengthRead);
+					buffer = new char[2000];
+				}
+				//After the for loop has completed and the local function exits the stream completion will be sent.
+			}
 
 		}
 	}

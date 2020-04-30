@@ -2,7 +2,10 @@
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Hubs
@@ -31,11 +34,20 @@ namespace Fritz.StreamTools.Hubs
 			await base.OnDisconnectedAsync(exception);
 		}
 
-		public async Task PostScreenshot(string imageData) {
+		public async Task PostScreenshot(IAsyncEnumerable<string> stream) {
 
-			var cleanString = imageData.Replace("data:image/png;base64,", "");
+			var sb = new StringBuilder();
+			await foreach (var item in stream)
+			{
+				sb.Append(item);
+			}
 
-			ScreenshotSink.Instance.OnScreenshotReceived(Convert.FromBase64String(cleanString));
+			Debug.WriteLine(sb.Length);
+			var cleanString = sb.ToString().Replace("data:image/png;base64,", "");
+
+			var bytes = Convert.FromBase64String(cleanString);
+
+			ScreenshotSink.Instance.OnScreenshotReceived(bytes);
 
 		}
 

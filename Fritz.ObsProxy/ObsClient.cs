@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.CompilerServices;
 using OBS.WebSocket.NET;
+using OBS.WebSocket.NET.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,16 +18,17 @@ namespace Fritz.ObsProxy
 		private ObsWebSocket _OBS;
 
 		private List<string> _CameraSources = new List<string> {
-			{"NDI - NUC" },
 			{"Webcam-ChromaKey" },
 		};
 		private readonly ILogger _Logger;
 		private readonly IConfiguration _Configuration;
+		private readonly string _IpAddress;
 
 		public ObsClient(ILoggerFactory loggerFactory, IConfiguration configuration )
 		{
 			_Logger = loggerFactory.CreateLogger("ObsClient");
 			_Configuration = configuration;
+			_IpAddress = string.IsNullOrEmpty(configuration["ObsIpAddress"]) ? "127.0.0.1:4444" : configuration["ObsIpAddress"];
 		}
 
 		/// <summary>
@@ -34,10 +36,10 @@ namespace Fritz.ObsProxy
 		/// </summary>
 		/// <param name="port"></param>
 		/// <returns></returns>
-		public Task Connect(short port) {
+		public Task Connect() {
 
 			_OBS = new ObsWebSocket();
-			_OBS.Connect($"ws://127.0.0.1:{port}", "");
+			_OBS.Connect($"ws://{_IpAddress}", "");
 
 			return Task.CompletedTask;
 
@@ -48,7 +50,13 @@ namespace Fritz.ObsProxy
 		public string TakeScreenshot() {
 
 			var sourceName = _CameraSources.First();
-			var response = _OBS.Api.TakeSourceScreenshot(sourceName,embedPictureFormat: "png");
+
+			SourceScreenshotResponse response = null;
+			if (string.IsNullOrEmpty(_Configuration["SaveFileLocation"])) {
+				response = _OBS.Api.TakeSourceScreenshot(sourceName,embedPictureFormat: "png");
+			} else {
+				response = _OBS.Api.TakeSourceScreenshot(sourceName, embedPictureFormat: "png", _Configuration["SaveFileLocation"]);
+			}
 
 			return response.ImageData;
 

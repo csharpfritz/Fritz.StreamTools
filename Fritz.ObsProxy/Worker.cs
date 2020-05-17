@@ -23,8 +23,8 @@ namespace Fritz.ObsProxy
 
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-		
-			await _ObsClient.Connect(4444);
+
+			await _ObsClient.Connect();
 			await _BotClient.Connect();
 
 		}

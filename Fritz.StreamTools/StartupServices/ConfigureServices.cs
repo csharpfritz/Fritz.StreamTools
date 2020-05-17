@@ -99,6 +99,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddHttpClient("ShoutoutCommand", c =>
 			{
 				c.DefaultRequestHeaders.Add("client-id", configuration["StreamServices:Twitch:ClientId"]);
+				c.DefaultRequestHeaders.Add("Authorization", $"Bearer {configuration["StreamServices:Twitch:ClientAccessToken"]}");
 			});
 
 			services.AddHostedService<GitHubService>();

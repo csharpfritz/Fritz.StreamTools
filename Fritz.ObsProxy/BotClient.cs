@@ -71,7 +71,7 @@ namespace Fritz.ObsProxy
 
 		public async ValueTask DisposeAsync()
 		{
-			await _Client.DisposeAsync();
+			await _Client?.DisposeAsync();
 		}
 
 		private Task _PostScreenshotTask;

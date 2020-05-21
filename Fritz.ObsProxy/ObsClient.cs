@@ -17,9 +17,6 @@ namespace Fritz.ObsProxy
 		private bool _DisposedValue;
 		private ObsWebSocket _OBS;
 
-		private List<string> _CameraSources = new List<string> {
-			{"Webcam-ChromaKey" },
-		};
 		private readonly ILogger _Logger;
 		private readonly IConfiguration _Configuration;
 		private readonly string _IpAddress;
@@ -47,15 +44,25 @@ namespace Fritz.ObsProxy
 
 		public string ImageFolderLocation => _Configuration["ImageFolder"];
 
+		public string CameraSource => _Configuration["CameraSource"];
+
+
 		public string TakeScreenshot() {
 
-			var sourceName = _CameraSources.First();
-
 			SourceScreenshotResponse response = null;
-			if (string.IsNullOrEmpty(_Configuration["SaveFileLocation"])) {
-				response = _OBS.Api.TakeSourceScreenshot(sourceName,embedPictureFormat: "png");
-			} else {
-				response = _OBS.Api.TakeSourceScreenshot(sourceName, embedPictureFormat: "png", _Configuration["SaveFileLocation"]);
+			if (string.IsNullOrEmpty(ImageFolderLocation)) {
+				response = _OBS.Api.TakeSourceScreenshot(CameraSource,embedPictureFormat: "png");
+			} else
+			{
+
+				try
+				{
+					response = _OBS.Api.TakeSourceScreenshot(CameraSource, saveToFilePath: ImageFolderLocation + "\\test.png");
+				} catch (Exception e) {
+					_Logger.LogError(e, "Error while taking screenshot");
+					return null;
+				}
+
 			}
 
 			return response.ImageData;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,9 @@ namespace Fritz.ObsProxy
 			{
 				await _BotClient.Connect();
 			} else {
-				_ObsClient.TakeScreenshot();
+				var imgString = _ObsClient.TakeScreenshot();
+				var bytes = Convert.FromBase64String(imgString);
+				File.WriteAllBytes("c:\\dev\\stream\\screenshots\\test.png", bytes);
 			}
 
 		}

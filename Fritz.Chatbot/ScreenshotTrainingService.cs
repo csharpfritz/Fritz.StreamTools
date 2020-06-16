@@ -34,11 +34,7 @@ namespace Fritz.Chatbot
 		private Task _TrainingTask;
 		private byte _RetryCount = 0;
 
-		public static readonly ScreenshotTrainingService Instance = new ScreenshotTrainingService();
-
-		private ScreenshotTrainingService() { }
-
-		public void Initialize(IConfiguration configuration, ILoggerFactory loggerFactory, IServiceProvider services)
+		public ScreenshotTrainingService(IConfiguration configuration, ILoggerFactory loggerFactory, IServiceProvider services)
 		{
 
 			_CustomVisionKey = configuration["AzureServices:HatDetection:Key"];
@@ -66,8 +62,6 @@ namespace Fritz.Chatbot
 			await _TrainingTask;
 
 		}
-
-		public IHubContext<ObsHub, ITakeScreenshots> ObsHubContext { get; set; }
 
 		private async Task Train(CancellationToken token)
 		{
@@ -161,7 +155,7 @@ namespace Fritz.Chatbot
 
 		}
 
-		private async Task<Stream> GetScreenshotFromObs()
+		internal async Task<Stream> GetScreenshotFromObs()
 		{
 
 			Stream result = null;
@@ -170,7 +164,12 @@ namespace Fritz.Chatbot
 			{
 				result = args.Screenshot;
 			};
-			await ObsHubContext.Clients.All.TakeScreenshot();
+
+			using (var scope = _Services.CreateScope())
+			{
+				var obsContext = scope.ServiceProvider.GetRequiredService<IHubContext<ObsHub, ITakeScreenshots>>();
+				await obsContext.Clients.All.TakeScreenshot();
+			}
 			var i = 0;
 			while (result == null) {
 				await Task.Delay(100);

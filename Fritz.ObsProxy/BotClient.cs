@@ -55,7 +55,7 @@ namespace Fritz.ObsProxy
 
 				if (_Client.State == HubConnectionState.Connected)
 				{
-					_Logger.LogDebug("Connected to ObsHub");
+					_Logger.LogWarning("Connected to ObsHub");
 
 				} 
 				else if (retryCount < 20) {

@@ -3,17 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace Fritz.Chatbot.Commands
 {
 	public class TrainHatCommand : IBasicCommand2
 	{
-		private readonly ITrainHat _TrainHat = ScreenshotTrainingService.Instance;
+		private readonly ITrainHat _TrainHat;
 
 		public string Trigger => "trainhat";
 		public string Description => "Moderators can capture 15 screenshots in an effort to help train the hat detection AI";
 		public TimeSpan? Cooldown => TimeSpan.FromMinutes(15);
 
+		public TrainHatCommand(ScreenshotTrainingService service)
+		{
+			_TrainHat = service;
+		}
 
 		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{

@@ -56,9 +56,6 @@ namespace Fritz.Chatbot
 
 			_OtherBots = String.IsNullOrEmpty(configuration[$"{ConfigurationRoot}:Otherbots"]) ? new[] { "nightbot","fritzbot","streamelements","pretzelrocks" } : configuration[$"{ConfigurationRoot}:Otherbots"].Split(',');
 
-			ScreenshotTrainingService.Instance.Initialize(configuration, loggerFactory, serviceProvider);
-			ScreenshotTrainingService.Instance.ObsHubContext = hubContext;
-
 			_logger?.LogInformation("Command cooldown set to {0}", CooldownTime);
 
 		}

@@ -25,13 +25,15 @@ namespace Fritz.Chatbot.Commands
 		private Guid _AzureProjectId;
 
 		private static string _IterationName = "";
+		private ScreenshotTrainingService _TrainHat;
 
-		public PredictHatCommand(IConfiguration configuration)
+		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service)
 		{
 			_CustomVisionKey = configuration["AzureServices:HatDetection:Key"];
 			_AzureEndpoint = configuration["AzureServices:HatDetection:CustomVisionEndpoint"];
 			_TwitchChannel = configuration["StreamServices:Twitch:Channel"];
 			_AzureProjectId = Guid.Parse(configuration["AzureServices:HatDetection:ProjectId"]);
+			_TrainHat = service;
 		}
 
 		public string TwitchScreenshotUrl => $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{_TwitchChannel}-1280x720.jpg?_=";
@@ -50,11 +52,14 @@ namespace Fritz.Chatbot.Commands
 				Endpoint = _AzureEndpoint
 			};
 
+			var obsImage = await _TrainHat.GetScreenshotFromObs();
+
+			////////////////////////////
 
 			ImagePrediction result;
 			try
 			{
-				result = await client.DetectImageUrlWithNoStoreAsync(_AzureProjectId, _IterationName, new ImageUrl(TwitchScreenshotUrl));
+				result = await client.DetectImageWithNoStoreAsync(_AzureProjectId, _IterationName, obsImage);
 			} catch (CustomVisionErrorException ex) {
 
 				

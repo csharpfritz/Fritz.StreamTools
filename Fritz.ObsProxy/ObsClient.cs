@@ -61,6 +61,7 @@ namespace Fritz.ObsProxy
 				response = _OBS.Api.TakeSourceScreenshot(CameraSource, embedPictureFormat: "png");
 				var cleanString = response.ImageData.Replace("data:image/png;base64,", "");
 				var bytes = Convert.FromBase64String(cleanString);
+				_Logger.LogWarning($"Took screenshot from scene '{CameraSource}'");
 				return ProcessImage(CameraSource, bytes);
 			}
 			else
@@ -69,7 +70,13 @@ namespace Fritz.ObsProxy
 				try
 				{
 					var imageFileName = ImageFolderLocation + "\\test.png";
-					response  = _OBS.Api.TakeSourceScreenshot(CameraSource, saveToFilePath: imageFileName);
+					response = _OBS.Api.TakeSourceScreenshot(CameraSource, embedPictureFormat: "png");
+					var cleanString = response.ImageData.Replace("data:image/png;base64,", "");
+					var bytes = Convert.FromBase64String(cleanString);
+					var outString = ProcessImage(CameraSource, bytes);
+					_Logger.LogWarning($"Took screenshot from scene '{CameraSource}'");
+					return outString;
+
 				}
 				catch (Exception e)
 				{
@@ -93,6 +100,7 @@ namespace Fritz.ObsProxy
 				// TODO: Crop appropriately for the camerasource
 				var memStream = new MemoryStream();
 				img.Clone(ctx => ctx.Crop(new Rectangle(450, 0, 900, 450))).SaveAsPng(memStream);
+				memStream.Position = 0;
 
 				outString = Convert.ToBase64String(memStream.ToArray());
 				memStream.Dispose();

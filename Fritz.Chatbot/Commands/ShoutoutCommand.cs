@@ -12,11 +12,12 @@ namespace Fritz.Chatbot.Commands
 		private readonly HttpClient _HttpClient;
 		private readonly ILogger _Logger;
 
-		public ShoutoutCommand(IHttpClientFactory httpClientFactory, ILoggerFactory logger)
+		public ShoutoutCommand(IHttpClientFactory httpClientFactory, ILoggerFactory logger, TwitchTokenConfig twitchConfig = null)
 		{
 
 			_HttpClient = httpClientFactory.CreateClient("ShoutoutCommand");
 			_HttpClient.BaseAddress = new Uri("https://api.twitch.tv/helix/users");
+			_HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {TwitchTokenConfig.Tokens.access_token}");
 
 			_Logger = logger.CreateLogger(nameof(ShoutoutCommand));
 
@@ -41,7 +42,11 @@ namespace Fritz.Chatbot.Commands
 
 			rhsTest = WebUtility.UrlEncode(rhsTest);
 			var result = await _HttpClient.GetAsync($"?login={rhsTest}");
-			if (result.StatusCode != HttpStatusCode.OK)
+			if (result.StatusCode == HttpStatusCode.Unauthorized) {
+				_Logger.LogError("Request to Twitch endpoint was unauthorized -- consider rotating keys");
+				return;
+			}
+			else if (result.StatusCode != HttpStatusCode.OK)
 			{
 				_Logger.LogWarning($"Unable to verify Shoutout for {rhsTest}");
 				return;

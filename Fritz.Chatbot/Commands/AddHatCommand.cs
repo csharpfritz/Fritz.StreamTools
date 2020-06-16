@@ -12,15 +12,16 @@ namespace Fritz.Chatbot.Commands
 {
 	public class AddHatCommand : IBasicCommand2
 	{
-		private readonly ITrainHat _TrainHat;
+
+		private readonly ScreenshotTrainingService _TrainHat;
 
 		public string Trigger => "addhat";
 		public string Description => "Moderators can add a screenshot of the stream to the image detection library";
 		public TimeSpan? Cooldown => TimeSpan.FromMinutes(2);
 
-		public AddHatCommand(ITrainHat trainHat)
+		public AddHatCommand(ScreenshotTrainingService service)
 		{
-			_TrainHat = trainHat;
+			_TrainHat = service;
 		}
 
 		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs)

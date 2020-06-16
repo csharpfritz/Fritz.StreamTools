@@ -45,6 +45,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
 			services.AddSingleton<IAttentionClient, AttentionHub>();
+			services.AddSingleton<ObsHub>();
 
 			// Add the SentimentSink
 			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
@@ -60,9 +61,6 @@ namespace Fritz.StreamTools.StartupServices
 
 			RegisterConfiguredServices(services, configuration);
 			RegisterGitHubServices(services, configuration);
-
-			RegisterBotAiServices(services, configuration);
-
 
 		}
 
@@ -99,10 +97,16 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddHttpClient("ShoutoutCommand", c =>
 			{
 				c.DefaultRequestHeaders.Add("client-id", configuration["StreamServices:Twitch:ClientId"]);
-				c.DefaultRequestHeaders.Add("Authorization", $"Bearer {configuration["StreamServices:Twitch:ClientAccessToken"]}");
 			});
 
+			services.AddTransient<TwitchTokenConfig>();
+
 			services.AddHostedService<GitHubService>();
+
+			services.AddSingleton<ScreenshotTrainingService>();
+			//var provider = services.BuildServiceProvider();
+			//var svc = provider.GetRequiredService<ScreenshotTrainingService>();
+			services.AddHostedService<ScreenshotTrainingService>(s => s.GetRequiredService<ScreenshotTrainingService>());
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services, IConfiguration configuration)
@@ -199,18 +203,6 @@ namespace Fritz.StreamTools.StartupServices
 			//provider.GetRequiredService<IOptions<Twitch.ConfigurationSettings>>());
 			//services.AddSingleton(pubSub as IHostedService);
 			//services.AddSingleton(pubSub);
-
-		}
-
-		private static void RegisterBotAiServices(IServiceCollection services, IConfiguration configuration)
-		{
-
-			var provider = services.BuildServiceProvider();   // Build a 'temporary' instance of the DI container
-			var loggerFactory = provider.GetService<ILoggerFactory>();
-
-			var service = new ScreenshotTrainingService(configuration, loggerFactory);
-			services.AddSingleton(service as IHostedService);
-			services.AddSingleton(service as ITrainHat);
 
 		}
 

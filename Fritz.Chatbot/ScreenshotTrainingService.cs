@@ -1,11 +1,17 @@
-﻿using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training;
+﻿using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,9 +24,9 @@ namespace Fritz.Chatbot
 		// TODO: Track how many images are loaded -- 5k is the maximum for the FREE service
 		private string _CustomVisionKey = "";
 		private string _AzureEndpoint = "";
-		private string _TwitchChannel = "";
 		private Guid _AzureProjectId;
-		private readonly ILogger _Logger;
+		private ILogger _Logger;
+		private IServiceProvider _Services;
 		private CancellationTokenSource _TokenSource;
 
 		private bool _CurrentlyTraining = false;
@@ -28,18 +34,16 @@ namespace Fritz.Chatbot
 		private Task _TrainingTask;
 		private byte _RetryCount = 0;
 
-		public string TwitchScreenshotUrl => $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{_TwitchChannel}-1280x720.jpg?_=";
-
-		public ScreenshotTrainingService(IConfiguration configuration, ILoggerFactory loggerFactory)
+		public ScreenshotTrainingService(IConfiguration configuration, ILoggerFactory loggerFactory, IServiceProvider services)
 		{
 
 			_CustomVisionKey = configuration["AzureServices:HatDetection:Key"];
 			_AzureEndpoint = configuration["AzureServices:HatDetection:CustomVisionEndpoint"];
-			_TwitchChannel = configuration["StreamServices:Twitch:Channel"];
 			_AzureProjectId = Guid.Parse(configuration["AzureServices:HatDetection:ProjectId"]);
 			_Logger = loggerFactory.CreateLogger("ScreenshotTraining");
-
+			_Services = services;
 		}
+
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
@@ -113,11 +117,12 @@ namespace Fritz.Chatbot
 					Endpoint = _AzureEndpoint
 				};
 
-				var result = await trainingClient.CreateImagesFromUrlsAsync(_AzureProjectId, new ImageUrlCreateBatch(
-					new List<ImageUrlCreateEntry> {
-					new ImageUrlCreateEntry(TwitchScreenshotUrl + Guid.NewGuid().ToString())
-					}
-				));
+				var imageStream = await GetScreenshotFromObs();
+				// TODO: If imageStream is null, handle gracefully
+
+				var result = await trainingClient.CreateImagesFromDataAsync(_AzureProjectId,
+					imageStream
+				);
 
 				if (!result.IsBatchSuccessful && _RetryCount < 3) {
 					_Logger.LogWarning($"Error while adding screenshot #{_TrainingCount} - trying again in 10 seconds");
@@ -144,11 +149,37 @@ namespace Fritz.Chatbot
 			}
 			catch (Exception ex)
 			{
-				_Logger.LogError($"Error while adding screenshot: {ex.Message}");
+
+			_Logger.LogError($"Error while adding screenshot: {ex.Message}");
 			}
 
 		}
 
+		internal async Task<Stream> GetScreenshotFromObs()
+		{
+
+			Stream result = null;
+
+			ScreenshotSink.Instance.ScreenshotReceived += (obj, args) =>
+			{
+				result = args.Screenshot;
+			};
+
+			using (var scope = _Services.CreateScope())
+			{
+				var obsContext = scope.ServiceProvider.GetRequiredService<IHubContext<ObsHub, ITakeScreenshots>>();
+				await obsContext.Clients.All.TakeScreenshot();
+			}
+			var i = 0;
+			while (result == null) {
+				await Task.Delay(100);
+				i++;
+				if (i >= 100) break;
+			}
+
+			return result;
+
+		}
 
 		public Task AddScreenshot()
 		{

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Services;
 using Fritz.Twitch;
@@ -61,6 +62,7 @@ namespace Fritz.StreamTools
 				endpoints.MapHub<FollowerHub>("/followerstream");
 				endpoints.MapHub<GithubyMcGithubFace>("/github");
 				endpoints.MapHub<AttentionHub>("/attentionhub");
+				endpoints.MapHub<ObsHub>("/obshub");
 
 				endpoints.MapRazorPages();
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -27,14 +28,17 @@ namespace Fritz.StreamTools.Services
 		private readonly Twitch.PubSub.Proxy _Proxy;
 		private readonly ConfigurationSettings _Configuration;
 		private readonly IHostEnvironment _HostEnvironment;
-		private readonly Dictionary<string, Action<IHubContext<AttentionHub, IAttentionHubClient>>> _ChannelPointActions = new Dictionary<string, Action<IHubContext<AttentionHub, IAttentionHubClient>>>();
+    private readonly ILogger _Logger;
+    private readonly Dictionary<string, Action<IHubContext<AttentionHub, IAttentionHubClient>>> _ChannelPointActions = new Dictionary<string, Action<IHubContext<AttentionHub, IAttentionHubClient>>>();
 
-		public TwitchPubSubService(IServiceProvider serviceProvider, Twitch.PubSub.Proxy proxy, IHostEnvironment hostEnvironment, IOptions<ConfigurationSettings> settings)
+		public TwitchPubSubService(IServiceProvider serviceProvider, Twitch.PubSub.Proxy proxy, IHostEnvironment hostEnvironment, IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory)
 		{
 			_ServiceProvider = serviceProvider;
 			_Proxy = proxy;
 			_Configuration = settings.Value;
 			_HostEnvironment = hostEnvironment;
+
+			_Logger = loggerFactory.CreateLogger("TwitchPubSub");
 
 			InitializeChannelPointActions();
 
@@ -47,6 +51,12 @@ namespace Fritz.StreamTools.Services
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
+
+			if (string.IsNullOrEmpty(_Configuration.PubSubAuthToken)) {
+				_Logger.LogError("Twitch PubSub token was not provided, unable to start this service");
+				return Task.CompletedTask;
+			}
+
 			_Proxy.OnChannelPointsRedeemed += _Proxy_OnChannelPointsRedeemed;
 			_Token = cancellationToken;
 			_BackgroundTask = _Proxy.StartAsync(new TwitchTopic[] { TwitchTopic.ChannelPoints(_Configuration.UserId) }, _Token);
@@ -59,7 +69,10 @@ namespace Fritz.StreamTools.Services
 
 			var oldManPath = Path.Combine(_HostEnvironment.ContentRootPath, "wwwroot", "contents", "oldman");
 			var di = new DirectoryInfo(oldManPath);
-			_OldManSoundFx = di.GetFiles().Select(f => f.Name).OrderBy(x => Guid.NewGuid()).ToArray();
+
+			if (di.Exists && di.GetFiles().Any()) {
+				_OldManSoundFx = di.GetFiles().Select(f => f.Name).OrderBy(x => Guid.NewGuid()).ToArray();
+			}
 
 		}
 

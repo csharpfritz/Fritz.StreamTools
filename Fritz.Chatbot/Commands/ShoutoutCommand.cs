@@ -41,7 +41,11 @@ namespace Fritz.Chatbot.Commands
 
 			rhsTest = WebUtility.UrlEncode(rhsTest);
 			var result = await _HttpClient.GetAsync($"?login={rhsTest}");
-			if (result.StatusCode != HttpStatusCode.OK)
+			if (result.StatusCode == HttpStatusCode.Unauthorized) {
+				_Logger.LogError("Request to Twitch endpoint was unauthorized -- consider rotating keys");
+				return;
+			}
+			else if (result.StatusCode != HttpStatusCode.OK)
 			{
 				_Logger.LogWarning($"Unable to verify Shoutout for {rhsTest}");
 				return;

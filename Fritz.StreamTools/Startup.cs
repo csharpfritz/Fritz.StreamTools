@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Services;
 using Fritz.Twitch;

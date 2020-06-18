@@ -26,7 +26,7 @@
 		<PackageReference Include="Microsoft.Azure.CognitiveServices.Language.TextAnalytics" Version="4.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" />
 		<PackageReference Include="Octokit" Version="0.32.0" />
-		<PackageReference Include="System.IO.Abstractions" Version="6.0.21" />
+		<PackageReference Include="System.IO.Abstractions" Version="11.0.15" />
 		<PackageReference Include="System.Memory" Version="4.5.3" />
 	</ItemGroup>
 	<ItemGroup>

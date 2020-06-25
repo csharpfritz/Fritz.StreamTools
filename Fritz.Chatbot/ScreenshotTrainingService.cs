@@ -79,7 +79,7 @@ namespace Fritz.Chatbot
 				{
 
 					await AddScreenshot(true);
-					await Task.Delay(TimeSpan.FromMinutes(1));
+					await Task.Delay(TimeSpan.FromSeconds(10));
 
 				}
 				else

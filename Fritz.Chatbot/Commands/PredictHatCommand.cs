@@ -24,7 +24,7 @@ namespace Fritz.Chatbot.Commands
 		private string _TwitchChannel = "";
 		private Guid _AzureProjectId;
 
-		private static string _IterationName = "";
+		internal static string IterationName = "";
 		private ScreenshotTrainingService _TrainHat;
 
 		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service)
@@ -42,7 +42,7 @@ namespace Fritz.Chatbot.Commands
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
 
-			if (string.IsNullOrEmpty(_IterationName)) {
+			if (string.IsNullOrEmpty(IterationName)) {
 				await IdentifyIterationName();
 			}
 
@@ -59,7 +59,7 @@ namespace Fritz.Chatbot.Commands
 			ImagePrediction result;
 			try
 			{
-				result = await client.DetectImageWithNoStoreAsync(_AzureProjectId, _IterationName, obsImage);
+				result = await client.DetectImageWithNoStoreAsync(_AzureProjectId, IterationName, obsImage);
 			} catch (CustomVisionErrorException ex) {
 
 				
@@ -94,7 +94,7 @@ namespace Fritz.Chatbot.Commands
 			};
 
 			var iterations = await client.GetIterationsAsync(_AzureProjectId);
-			_IterationName = iterations
+			IterationName = iterations
 				.Where(i => !string.IsNullOrEmpty(i.PublishName) && i.Status == "Completed")
 				.OrderByDescending(i => i.LastModified).First().PublishName;
 

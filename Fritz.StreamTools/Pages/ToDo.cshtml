@@ -42,6 +42,11 @@
 				}, 5000);
 			});
 
+			this._hub.on("project_update", (text) => {
+				if (this.debug) console.debug(`Project update: ${text}`);
+				document.querySelector("h4").textContext = text;
+			});
+
 			this._hub.on('todo_new', (id, text) => {
 				if (this.debug) console.debug("New ToDo", { id, text });
 				this.Add(id, text);

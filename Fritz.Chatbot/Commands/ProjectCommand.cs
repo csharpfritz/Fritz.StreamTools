@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 
 namespace Fritz.Chatbot.Commands
@@ -8,10 +10,12 @@ namespace Fritz.Chatbot.Commands
   public class ProjectCommand : IBasicCommand2
   {
 		private readonly IConfiguration Configuration;
+		private readonly IHubContext<ObsHub> _HubContext;
 
-		public ProjectCommand(IConfiguration configuration)
+		public ProjectCommand(IConfiguration configuration, IHubContext<ObsHub> hubContext)
 		{
 			this.Configuration = configuration;
+			_HubContext = hubContext;
 		}
 
 		public string Trigger => "project";
@@ -27,6 +31,7 @@ namespace Fritz.Chatbot.Commands
 			if ((isModerator || isBroadcaster) && !rhs.IsEmpty)
 			{
 				CurrentProject = rhs.ToString();
+				await _HubContext.Clients.All.SendAsync("project_update", CurrentProject);
 			}
 
 			var projectText = Configuration["FritzBot:ProjectCommand:TemplateText"];

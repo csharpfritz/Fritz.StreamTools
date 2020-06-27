@@ -125,7 +125,8 @@ input[type=color] {
 
 .todoWidget {
 	background-color: rgb(32,10,72);
-	display: block;
+	display: grid;
+	align-content: start;
 	width: 270px;
 	height: 270px;
 	border: 1px solid #FFF;
@@ -141,19 +142,39 @@ input[type=color] {
 }
 
 .todoWidget h4 {
+	font-size: 22px;
 	margin: 2px;
 	text-align: center;
 }
 
-.todoWidget ul {
-	list-style-type: none;
-	margin: 0;
-	padding: 2px;
+	.todoWidget ul {
+		list-style-type: none;
+		margin: 0;
+		height: 100%;
+		padding: 2px;
+		/*animation-name: todo_slide;
+		animation-duration: 10s;
+		animation-direction: alternate;
+		animation-iteration-count: infinite;
+		animation-timing-function: cubic-bezier(0.83, 0, 0.17, 1);*/ /* ease-in-out; */
+	}
+
+.todoWidget li {
+	font-size: 20px;
 }
 
 #checklistContainer {
-	background-color: #EEE;
-	width: 270px;
-	height: 247px;
 	overflow: hidden;
+}
+
+@keyframes todo_slide {
+
+	from {
+		top: 0px;
+	}
+
+	to {
+		top: -300px;
+	}
+
 }

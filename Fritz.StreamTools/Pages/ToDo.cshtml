@@ -7,7 +7,7 @@
 <html>
 <head>
 	<meta name="viewport" content="width=device-width" />
-	<title>Sentiment</title>
+	<title>ToDo Widget</title>
 	<link rel="stylesheet" href="~/css/site.css" />
 	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
 </head>
@@ -16,15 +16,28 @@
 
 	<div id="checklistContainer">
 		<ul id="todos">
-			<li><i class="far fa-square"></i> Add the feature X</li>
+			@*<li><i class="far fa-square"></i> Add the feature X</li>
 			<li><i class="far fa-square"></i> Fix the bug with the thing</li>
 			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>
+			<li><i class="far fa-square"></i> Fix the bug with the thing and all the stuff that happened that time with the issue</li>*@
 		</ul>
 	</div>
 
 
+	<script type='text/javascript' src='/lib/jquery.js'></script>
+	<script type='text/javascript' src='//cdn.jsdelivr.net/jquery.marquee/1.3.1/jquery.marquee.min.js'></script>
 	<script src="~/lib/signalr/signalr-client.js"></script>
 	<script>
+
+		var $mq = $("#todos");
+		var debug = false;
+
 		(function () {
 
 			this._hub = new signalR.HubConnectionBuilder()
@@ -33,7 +46,7 @@
 				.build();
 
 			this._hub.onclose(() => {
-				if (this.debug) console.debug("hub connection closed");
+				if (debug) console.debug("hub connection closed");
 
 				// Hub connection was closed for some reason
 				let interval = setInterval(() => {
@@ -47,12 +60,12 @@
 			});
 
 			this._hub.on("project_update", (text) => {
-				if (this.debug) console.debug(`Project update: ${text}`);
-				document.querySelector("h4").textContext = text;
+				if (debug) console.debug(`Project update: ${text}`, null);
+				document.querySelector("h4").innerText = text;
 			});
 
 			this._hub.on('todo_new', (id, text) => {
-				if (this.debug) console.debug("New ToDo", { id, text });
+				if (debug) console.debug("New ToDo", { id, text });
 				this.Add(id, text);
 			});
 			this._hub.on('todo_done', (id) => {
@@ -65,8 +78,16 @@
 			this.Add = function (id, text) {
 				var newEl = document.createElement("li");
 				newEl.setAttribute("data-id", id);
-				newEl.innerHTML = `<i class="far fa-square"></i> ${text}`;
+				newEl.innerHTML = `<i class="far fa-square"></i> ${id}. ${text}`;
+				$mq.marquee('destroy');
+				todos.style = "";
 				todos.appendChild(newEl);
+				$mq.marquee({
+					duplicated: true,
+					direction: 'up',
+					duration: id * 1000
+				});
+				todos.style ="visibility: visible";
 			}
 
 			this.Complete = function (id) {

@@ -20,7 +20,7 @@ namespace Fritz.Chatbot.Commands
 
 		public TimeSpan? Cooldown => TimeSpan.FromSeconds(30);
 
-		private static string CurrentProject = null;
+		public static string CurrentProject { get; private set; }
 
 		public async Task Execute(IChatService chatService, string userName, bool isModerator, bool isVip, bool isBroadcaster, ReadOnlyMemory<char> rhs)
 		{

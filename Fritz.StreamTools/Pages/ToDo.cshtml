@@ -14,28 +14,44 @@
 	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
 </head>
 <body>  
-	<div id="sentimentBlock">
-		<span id="brands" class="toprow">
-			<i class="fab fa-youtube fa-3x"></i>
-			<i class="fab fa-github fa-3x"></i>
-			<i class="fab fa-twitter fa-3x"></i>
-		</span>
-		<label class="toprow">csharpfritz</label>
-		<img class="sentimentGauge" style="z-index: 1;" src="~/img/sentiment-bar-divider.png" />
-		<div id="constrain">
-			<div class="ryg-gauge" style="z-index: 0;"></div>
-		</div>
-		<label class="bottomrow" style="text-align:left;font-size:16px;top:72px;margin-left:10px">!sentiment for details</label>
-		<label id="currentSentiment" class="bottomrow">99.9%</label>
-	</div>
+	<ul id="todos">
+
+	</ul>
 
 
 	<script src="~/lib/signalr/signalr-client.js"></script>
-	<script src="~/js/streamhub.js"></script>
 	<script>
 		(function () {
 
-			var hub = new StreamHub();
+			this._hub = new signalR.HubConnectionBuilder()
+				.withUrl("/obshub")
+				.withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
+				.build();
+
+			this._hub.onclose(() => {
+				if (this.debug) console.debug("hub connection closed");
+
+				// Hub connection was closed for some reason
+				let interval = setInterval(() => {
+					// Try to reconnect hub every 5 secs
+					this.start(groups).then(() => {
+						// Reconnect succeeded
+						clearInterval(interval);
+						if (this.debug) console.debug("hub reconnected");
+					});
+				}, 5000);
+			});
+
+			this._hub.on('todo_new', (id, text) => {
+				if (this.debug) console.debug("New ToDo", { id, text });
+			});
+			this._hub.on('todo_done', (id) => {
+				if (this.debug) console.debug("Done ToDo", { id });
+				if (this.onSentiment) this.onSentiment(newSentiment, oneMinute, fiveMinute, all);
+			});
+
+			return this._hub.start();
+
 			var sentimentEl = document.getElementById("currentSentiment");
 			var gauge = document.getElementById("constrain");
 

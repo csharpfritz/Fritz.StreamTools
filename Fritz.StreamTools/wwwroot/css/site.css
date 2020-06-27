@@ -56,3 +56,69 @@ input[type=color] {
 		width: 44px;
 		cursor: pointer;
 }
+
+.ryg-gauge {
+	background: linear-gradient(90deg, rgba(255,0,0,1) 0%, rgba(213,255,0,1) 50%, rgba(0,71,0,1) 100%);
+	top: 46px;
+	left: 11px;
+	display: block;
+	width: 300px;
+	height: 15px;
+}
+
+#sentimentBlock {
+	display: block;
+	height: 100px;
+	width: 320px;
+	border: 2px solid #FFF;
+	position: relative;
+}
+
+#sentimentBlock > label {
+	display: block;
+	text-align: right;
+	font-family: 'Uni Sans';
+	font-weight: bold;
+	font-size: 22px;
+	color: #FFF;
+	text-transform: uppercase;
+	text-shadow: 2px 2px 2px black;
+	position: absolute;
+	width: 310px;
+}
+
+#sentimentBlock > .toprow {
+	top: 14px;
+}
+
+#sentimentBlock > .bottomrow {
+	top: 68px;
+}
+
+#brands {
+	left: 10px;
+	position: absolute;
+	display: block;
+}
+
+#brands > i {
+	font-size: 22px;
+	color: #FFF;
+} 
+
+.sentimentGauge {
+	position: absolute;
+	top: 46px;
+	left: 11px;
+	display: block;
+	width: 300px;
+	height: 15px;
+}
+
+#constrain {
+	overflow: hidden;
+	position:absolute;
+	top: 46px;
+	left: 11px;
+	height: 15px;
+}

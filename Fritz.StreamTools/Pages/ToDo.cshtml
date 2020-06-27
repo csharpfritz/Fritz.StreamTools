@@ -9,13 +9,13 @@
 	<meta name="viewport" content="width=device-width" />
 	<title>Sentiment</title>
 	@*<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/solid.css" integrity="sha384-TbilV5Lbhlwdyc4RuIV/JhD8NR+BfMrvz4BL5QFa2we1hQu6wvREr3v6XSRfCTRp" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/fontawesome.css" integrity="sha384-ozJwkrqb90Oa3ZNb+yKFW2lToAWYdTiF1vt8JiH5ptTGHTGcN7qdoR1F95e0kYyG" crossorigin="anonymous">*@
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/fontawesome.css" integrity="sha384-ozJwkrqb90Oa3ZNb+yKFW2lToAWYdTiF1vt8JiH5ptTGHTGcN7qdoR1F95e0kYyG" crossorigin="anonymous">*@
 	<link rel="stylesheet" href="~/css/site.css" />
 	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
 </head>
-<body>  
+<body class="todoWidget">
+	<h4></h4>
 	<ul id="todos">
-
 	</ul>
 
 
@@ -44,35 +44,30 @@
 
 			this._hub.on('todo_new', (id, text) => {
 				if (this.debug) console.debug("New ToDo", { id, text });
+				this.Add(id, text);
 			});
 			this._hub.on('todo_done', (id) => {
 				if (this.debug) console.debug("Done ToDo", { id });
-				if (this.onSentiment) this.onSentiment(newSentiment, oneMinute, fiveMinute, all);
+				this.Complete(id);
 			});
 
-			return this._hub.start();
+			var todos = document.getElementById("todos");
 
-			var sentimentEl = document.getElementById("currentSentiment");
-			var gauge = document.getElementById("constrain");
-
-			hub.onSentiment = (instant, oneMinute, fiveMinute, all) => {
-
-				console.log({
-					instant: instant,
-					oneMinute: oneMinute,
-					fiveMinute: fiveMinute,
-					all: all
-				});
-
-				gauge.style.width = `${oneMinute * 300}px`;
-				var trendClass = (fiveMinute < oneMinute) ? "fas fa-arrow-up" : (fiveMinute != oneMinute) ? "fas fa-arrow-down" : "fa fa-arrows-h";
-				sentimentEl.innerHTML = `<i class="${trendClass}"></i>  ${(oneMinute * 100).toFixed(1)}%`;
-
+			this.Add = function (id, text) {
+				var newEl = document.createElement("li");
+				newEl.setAttribute("data-id", id);
+				newEl.innerHTML = `<i class="far fa-square"></i> ${text}`;
+				todos.appendChild(newEl);
 			}
 
-			hub.start("sentiment");
+			this.Complete = function (id) {
+				var el = document.querySelector(`li[data-id='${id}'] > i`);
+				el.className = "far fa-check-square";
+			}
+
+			this._hub.start();
 
 		})();
 	</script>
-</body >
-</html >
+</body>
+</html>

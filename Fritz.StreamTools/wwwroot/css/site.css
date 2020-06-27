@@ -122,3 +122,38 @@ input[type=color] {
 	left: 11px;
 	height: 15px;
 }
+
+.todoWidget {
+	background-color: rgb(32,10,72);
+	display: block;
+	width: 270px;
+	height: 270px;
+	border: 1px solid #FFF;
+	overflow: hidden;
+	margin: 0px;
+	padding: 0px;
+}
+
+.todoWidget * {
+	font-family: 'Uni Sans';
+	font-weight: bold;
+	color: #FFF;
+}
+
+.todoWidget h4 {
+	margin: 2px;
+	text-align: center;
+}
+
+.todoWidget ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 2px;
+}
+
+#checklistContainer {
+	background-color: #EEE;
+	width: 270px;
+	height: 247px;
+	overflow: hidden;
+}

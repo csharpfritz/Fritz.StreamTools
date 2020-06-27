@@ -155,30 +155,43 @@ namespace Fritz.Chatbot
 
 		}
 
-		internal async Task<Stream> GetScreenshotFromObs()
+		internal Task<Stream> GetScreenshotFromObs()
 		{
+			var source = new TaskCompletionSource<Stream>();
 
-			Stream result = null;
+			var cancellationSource = new CancellationTokenSource(100 * 100);
+			cancellationSource.Token.Register(() => source.TrySetCanceled());
 
 			ScreenshotSink.Instance.ScreenshotReceived += (obj, args) =>
 			{
-				result = args.Screenshot;
+				source.TrySetResult(args.Screenshot);
 			};
 
-			using (var scope = _Services.CreateScope())
+			var scope = _Services.CreateScope();
+			var obsContext = scope.ServiceProvider.GetRequiredService<IHubContext<ObsHub, ITakeScreenshots>>();
+			_ = obsContext.Clients.All.TakeScreenshot().ContinueWith((t) =>
 			{
-				var obsContext = scope.ServiceProvider.GetRequiredService<IHubContext<ObsHub, ITakeScreenshots>>();
-				await obsContext.Clients.All.TakeScreenshot();
-			}
-			var i = 0;
-			while (result == null) {
-				await Task.Delay(100);
-				i++;
-				if (i >= 100) break;
-			}
+				try
+				{
+					if (t.IsFaulted)
+					{
+						source.TrySetException(t.Exception.InnerExceptions);
+						return;
+					}
 
-			return result;
+					if (t.IsCanceled || cancellationSource.IsCancellationRequested)
+					{
+						source.TrySetCanceled();
+						return;
+					}
+				}
+				finally
+				{
+					scope.Dispose();
+				}
+			});
 
+			return source.Task;
 		}
 
 		public Task AddScreenshot()

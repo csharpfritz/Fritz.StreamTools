@@ -1,60 +1,60 @@
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-		position: relative;
-		min-height: 100%;
+	position: relative;
+	min-height: 100%;
 }
 
 body {
-		/* Margin bottom by footer height */
-		margin-bottom: 60px;
+	/* Margin bottom by footer height */
+	margin-bottom: 60px;
 }
 
 .footer {
-		position: absolute;
-		bottom: 0;
-		width: 100%;
-		/* Set the fixed height of the footer here */
-		height: 60px;
-		line-height: 60px; /* Vertically center the text there */
-		background-color: #f5f5f5;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	/* Set the fixed height of the footer here */
+	height: 60px;
+	line-height: 60px; /* Vertically center the text there */
+	background-color: #f5f5f5;
 }
 
 body > .container {
-		padding: 60px 15px 0;
+	padding: 60px 15px 0;
 }
 
 .footer > .container {
-		padding-right: 15px;
-		padding-left: 15px;
+	padding-right: 15px;
+	padding-left: 15px;
 }
 
 code {
-		font-size: 80%;
+	font-size: 80%;
 }
 
 /* Follower Goal styles
 -------------------------------------------------- */
 
 iframe#widgetPreview {
-		height: 60px;
-		width: 100%;
-		border: 0;
+	height: 60px;
+	width: 100%;
+	border: 0;
 }
 
 #fontsPanel {
-		position: absolute;
-		z-index: 1;
+	position: absolute;
+	z-index: 1;
 }
 
 a#outputUrl {
-		font-size: 80%;
+	font-size: 80%;
 }
 
 input[type=color] {
-		padding: 0;
-		width: 44px;
-		cursor: pointer;
+	padding: 0;
+	width: 44px;
+	cursor: pointer;
 }
 
 .ryg-gauge {
@@ -74,26 +74,26 @@ input[type=color] {
 	position: relative;
 }
 
-#sentimentBlock > label {
-	display: block;
-	text-align: right;
-	font-family: 'Uni Sans';
-	font-weight: bold;
-	font-size: 22px;
-	color: #FFF;
-	text-transform: uppercase;
-	text-shadow: 2px 2px 2px black;
-	position: absolute;
-	width: 310px;
-}
+	#sentimentBlock > label {
+		display: block;
+		text-align: right;
+		font-family: 'Uni Sans';
+		font-weight: bold;
+		font-size: 22px;
+		color: #FFF;
+		text-transform: uppercase;
+		text-shadow: 2px 2px 2px black;
+		position: absolute;
+		width: 310px;
+	}
 
-#sentimentBlock > .toprow {
-	top: 14px;
-}
+	#sentimentBlock > .toprow {
+		top: 14px;
+	}
 
-#sentimentBlock > .bottomrow {
-	top: 68px;
-}
+	#sentimentBlock > .bottomrow {
+		top: 68px;
+	}
 
 #brands {
 	left: 10px;
@@ -101,10 +101,10 @@ input[type=color] {
 	display: block;
 }
 
-#brands > i {
-	font-size: 22px;
-	color: #FFF;
-} 
+	#brands > i {
+		font-size: 22px;
+		color: #FFF;
+	}
 
 .sentimentGauge {
 	position: absolute;
@@ -117,7 +117,7 @@ input[type=color] {
 
 #constrain {
 	overflow: hidden;
-	position:absolute;
+	position: absolute;
 	top: 46px;
 	left: 11px;
 	height: 15px;
@@ -147,17 +147,13 @@ input[type=color] {
 	text-align: center;
 }
 
-	.todoWidget ul {
-		list-style-type: none;
-		margin: 0;
-		height: 100%;
-		padding: 2px;
-		/*animation-name: todo_slide;
-		animation-duration: 10s;
-		animation-direction: alternate;
-		animation-iteration-count: infinite;
-		animation-timing-function: cubic-bezier(0.83, 0, 0.17, 1);*/ /* ease-in-out; */
-	}
+.todoWidget ul {
+	list-style-type: none;
+	position:relative;
+	margin: 0;
+	height: 100%;
+	padding: 2px;
+}
 
 .todoWidget li {
 	font-size: 20px;
@@ -165,6 +161,13 @@ input[type=color] {
 
 #checklistContainer {
 	overflow: hidden;
+}
+
+.scrollVertical {
+	animation-name: todo_slide;
+	animation-duration: 5s;
+	animation-direction: normal;
+	animation-iteration-count: infinite;
 }
 
 @keyframes todo_slide {
@@ -176,5 +179,4 @@ input[type=color] {
 	to {
 		top: -300px;
 	}
-
 }

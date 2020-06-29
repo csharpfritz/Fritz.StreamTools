@@ -15,12 +15,16 @@ namespace Fritz.Chatbot.Commands
 		public ShoutoutCommand(IHttpClientFactory httpClientFactory, ILoggerFactory logger, TwitchTokenConfig twitchConfig = null)
 		{
 
-			_HttpClient = httpClientFactory.CreateClient("ShoutoutCommand");
-			_HttpClient.BaseAddress = new Uri("https://api.twitch.tv/helix/users");
-			_HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {TwitchTokenConfig.Tokens.access_token}");
-
 			_Logger = logger.CreateLogger(nameof(ShoutoutCommand));
 
+			if (!string.IsNullOrEmpty(TwitchTokenConfig.Tokens?.access_token))
+			{
+				_HttpClient = httpClientFactory.CreateClient("ShoutoutCommand");
+				_HttpClient.BaseAddress = new Uri("https://api.twitch.tv/helix/users");
+				_HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {TwitchTokenConfig.Tokens.access_token}");
+			} else {
+				_Logger.LogError("Unable to create HttpClient for Twitch with Bearer token");
+			}
 		}
 
 

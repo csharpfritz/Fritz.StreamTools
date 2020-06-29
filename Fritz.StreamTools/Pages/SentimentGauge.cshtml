@@ -1,0 +1,62 @@
+﻿@page
+@model Fritz.StreamTools.Pages.SentimentModel
+@{
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="width=device-width" />
+	<title>Sentiment</title>
+	@*<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/solid.css" integrity="sha384-TbilV5Lbhlwdyc4RuIV/JhD8NR+BfMrvz4BL5QFa2we1hQu6wvREr3v6XSRfCTRp" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/fontawesome.css" integrity="sha384-ozJwkrqb90Oa3ZNb+yKFW2lToAWYdTiF1vt8JiH5ptTGHTGcN7qdoR1F95e0kYyG" crossorigin="anonymous">*@
+	<link rel="stylesheet" href="~/css/site.css" />
+	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
+</head>
+<body>  
+	<div id="sentimentBlock">
+		<span id="brands" class="toprow">
+			<i class="fab fa-youtube fa-3x"></i>
+			<i class="fab fa-github fa-3x"></i>
+			<i class="fab fa-twitter fa-3x"></i>
+		</span>
+		<label class="toprow">csharpfritz</label>
+		<img class="sentimentGauge" style="z-index: 1;" src="~/img/sentiment-bar-divider.png" />
+		<div id="constrain">
+			<div class="ryg-gauge" style="z-index: 0;"></div>
+		</div>
+		<label class="bottomrow" style="text-align:left;font-size:16px;top:72px;margin-left:10px">! sentiment for details</label>
+		<label id="currentSentiment" class="bottomrow">99.9%</label>
+	</div>
+
+
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/streamhub.js"></script>
+	<script>
+		(function () {
+
+			var hub = new StreamHub();
+			var sentimentEl = document.getElementById("currentSentiment");
+			var gauge = document.getElementById("constrain");
+
+			hub.onSentiment = (instant, oneMinute, fiveMinute, all) => {
+
+				console.log({
+					instant: instant,
+					oneMinute: oneMinute,
+					fiveMinute: fiveMinute,
+					all: all
+				});
+
+				gauge.style.width = `${oneMinute * 300}px`;
+				var trendClass = (fiveMinute < oneMinute) ? "fas fa-arrow-up" : (fiveMinute != oneMinute) ? "fas fa-arrow-down" : "fa fa-arrows-h";
+				sentimentEl.innerHTML = `<i class="${trendClass}"></i>  ${(oneMinute * 100).toFixed(1)}%`;
+
+			}
+
+			hub.start("sentiment");
+
+		})();
+	</script>
+</body >
+</html >

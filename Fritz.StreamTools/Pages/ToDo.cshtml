@@ -1,0 +1,148 @@
+﻿@page
+@{
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="width=device-width" />
+	<title>ToDo Widget</title>
+	<link rel="stylesheet" href="~/css/site.css" />
+	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
+</head>
+<body class="todoWidget">
+	<h4>@Fritz.Chatbot.Commands.ProjectCommand.CurrentProject</h4>
+
+	<div id="checklistContainer">
+		<ul id="todos">
+			@foreach(var item in Fritz.Chatbot.Commands.ToDoCommand.ToDos) {
+				var cssClass = item.Value.completed ? "far fa-check-square" : "far fa-square";
+				<li data-id="@item.Key"><i class="@cssClass"></i> @($"{item.Key}.") @item.Value.text</li>
+			}
+		</ul>
+	</div>
+
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script>
+
+		var debug = false;
+		var scrollSpeed = 0.5;
+
+
+		(function () {
+
+			this._hub = new signalR.HubConnectionBuilder()
+				.withUrl("/obshub")
+				.withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
+				.build();
+
+			this._hub.onclose(() => {
+				if (debug) console.debug("hub connection closed");
+
+				// Hub connection was closed for some reason
+				let interval = setInterval(() => {
+					// Try to reconnect hub every 5 secs
+					this.start(groups).then(() => {
+						// Reconnect succeeded
+						clearInterval(interval);
+						if (this.debug) console.debug("hub reconnected");
+					});
+				}, 5000);
+			});
+
+			this._hub.on("project_update", (text) => {
+				if (debug) console.debug(`Project update: ${text}`, null);
+				document.querySelector("h4").innerText = text;
+			});
+
+			this._hub.on('todo_new', (id, text) => {
+				if (debug) console.debug("New ToDo", { id, text });
+				this.Add(id, text);
+			});
+			this._hub.on('todo_done', (id) => {
+				if (this.debug) console.debug("Done ToDo", { id });
+				this.Complete(id);
+			});
+			this._hub.on("todo_remove", (id) => {
+				if (this.debug) console.debug("Remove ToDo", { id });
+				this.Remove(id);
+			});
+			this._hub.on("todo_speed", (s) => {
+				if (this.debug) console.debug("ToDo Speed", { s });
+				scrollSpeed = s;
+				ConfigureScroll();
+			});
+
+			var todos = document.getElementById("todos");
+			var todosClone;
+			var myStylesheet;
+			var projectTitle = document.querySelector("h4");
+			var container = document.getElementById("checklistContainer");
+
+			this.Add = function (id, text) {
+				var newEl = document.createElement("li");
+				newEl.setAttribute("data-id", id);
+				newEl.innerHTML = `<i class="far fa-square"></i> ${id}. ${text}`;
+				todos.appendChild(newEl);
+				ConfigureScroll();
+			}
+
+			this.Complete = function (id) {
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].className = "far fa-check-square";
+				if (el.length > 1) el[1].className = "far fa-check-square";
+			}
+
+			this.Remove = function (id) {
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].parentElement.parentElement.removeChild(el[0].parentElement);
+				if (el.length > 1) el[1].parentElement.parentElement.removeChild(el[1].parentElement);
+				ConfigureScroll();
+			}
+
+			this.ConfigureScroll = function () {
+				console.log(`todos: ${todos.scrollHeight} ,project ${projectTitle.offsetHeight}`);
+				if (todosClone != null) container.removeChild(todosClone);
+				if (myStylesheet) myStylesheet.sheet.deleteRule(0); // stop scrolling
+
+				if (todos.scrollHeight + projectTitle.scrollHeight > 265) {
+
+					todos.style.animationName = "scroller";
+					todos.style.animationDuration = `${(todos.querySelectorAll("li").length * scrollSpeed).toString()}s`;
+
+					console.log("Scrolling");
+
+					todosClone = todos.cloneNode(true);
+					todosClone.style.top = `${todos.scrollHeight}px`;
+					todosClone.id = 'todosClone';
+					container.appendChild(todosClone);
+					ConfigureAnimation();
+
+				}
+			};
+
+			this.AddKeyFrames = function (name, frames) {
+				var pos = myStylesheet.length;
+				myStylesheet.sheet.insertRule(`@@keyframes ${name} {${frames}}`, pos);
+			};
+
+			this.ConfigureAnimation = function () {
+
+				if (myStylesheet) {
+					// myStylesheet.sheet.deleteRule(0);
+				} else {
+					myStylesheet = document.createElement("style");
+					document.head.appendChild(myStylesheet);
+				}
+				AddKeyFrames("scroller", `from {transform: translateY(0)} to {transform: translateY(-${todos.scrollHeight}px)}`);
+
+			};
+
+			ConfigureScroll();
+
+			this._hub.start();
+
+		})();
+	</script>
+</body>
+</html>

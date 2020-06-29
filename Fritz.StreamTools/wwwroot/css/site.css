@@ -129,54 +129,58 @@ input[type=color] {
 	align-content: start;
 	width: 270px;
 	height: 270px;
-	border: 1px solid #FFF;
 	overflow: hidden;
 	margin: 0px;
 	padding: 0px;
 }
 
-.todoWidget * {
-	font-family: 'Uni Sans';
-	font-weight: bold;
-	color: #FFF;
+.todoWidget {
+	background-color: rgb(32, 10, 72);
+	width: 270px;
+	height: 270px;
+	min-height: 270px;
+	overflow: hidden;
+	margin: 0px;
+	padding: 0px;
+	display: grid;
 }
 
-.todoWidget h4 {
-	font-size: 22px;
-	margin: 2px;
-	text-align: center;
-}
+	.todoWidget * {
+		font-family: 'Uni Sans';
+		font-weight: bold;
+		color: #FFF;
+	}
 
-.todoWidget ul {
-	list-style-type: none;
-	position:relative;
-	margin: 0;
-	height: 100%;
-	padding: 2px;
-}
+	.todoWidget h4 {
+		font-size: 22px;
+		margin: 2px;
+		text-align: center;
+	}
 
-.todoWidget li {
-	font-size: 20px;
-}
+	.todoWidget ul {
+		list-style-type: none;
+		position: relative;
+		margin: 0;
+		height: 100%;
+		padding: 2px;
+	}
+
+	.todoWidget li {
+		font-size: 20px;
+	}
 
 #checklistContainer {
 	overflow: hidden;
+	position: relative;
+	width: 270px;
+	min-height: 230px;
 }
 
-.scrollVertical {
-	animation-name: todo_slide;
-	animation-duration: 5s;
-	animation-direction: normal;
-	animation-iteration-count: infinite;
-}
-
-@keyframes todo_slide {
-
-	from {
-		top: 0px;
+	#checklistContainer ul {
+		animation-iteration-count: infinite;
+		animation-timing-function: linear;
 	}
 
-	to {
-		top: -300px;
-	}
-}
+		#checklistContainer ul:last-child {
+			position: absolute;
+		}

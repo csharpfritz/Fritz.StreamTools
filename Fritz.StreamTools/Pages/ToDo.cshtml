@@ -11,28 +11,23 @@
 	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
 </head>
 <body class="todoWidget">
-	<h4>Adding ToDo widget to StreamTools</h4>
+	<h4>@Fritz.Chatbot.Commands.ProjectCommand.CurrentProject</h4>
 
 	<div id="checklistContainer">
-		<ul id="todos" class="scrollVertical">
-			<li><i class="far fa-square"></i> 0. First Item</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
-			<li><i class="far fa-square"></i> 1. This is a test and I need to review all the things</li>
+		<ul id="todos">
+			@foreach(var item in Fritz.Chatbot.Commands.ToDoCommand.ToDos) {
+				var cssClass = item.Value.completed ? "far fa-check-square" : "far fa-square";
+				<li data-id="@item.Key"><i class="@cssClass"></i> @($"{item.Key}.") @item.Value.text</li>
+			}
 		</ul>
 	</div>
 
 	<script src="~/lib/signalr/signalr-client.js"></script>
 	<script>
 
-		var $mq = $("#todos");
 		var debug = false;
+		var scrollSpeed = 0.5;
+
 
 		(function () {
 
@@ -68,28 +63,82 @@
 				if (this.debug) console.debug("Done ToDo", { id });
 				this.Complete(id);
 			});
+			this._hub.on("todo_remove", (id) => {
+				if (this.debug) console.debug("Remove ToDo", { id });
+				this.Remove(id);
+			});
+			this._hub.on("todo_speed", (s) => {
+				if (this.debug) console.debug("ToDo Speed", { s });
+				scrollSpeed = s;
+				ConfigureScroll();
+			});
 
 			var todos = document.getElementById("todos");
+			var todosClone;
+			var myStylesheet;
+			var projectTitle = document.querySelector("h4");
+			var container = document.getElementById("checklistContainer");
 
 			this.Add = function (id, text) {
 				var newEl = document.createElement("li");
 				newEl.setAttribute("data-id", id);
 				newEl.innerHTML = `<i class="far fa-square"></i> ${id}. ${text}`;
-				$mq.marquee('destroy');
-				todos.style = "";
 				todos.appendChild(newEl);
-				$mq.marquee({
-					duplicated: true,
-					direction: 'up',
-					duration: id * 1000
-				});
-				todos.style ="visibility: visible";
+				ConfigureScroll();
 			}
 
 			this.Complete = function (id) {
-				var el = document.querySelector(`li[data-id='${id}'] > i`);
-				el.className = "far fa-check-square";
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].className = "far fa-check-square";
+				if (el.length > 1) el[1].className = "far fa-check-square";
 			}
+
+			this.Remove = function (id) {
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].parentElement.parentElement.removeChild(el[0].parentElement);
+				if (el.length > 1) el[1].parentElement.parentElement.removeChild(el[1].parentElement);
+				ConfigureScroll();
+			}
+
+			this.ConfigureScroll = function () {
+				console.log(`todos: ${todos.scrollHeight} ,project ${projectTitle.offsetHeight}`);
+				if (todosClone != null) container.removeChild(todosClone);
+				if (myStylesheet) myStylesheet.sheet.deleteRule(0); // stop scrolling
+
+				if (todos.scrollHeight + projectTitle.scrollHeight > 265) {
+
+					todos.style.animationName = "scroller";
+					todos.style.animationDuration = `${(todos.querySelectorAll("li").length * scrollSpeed).toString()}s`;
+
+					console.log("Scrolling");
+
+					todosClone = todos.cloneNode(true);
+					todosClone.style.top = `${todos.scrollHeight}px`;
+					todosClone.id = 'todosClone';
+					container.appendChild(todosClone);
+					ConfigureAnimation();
+
+				}
+			};
+
+			this.AddKeyFrames = function (name, frames) {
+				var pos = myStylesheet.length;
+				myStylesheet.sheet.insertRule(`@@keyframes ${name} {${frames}}`, pos);
+			};
+
+			this.ConfigureAnimation = function () {
+
+				if (myStylesheet) {
+					// myStylesheet.sheet.deleteRule(0);
+				} else {
+					myStylesheet = document.createElement("style");
+					document.head.appendChild(myStylesheet);
+				}
+				AddKeyFrames("scroller", `from {transform: translateY(0)} to {transform: translateY(-${todos.scrollHeight}px)}`);
+
+			};
+
+			ConfigureScroll();
 
 			this._hub.start();
 

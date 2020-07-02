@@ -118,7 +118,12 @@
 					container.appendChild(todosClone);
 					ConfigureAnimation();
 
+				} else {
+					todos.style.animationName = "";
+					todos.style.animationDuration = "";
 				}
+
+
 			};
 
 			this.AddKeyFrames = function (name, frames) {

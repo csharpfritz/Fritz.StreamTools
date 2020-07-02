@@ -161,7 +161,7 @@ input[type=color] {
 		list-style-type: none;
 		position: relative;
 		margin: 0;
-		height: 100%;
+	/*	height: 100%;*/
 		padding: 2px;
 	}
 
@@ -173,7 +173,7 @@ input[type=color] {
 	overflow: hidden;
 	position: relative;
 	width: 270px;
-	min-height: 230px;
+	min-height: 200px;
 }
 
 	#checklistContainer ul {

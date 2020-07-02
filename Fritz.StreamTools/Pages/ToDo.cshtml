@@ -53,6 +53,7 @@
 			this._hub.on("project_update", (text) => {
 				if (debug) console.debug(`Project update: ${text}`, null);
 				document.querySelector("h4").innerText = text;
+				ConfigureScroll();
 			});
 
 			this._hub.on('todo_new', (id, text) => {
@@ -102,8 +103,13 @@
 
 			this.ConfigureScroll = function () {
 				console.log(`todos: ${todos.scrollHeight} ,project ${projectTitle.offsetHeight}`);
-				if (todosClone != null) container.removeChild(todosClone);
-				if (myStylesheet) myStylesheet.sheet.deleteRule(0); // stop scrolling
+				if (todosClone != null) {
+					container.removeChild(todosClone);
+					todosClone = null;
+				}
+				if (myStylesheet) try {
+					myStylesheet.sheet.deleteRule(0); // stop scrolling
+				} catch (e) {}
 
 				if (todos.scrollHeight + projectTitle.scrollHeight > 265) {
 
@@ -142,8 +148,6 @@
 				AddKeyFrames("scroller", `from {transform: translateY(0)} to {transform: translateY(-${todos.scrollHeight}px)}`);
 
 			};
-
-			ConfigureScroll();
 
 			this._hub.start();
 

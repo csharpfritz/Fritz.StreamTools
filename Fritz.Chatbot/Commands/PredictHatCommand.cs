@@ -26,14 +26,16 @@ namespace Fritz.Chatbot.Commands
 
 		internal static string IterationName = "";
 		private ScreenshotTrainingService _TrainHat;
+		private readonly HatDescriptionRepository _Repository;
 
-		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service)
+		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service, HatDescriptionRepository repository)
 		{
 			_CustomVisionKey = configuration["AzureServices:HatDetection:Key"];
 			_AzureEndpoint = configuration["AzureServices:HatDetection:CustomVisionEndpoint"];
 			_TwitchChannel = configuration["StreamServices:Twitch:Channel"];
 			_AzureProjectId = Guid.Parse(configuration["AzureServices:HatDetection:ProjectId"]);
 			_TrainHat = service;
+			_Repository = repository;
 		}
 
 		public string TwitchScreenshotUrl => $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{_TwitchChannel}-1280x720.jpg?_=";
@@ -82,6 +84,10 @@ namespace Fritz.Chatbot.Commands
 			}
 
 			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {bestMatch.TagName} hat csharpClip");
+			if (bestMatch.Probability >= 0.6D) {
+				var desc = await _Repository.GetDescription(bestMatch.TagName);
+				if (!string.IsNullOrEmpty(desc)) await chatService.SendMessageAsync(desc);
+			}
 
 		}
 

@@ -9,6 +9,7 @@ using Fritz.StreamTools.Services;
 using Fritz.StreamTools.StartupServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,12 +26,14 @@ namespace Test.Startup
 							new Dictionary<string, string>()
 							{
 								{ "FakeConfiguration:PropertyOne", "RandomValue" },
-								{ "FakeConfiguration:PropertyTwo", "RandomValue" }
+								{ "FakeConfiguration:PropertyTwo", "RandomValue" },
+								{ "AzureServices:HatDetection:ProjectId", Guid.NewGuid().ToString() }
 							}).Build();
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+			serviceCollection.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
 
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
@@ -51,11 +54,13 @@ namespace Test.Startup
 								new Dictionary<string, string>()
 								{
 									{ "FakeConfiguration:PropertyOne", "RandomValue" },
+									{ "AzureServices:HatDetection:ProjectId", Guid.NewGuid().ToString() }
 								}).Build();
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+			serviceCollection.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
 
 			var serviceRequriedConfiguration = new Dictionary<Type, string[]>()
@@ -80,6 +85,7 @@ namespace Test.Startup
 			serviceCollection.AddSingleton<ILoggerFactory>(new LoggerFactory());
 			serviceCollection.AddSingleton<IConfiguration>(configuration);
 			serviceCollection.AddSingleton<ILogger>(NullLogger.Instance);
+			serviceCollection.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
 			// act
 			ConfigureServices.Execute(serviceCollection, configuration, new Dictionary<Type, string[]>());
@@ -109,7 +115,8 @@ namespace Test.Startup
 				{"StreamServices:Twitch:ClientId", twitchClientId},
 				{"StreamServices:Mixer:Channel", mixerClientId},
 				{"StreamServices:Fake:Enabled", enableFake.ToString()},
-				{"FritzBot:ServerUrl", "http://localhost:80" }
+				{"FritzBot:ServerUrl", "http://localhost:80" },
+				{"AzureServices:HatDetection:ProjectId", Guid.NewGuid().ToString() }
 			};
 		}
 
@@ -125,5 +132,13 @@ namespace Test.Startup
 			return null;
 			}
 		}
-  }
+
+		private class FakeHostEnvironment : IHostEnvironment
+		{
+			public string ApplicationName { get; set; }
+			public IFileProvider ContentRootFileProvider { get; set; }
+			public string ContentRootPath { get; set; }
+			public string EnvironmentName { get; set; }
+		}
+	}
 }

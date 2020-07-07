@@ -104,8 +104,6 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddHostedService<GitHubService>();
 
 			services.AddSingleton<ScreenshotTrainingService>();
-			//var provider = services.BuildServiceProvider();
-			//var svc = provider.GetRequiredService<ScreenshotTrainingService>();
 			services.AddHostedService<ScreenshotTrainingService>(s => s.GetRequiredService<ScreenshotTrainingService>());
 			services.AddTransient<HatDescriptionRepository>();
 		}

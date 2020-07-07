@@ -38,9 +38,6 @@ namespace Fritz.Chatbot.Commands
 			_Repository = repository;
 		}
 
-		public string TwitchScreenshotUrl => $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{_TwitchChannel}-1280x720.jpg?_=";
-
-
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
 
@@ -51,7 +48,7 @@ namespace Fritz.Chatbot.Commands
 			var client = new CustomVisionPredictionClient()
 			{
 				ApiKey = _CustomVisionKey,
-				Endpoint = _AzureEndpoint
+				Endpoint = _AzureEndpoint,
 			};
 
 			var obsImage = await _TrainHat.GetScreenshotFromObs();
@@ -75,19 +72,20 @@ namespace Fritz.Chatbot.Commands
 
 			}
 
+			if (DateTime.UtcNow.Subtract(result.Created).TotalSeconds > Cooldown.Value.TotalSeconds) {
+				await chatService.SendMessageAsync($"I previously predicted this hat about {DateTime.UtcNow.Subtract(result.Created).TotalSeconds} seconds ago");
+			}
 
 			var bestMatch = result.Predictions.OrderByDescending(p => p.Probability).FirstOrDefault();
-			if (bestMatch == null || bestMatch.Probability <= 0.3D) {
+			if (bestMatch == null || bestMatch.Probability < 0.7D) {
 				await chatService.SendMessageAsync("csharpAngry 404 Hat Not Found!  Let's ask a moderator to !addhat so we can identify it next time");
 				// do we store the image?
 				return;
 			}
 
 			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {bestMatch.TagName} hat csharpClip");
-			if (bestMatch.Probability >= 0.6D) {
-				var desc = await _Repository.GetDescription(bestMatch.TagName);
-				if (!string.IsNullOrEmpty(desc)) await chatService.SendMessageAsync(desc);
-			}
+			var desc = await _Repository.GetDescription(bestMatch.TagName);
+			if (!string.IsNullOrEmpty(desc)) await chatService.SendMessageAsync(desc);
 
 		}
 

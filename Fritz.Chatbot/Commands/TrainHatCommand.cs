@@ -26,7 +26,7 @@ namespace Fritz.Chatbot.Commands
 			if (!(isModerator || isBroadcaster)) return;
 
 			_TrainHat.StartTraining();
-			await chatService.SendMessageAsync("Started taking screenshots, 1 every ten seconds for the next 150 seconds");
+			await chatService.SendMessageAsync($"Started taking screenshots, 1 every {ScreenshotTrainingService.TrainingIntervalInSeconds} seconds for the next {ScreenshotTrainingService.TrainingIntervalInSeconds * ScreenshotTrainingService.TrainingCount} seconds");
 
 		}
 

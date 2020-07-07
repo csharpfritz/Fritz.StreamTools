@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,8 @@ namespace Fritz.Chatbot
 {
 	public class ScreenshotTrainingService : IHostedService, ITrainHat
 	{
+		public const int TrainingCount = 15;
+		public const int TrainingIntervalInSeconds = 2;
 
 		// TODO: Track how many images are loaded -- 5k is the maximum for the FREE service
 		private string _CustomVisionKey = "";
@@ -32,7 +35,10 @@ namespace Fritz.Chatbot
 		private bool _CurrentlyTraining = false;
 		private byte _TrainingCount = 0;
 		private Task _TrainingTask;
+		private byte _TotalPictures = 0;
 		private byte _RetryCount = 0;
+
+		private readonly Queue<MemoryStream> _ImagesToUpload = new Queue<MemoryStream>();
 
 		public ScreenshotTrainingService(IConfiguration configuration, ILoggerFactory loggerFactory, IServiceProvider services)
 		{
@@ -69,17 +75,25 @@ namespace Fritz.Chatbot
 			while (!token.IsCancellationRequested)
 			{
 
-				if (_CurrentlyTraining && _TrainingCount == 15)
+				if (_CurrentlyTraining && _TotalPictures == TrainingCount)
 				{
 					_CurrentlyTraining = false;
 					_Logger.LogTrace("Completed screenshot training");
+					await UploadCachedScreenshots();
+					if (!_CurrentlyTraining) _TotalPictures = 0;
 
 				}
 				else if (_CurrentlyTraining)
 				{
 
-					await AddScreenshot(true);
-					await Task.Delay(TimeSpan.FromSeconds(10));
+					if (_ImagesToUpload.Count == 5) {
+						await UploadCachedScreenshots();
+					}
+
+					var imageStream = await GetScreenshotFromObs();
+					_TotalPictures++;
+					_ImagesToUpload.Enqueue((MemoryStream)imageStream);
+					await Task.Delay(TimeSpan.FromSeconds(TrainingIntervalInSeconds));
 
 				}
 				else
@@ -90,6 +104,36 @@ namespace Fritz.Chatbot
 				}
 
 			}
+
+		}
+
+		private async Task UploadCachedScreenshots()
+		{
+
+			if (!_ImagesToUpload.Any()) return;
+
+			var trainingClient = new CustomVisionTrainingClient()
+			{
+				ApiKey = _CustomVisionKey,
+				Endpoint = _AzureEndpoint
+			};
+
+			var listToLoad = new List<ImageFileCreateEntry>();
+			while (_ImagesToUpload.Any())
+			{
+				var imgStream = _ImagesToUpload.Dequeue();
+				listToLoad.Add(new ImageFileCreateEntry(contents: imgStream.ToArray()));
+			}
+
+			var result = await trainingClient.CreateImagesFromFilesWithHttpMessagesAsync(_AzureProjectId, new ImageFileCreateBatch()
+			{
+				Images = listToLoad
+			});
+
+			_TotalPictures -= (byte)result.Body.Images.Where(r => r.Status != "OK").Count();
+			if (_TotalPictures >= TrainingCount) _CurrentlyTraining = true;
+
+			Console.WriteLine(result.ToString());
 
 		}
 

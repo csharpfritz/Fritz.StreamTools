@@ -74,7 +74,7 @@ namespace Fritz.ObsProxy
 					var cleanString = response.ImageData.Replace("data:image/png;base64,", "");
 					var bytes = Convert.FromBase64String(cleanString);
 					var outString = ProcessImage(CameraSource, bytes);
-					_Logger.LogWarning($"Took screenshot from scene '{CameraSource}'");
+					_Logger.LogWarning($"${DateTime.Now} Took screenshot from scene '{CameraSource}'");
 					return outString;
 
 				}

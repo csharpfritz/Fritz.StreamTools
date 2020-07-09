@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training;
 using System.Net;
+using Microsoft.AspNetCore.SignalR;
+using Fritz.StreamTools.Hubs;
 
 namespace Fritz.Chatbot.Commands
 {
@@ -27,8 +29,9 @@ namespace Fritz.Chatbot.Commands
 		internal static string IterationName = "";
 		private ScreenshotTrainingService _TrainHat;
 		private readonly HatDescriptionRepository _Repository;
+		private readonly IHubContext<ObsHub> _HubContext;
 
-		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service, HatDescriptionRepository repository)
+		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service, HatDescriptionRepository repository, IHubContext<ObsHub> hubContext)
 		{
 			_CustomVisionKey = configuration["AzureServices:HatDetection:Key"];
 			_AzureEndpoint = configuration["AzureServices:HatDetection:CustomVisionEndpoint"];
@@ -36,6 +39,7 @@ namespace Fritz.Chatbot.Commands
 			_AzureProjectId = Guid.Parse(configuration["AzureServices:HatDetection:ProjectId"]);
 			_TrainHat = service;
 			_Repository = repository;
+			_HubContext = hubContext;
 		}
 
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
@@ -51,6 +55,7 @@ namespace Fritz.Chatbot.Commands
 				Endpoint = _AzureEndpoint,
 			};
 
+			await _HubContext.Clients.All.SendAsync("shutter");
 			var obsImage = await _TrainHat.GetScreenshotFromObs();
 
 			////////////////////////////
@@ -83,9 +88,12 @@ namespace Fritz.Chatbot.Commands
 				return;
 			}
 
-			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {bestMatch.TagName} hat csharpClip");
-			var desc = await _Repository.GetDescription(bestMatch.TagName);
-			if (!string.IsNullOrEmpty(desc)) await chatService.SendMessageAsync(desc);
+			var hatData = (await _Repository.GetHatData(bestMatch.TagName));
+			var nameToReport = (hatData == null ? bestMatch.TagName : (string.IsNullOrEmpty(hatData.Name) ? bestMatch.TagName : hatData.Name));
+			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {nameToReport} hat csharpClip");
+			if (hatData != null && !string.IsNullOrEmpty(hatData.Description)) await chatService.SendMessageAsync(hatData.Description);
+
+			await _HubContext.Clients.All.SendAsync("hatDetected", bestMatch.Probability.ToString("0.0%"), bestMatch.TagName, nameToReport, hatData?.Description);
 
 		}
 

@@ -6,7 +6,7 @@ namespace Fritz.Chatbot
 	public interface ITrainHat
 	{
 
-		void StartTraining();
+		void StartTraining(int? count);
 
 		Task AddScreenshot();
 

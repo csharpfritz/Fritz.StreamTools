@@ -21,7 +21,8 @@ namespace Fritz.Chatbot
 {
 	public class ScreenshotTrainingService : IHostedService, ITrainHat
 	{
-		public const int TrainingCount = 15;
+		public const int DefaultTrainingCount = 15;
+		private int _TrainingPicCount = 15;
 		public const int TrainingIntervalInSeconds = 2;
 
 		// TODO: Track how many images are loaded -- 5k is the maximum for the FREE service
@@ -75,7 +76,7 @@ namespace Fritz.Chatbot
 			while (!token.IsCancellationRequested)
 			{
 
-				if (_CurrentlyTraining && _TotalPictures == TrainingCount)
+				if (_CurrentlyTraining && _TotalPictures == DefaultTrainingCount)
 				{
 					_CurrentlyTraining = false;
 					_Logger.LogTrace("Completed screenshot training");
@@ -131,19 +132,20 @@ namespace Fritz.Chatbot
 			});
 
 			_TotalPictures -= (byte)result.Body.Images.Where(r => r.Status != "OK").Count();
-			if (_TotalPictures >= TrainingCount) _CurrentlyTraining = true;
+			if (_TotalPictures >= DefaultTrainingCount) _CurrentlyTraining = true;
 
 			Console.WriteLine(result.ToString());
 
 		}
 
-		public void StartTraining()
+		public void StartTraining(int? count)
 		{
 
 			if (_CurrentlyTraining) return;
 
 			_Logger.LogTrace("Starting screenshot training");
 			_TrainingCount = 0;
+			_TrainingPicCount = count ?? DefaultTrainingCount;
 			_CurrentlyTraining = true;
 
 		}

@@ -30,18 +30,34 @@ namespace Fritz.Chatbot
 		/// </summary>
 		/// <param name="tag">The unique tag for the hat</param>
 		/// <returns>Description (if any) for the hat</returns>
-		public async Task<string> GetDescription(string tag) {
+		public async Task<HatData> GetHatData(string tag) {
 
 			try
 			{
 				var singleMatch = await _Client.Query(Get(Match(Index("hats_tag_desc"), tag)));
 
-				return singleMatch.Get(Field.At("data")).At("description").To<string>().Value;
+				var hatData = singleMatch.Get(Field.At("data")).To<HatData>().Value;
+				return hatData;
 			} catch {
 				// No result found
-				return "";
+				return null;
 			}
 		}
 
+
+		public class HatData {
+
+			[FaunaField("tag")]
+			public string Tag { get; set; }
+
+			[FaunaField("description")]
+			public string Description { get; set; }
+
+			[FaunaField("name")]
+			public string? Name { get; set; }
+
+		}
+
 	}
+
 }

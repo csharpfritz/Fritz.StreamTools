@@ -29,8 +29,8 @@ namespace Fritz.Chatbot.Commands
 
 			if (!(isModerator || isBroadcaster)) return;
 
-			var picCount = ScreenshotTrainingService.DefaultTrainingCount;
-			int.TryParse(rhs.ToString(), out picCount);
+			int.TryParse(rhs.ToString(), out var picCount);
+			picCount = (picCount < 1) ? ScreenshotTrainingService.DefaultTrainingCount : picCount;
 			_TrainHat.StartTraining(picCount);
 			await _HubContext.Clients.All.SendAsync("shutter");
 			await chatService.SendMessageAsync($"Started taking screenshots, 1 every {ScreenshotTrainingService.TrainingIntervalInSeconds} seconds for the next {ScreenshotTrainingService.TrainingIntervalInSeconds * picCount} seconds");

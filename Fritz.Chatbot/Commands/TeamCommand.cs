@@ -3,8 +3,10 @@ using Fritz.StreamTools.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -52,21 +54,28 @@ namespace Fritz.Chatbot.Commands
 		{
 			if (!_Teammates.Any())
 			{
-				GetTeammates();
+				GetTeammates().GetAwaiter().GetResult();
 			}
 
-			return _Teammates.Contains(userName);
+			return _Teammates.Contains(userName.ToLowerInvariant());
 
 		}
 
-		private void GetTeammates()
+		private async Task GetTeammates()
 		{
-			throw new NotImplementedException();
+
+			var response = await _HttpClient.GetStringAsync("");
+			var team = JsonConvert.DeserializeObject<TeamResponse>(response);
+			foreach (var user in team.users)
+			{
+				_Teammates.Add(user.name);
+			}
+
 		}
 
 		public Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
-
+			_Context.Clients.All.SendAsync("Teammate")
 		}
 
 
@@ -83,6 +92,7 @@ namespace Fritz.Chatbot.Commands
 			public DateTime updated_at { get; set; }
 			public User[] users { get; set; }
 		}
+
 
 		internal class User
 		{

@@ -18,6 +18,7 @@ namespace Fritz.Chatbot.Commands
 	{
 
 		private static HashSet<string> _Teammates = new HashSet<string>();
+		private static Dictionary<string, DateTime> _TeammateCooldown = new Dictionary<string, DateTime>();
 		private string _TeamName;
 		private HttpClient _HttpClient;
 		private readonly IHubContext<AttentionHub> _Context;
@@ -57,8 +58,18 @@ namespace Fritz.Chatbot.Commands
 				GetTeammates().GetAwaiter().GetResult();
 			}
 
-			return _Teammates.Contains(userName.ToLowerInvariant());
+			var u = userName.ToLowerInvariant();
+			var isTeammate = _Teammates.Contains(u);
+			var recentShoutout = _TeammateCooldown.ContainsKey(u) && (DateTime.UtcNow.Subtract(_TeammateCooldown[u]).TotalHours > 1);
 
+			return isTeammate && !recentShoutout;
+
+		}
+
+		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
+		{
+			_TeammateCooldown[userName.ToLowerInvariant()] = DateTime.UtcNow;
+			await _Context.Clients.All.SendAsync("Teammate", userName);
 		}
 
 		private async Task GetTeammates()
@@ -71,11 +82,6 @@ namespace Fritz.Chatbot.Commands
 				_Teammates.Add(user.name);
 			}
 
-		}
-
-		public Task Execute(IChatService chatService, string userName, string fullCommandText)
-		{
-			_Context.Clients.All.SendAsync("Teammate")
 		}
 
 

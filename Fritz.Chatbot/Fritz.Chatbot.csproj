@@ -20,8 +20,13 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
+		<PackageReference Include="Microsoft.Extensions.ML" Version="1.5.1" />
+		<PackageReference Include="Microsoft.ML" Version="1.5.1" />
+		<PackageReference Include="Microsoft.ML.ImageAnalytics" Version="1.5.1" />
+		<PackageReference Include="Microsoft.ML.TensorFlow" Version="1.5.1" />
 		<PackageReference Include="NetCoreAudio" Version="1.5.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+		<PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.2.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,9 +43,23 @@
     <None Update="hey_listen.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="ML\MLNETModel\MLModels.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ML\TensorflowModel\labels.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ML\TensorflowModel\model.pb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="SkeetQuotes.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="ML\MLNETModel\" />
+    <Folder Include="ML\TensorflowModel\" />
   </ItemGroup>
 
 </Project>

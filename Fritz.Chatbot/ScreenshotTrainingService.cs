@@ -1,4 +1,5 @@
-﻿using Fritz.StreamLib.Core;
+﻿using Fritz.Chatbot.ML;
+using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training;
@@ -38,7 +39,8 @@ namespace Fritz.Chatbot
 		private Task _TrainingTask;
 		private byte _TotalPictures = 0;
 		private byte _RetryCount = 0;
-
+		private string _tensorFlowModelFilePath;
+		private string _mlnetModelFilePath;
 		private readonly Queue<MemoryStream> _ImagesToUpload = new Queue<MemoryStream>();
 
 		public ScreenshotTrainingService(IConfiguration configuration, ILoggerFactory loggerFactory, IServiceProvider services)
@@ -54,6 +56,8 @@ namespace Fritz.Chatbot
 
 		public Task StartAsync(CancellationToken cancellationToken)
 		{
+
+			ConfigureMLNetModel();
 
 			_TokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -233,6 +237,32 @@ namespace Fritz.Chatbot
 			return AddScreenshot(false);
 
 		}
+
+		#region ML.NET Configuration and Interactions
+
+		private void ConfigureMLNetModel()
+		{
+			_tensorFlowModelFilePath = GetAbsolutePath(@"ML\TensorflowModel\model.pb");
+			_mlnetModelFilePath = GetAbsolutePath(@"ML\MLNETModel\MLModels.zip");
+
+			/////////////////////////////////////////////////////////////////
+			//Configure the ML.NET model for the pre-trained TensorFlow model
+			var tensorFlowModelConfigurator = new TensorFlowModelConfigurator(_tensorFlowModelFilePath);
+
+			// Save the ML.NET model .zip file based on the TensorFlow model and related configuration
+			tensorFlowModelConfigurator.SaveMLNetModel(_mlnetModelFilePath);
+		}
+
+		public static string GetAbsolutePath(string relativePath)
+		{
+
+			var _dataRoot = new FileInfo(typeof(FritzBot).Assembly.Location);
+			var assemblyFolderPath = _dataRoot.Directory.FullName;
+
+			return Path.Combine(assemblyFolderPath, relativePath);
+
+		}
+		#endregion
 
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fritz.Chatbot;
 using Fritz.Chatbot.Commands;
+using Fritz.Chatbot.ML.DataModels;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Interfaces;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ML;
 using Microsoft.Extensions.Options;
 using Octokit;
 
@@ -106,6 +108,11 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<ScreenshotTrainingService>();
 			services.AddHostedService<ScreenshotTrainingService>(s => s.GetRequiredService<ScreenshotTrainingService>());
 			services.AddTransient<HatDescriptionRepository>();
+
+			var mlnetModelFilePath = ScreenshotTrainingService.GetAbsolutePath(@"ML\MLNETModel\MLModels.zip");
+			services.AddPredictionEnginePool<ImageInputData, ImageLabelPredictions>()
+										.FromFile(mlnetModelFilePath);
+
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services, IConfiguration configuration)

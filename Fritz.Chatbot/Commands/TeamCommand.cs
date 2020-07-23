@@ -25,21 +25,26 @@ namespace Fritz.Chatbot.Commands
 		private ILogger _Logger;
 
 		public string Name { get; } = "Team Detection";
-		public string Description { get; } = "Alert when a teammate joins the stream";
+		public string Description { get; } = "Alert when a teammate joins the stream and starts chatting";
 		public int Order { get; } = 1;
 		public bool Final { get; } = false;
 		public TimeSpan? Cooldown { get; } = TimeSpan.FromSeconds(5);
+		public TimeSpan ShoutoutCooldown;
+		public string ShoutoutFormat;
+		public Queue<string> _TeammateNotifications = new Queue<string>();
 
 		public TeamCommand(IConfiguration configuration, ILoggerFactory loggerFactory, IHubContext<AttentionHub> context, IHttpClientFactory httpClientFactory)
 		{
 			_TeamName = configuration["StreamServices:Twitch:Team"];
+			ShoutoutCooldown = configuration.GetValue("StreamServices:Twitch:TeamCooldown", TimeSpan.FromHours(1));
+			ShoutoutFormat = configuration.GetValue("StreamServices:Twitch:TeamShoutoutFormat", "");
 			_Context = context;
 			_Logger = loggerFactory.CreateLogger(nameof(TeamCommand));
 
 			if (!string.IsNullOrEmpty(TwitchTokenConfig.Tokens?.access_token))
 			{
 				_HttpClient = httpClientFactory.CreateClient("TeamLookup");
-				_HttpClient.BaseAddress = new Uri($"https://api.twitch.tv/kraken/teams/{_TeamName}");
+				_HttpClient.BaseAddress = new Uri($"https://api.twitch.tv/kraken/teams/");
 				_HttpClient.DefaultRequestHeaders.Add("Client-ID", configuration["StreamServices:Twitch:ClientId"]);
 				_HttpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.twitchtv.v5+json");
 
@@ -49,18 +54,34 @@ namespace Fritz.Chatbot.Commands
 				_Logger.LogError("Unable to create HttpClient for Twitch with Bearer token");
 			}
 
+			GetTeammates().GetAwaiter().GetResult();
+
+			Task.Run(SendNotificationsToWidget);
+
+		}
+
+		private void SendNotificationsToWidget()
+		{
+
+			while (true) {
+
+				if (_TeammateNotifications.TryPeek(out var _)) {
+
+					_Context.Clients.All.SendAsync("Teammate", _TeammateNotifications.Dequeue());
+					Task.Delay(5000);
+
+				}
+
+			}
+
 		}
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{
-			if (!_Teammates.Any())
-			{
-				GetTeammates().GetAwaiter().GetResult();
-			}
 
 			var u = userName.ToLowerInvariant();
 			var isTeammate = _Teammates.Contains(u);
-			var recentShoutout = _TeammateCooldown.ContainsKey(u) && (DateTime.UtcNow.Subtract(_TeammateCooldown[u]).TotalHours > 1);
+			var recentShoutout = _TeammateCooldown.ContainsKey(u) && (DateTime.UtcNow.Subtract(_TeammateCooldown[u]) < ShoutoutCooldown);
 
 			return isTeammate && !recentShoutout;
 
@@ -69,18 +90,22 @@ namespace Fritz.Chatbot.Commands
 		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
 			_TeammateCooldown[userName.ToLowerInvariant()] = DateTime.UtcNow;
-			await _Context.Clients.All.SendAsync("Teammate", userName);
+			if (ShoutoutFormat != "")
+			{
+				await chatService.SendMessageAsync(ShoutoutFormat.Replace("{teammate}", userName));
+			}
+
+			_TeammateNotifications.Enqueue(userName);
+
 		}
 
 		private async Task GetTeammates()
 		{
 
-			var response = await _HttpClient.GetStringAsync("");
+			var response = await _HttpClient.GetStringAsync(_TeamName);
 			var team = JsonConvert.DeserializeObject<TeamResponse>(response);
-			foreach (var user in team.users)
-			{
-				_Teammates.Add(user.name);
-			}
+
+			_Teammates = team.users.Select(u => u.name).ToHashSet();
 
 		}
 

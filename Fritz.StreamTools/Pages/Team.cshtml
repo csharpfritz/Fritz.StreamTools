@@ -1,6 +1,5 @@
 ﻿@page
-@{
-}
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 <!DOCTYPE html>
 
 <html>
@@ -46,53 +45,34 @@
 <body>
 
 	<div id="d" class="todoWidget fadeOut" style="padding:10px">
-		<h4>Jeff is wearing his <span id="hatName"></span> hat. (<span id="confidence"></span> accuracy)</h4>
-		<hr style="width: 200px" />
-		<h4 id="description" style="text-align: left;"></h4>
+		<h4>Welcome <span id="teammate"></span> from @Configuration["StreamServices:Twitch:TeamDisplayName"]</h4>
+		<img height="240" style="margin: auto;" src="~/contents/img/teamlogo.png" />
 	</div>
 
 	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/attentionhub.js"></script>
 	<script>
 
 		var debug = false;
-		var audio = new Audio('@Url.Content(@"~/contents/teammate.mp3")');
+		var audio = new Audio('@Url.Content(@"~/contents/teammate.wav")');
 		var widget = document.getElementById("d");
 
 		(function () {
 
-			this._hub = new signalR.HubConnectionBuilder()
-				.withUrl("/attention")
-				.withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
-				.withReconnect()
-				.build();
+			this._hub = new AttentionHub();
 
-			this._hub.onclose(() => {
-				if (debug) console.debug("hub connection closed");
-
-				// Hub connection was closed for some reason
-				let interval = setInterval(() => {
-					// Try to reconnect hub every 5 secs
-					this.start(groups).then(() => {
-						// Reconnect succeeded
-						clearInterval(interval);
-						if (this.debug) console.debug("hub reconnected");
-					});
-				}, 5000);
-			});
-
-			this._hub.on("teammate", (name) => {
-				if (debug) console.debug(`Teammate detected: ${name}`, null);
+			this._hub.onTeammate = (name) => {
 				document.getElementById("teammate").innerText = name;
 				widget.classList.remove("fadeOut");
 				widget.classList.add("fadeIn");
-				detected.play();
+				audio.play();
 
 				window.setTimeout(function () {
 					widget.classList.remove("fadeIn");
 					widget.classList.add("fadeOut");
-				}, 8000);
+				}, 3000);
 
-			});
+			};
 
 			this._hub.start();
 

@@ -3,8 +3,10 @@ using Fritz.StreamTools.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -16,6 +18,7 @@ namespace Fritz.Chatbot.Commands
 	{
 
 		private static HashSet<string> _Teammates = new HashSet<string>();
+		private static Dictionary<string, DateTime> _TeammateCooldown = new Dictionary<string, DateTime>();
 		private string _TeamName;
 		private HttpClient _HttpClient;
 		private readonly IHubContext<AttentionHub> _Context;
@@ -52,20 +55,32 @@ namespace Fritz.Chatbot.Commands
 		{
 			if (!_Teammates.Any())
 			{
-				GetTeammates();
+				GetTeammates().GetAwaiter().GetResult();
 			}
 
-			return _Teammates.Contains(userName);
+			var u = userName.ToLowerInvariant();
+			var isTeammate = _Teammates.Contains(u);
+			var recentShoutout = _TeammateCooldown.ContainsKey(u) && (DateTime.UtcNow.Subtract(_TeammateCooldown[u]).TotalHours > 1);
+
+			return isTeammate && !recentShoutout;
 
 		}
 
-		private void GetTeammates()
+		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
 		{
-			throw new NotImplementedException();
+			_TeammateCooldown[userName.ToLowerInvariant()] = DateTime.UtcNow;
+			await _Context.Clients.All.SendAsync("Teammate", userName);
 		}
 
-		public Task Execute(IChatService chatService, string userName, string fullCommandText)
+		private async Task GetTeammates()
 		{
+
+			var response = await _HttpClient.GetStringAsync("");
+			var team = JsonConvert.DeserializeObject<TeamResponse>(response);
+			foreach (var user in team.users)
+			{
+				_Teammates.Add(user.name);
+			}
 
 		}
 
@@ -83,6 +98,7 @@ namespace Fritz.Chatbot.Commands
 			public DateTime updated_at { get; set; }
 			public User[] users { get; set; }
 		}
+
 
 		internal class User
 		{

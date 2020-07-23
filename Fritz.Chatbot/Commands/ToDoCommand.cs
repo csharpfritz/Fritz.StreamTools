@@ -46,7 +46,7 @@ namespace Fritz.Chatbot.Commands
 				_ToDos[id] = todo;
 				await _HubContext.Clients.All.SendAsync("todo_done", id);
 			}
-			else if (arrArgs[0] == "clear" && int.TryParse(arrArgs[1], out var clearId) && _ToDos.Any(t => t.Key == id))
+			else if (arrArgs[0] == "clear" && int.TryParse(arrArgs[1], out var clearId) && _ToDos.Any(t => t.Key == clearId))
 			{
 				var todo = _ToDos[clearId];
 				todo.completed = false;

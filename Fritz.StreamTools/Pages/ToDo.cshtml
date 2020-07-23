@@ -68,6 +68,10 @@
 				if (this.debug) console.debug("Remove ToDo", { id });
 				this.Remove(id);
 			});
+			this._hub.on("todo_clear", (id) => {
+				if (this.debug) console.debug("Clearing ToDo", { id });
+				this.Clear(id);
+			});
 			this._hub.on("todo_speed", (s) => {
 				if (this.debug) console.debug("ToDo Speed", { s });
 				scrollSpeed = s;
@@ -92,6 +96,12 @@
 				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
 				el[0].className = "far fa-check-square";
 				if (el.length > 1) el[1].className = "far fa-check-square";
+			}
+
+			this.Clear = function (id) {
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].className = "far fa-square";
+				if (el.length > 1) el[1].className = "far fa-square";
 			}
 
 			this.Remove = function (id) {

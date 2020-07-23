@@ -151,6 +151,12 @@ input[type=color] {
 		color: #FFF;
 	}
 
+	.todoWidget li.active {
+		color: yellow;
+		text-decoration: underline;
+		font-weight: bold;
+	}
+
 	.todoWidget h4 {
 		font-size: 22px;
 		margin: 2px;

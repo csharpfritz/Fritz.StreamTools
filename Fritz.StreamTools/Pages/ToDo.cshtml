@@ -25,7 +25,7 @@
 	<script src="~/lib/signalr/signalr-client.js"></script>
 	<script>
 
-		var debug = false;
+		var debug = true;
 		var scrollSpeed = 1.5;
 
 
@@ -68,6 +68,18 @@
 				if (this.debug) console.debug("Remove ToDo", { id });
 				this.Remove(id);
 			});
+			this._hub.on("todo_clear", (id) => {
+				if (this.debug) console.debug("Clearing ToDo", { id });
+				this.Clear(id);
+			});
+			this._hub.on("todo_activate", (id) => {
+				if (this.debug) console.debug("Marking item active on the ToDo", { id });
+				this.Activate(id);
+			});
+			this._hub.on("todo_deactivate", () => {
+				if (this.debug) console.debug("Clearing Active ToDo Items");
+				this.Deactivate();
+			});
 			this._hub.on("todo_speed", (s) => {
 				if (this.debug) console.debug("ToDo Speed", { s });
 				scrollSpeed = s;
@@ -92,6 +104,29 @@
 				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
 				el[0].className = "far fa-check-square";
 				if (el.length > 1) el[1].className = "far fa-check-square";
+
+				if (document.querySelectorAll(`li[data-id='${id}].active`)) Deactivate();
+
+			}
+
+			this.Clear = function (id) {
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].className = "far fa-square";
+				if (el.length > 1) el[1].className = "far fa-square";
+			}
+
+			this.Activate = function (id) {
+				Deactivate();
+				var el = document.querySelectorAll(`li[data-id='${id}']`);
+				el[0].classList.add("active");
+				if (el.length > 1) el[1].classList.remove("active");
+			}
+
+			this.Deactivate = function () {
+				var el = document.querySelectorAll(`.active`);
+				for (var e of el) {
+					e.classList.remove("active");
+				}
 			}
 
 			this.Remove = function (id) {

@@ -51,6 +51,11 @@ class AttentionHub {
 			if (this.onRedemption) this.onRedemption(redemption);
 		});
 
+		this._hub.on("Teammate", teammate => {
+			if (this.debug) console.debug(`Teammate arrived: ${teammate}`);
+			if (this.onTeammate) this.onTeammate(teammate);
+		});
+
 
 		return this._hub.start();
 	}

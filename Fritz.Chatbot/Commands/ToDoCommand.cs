@@ -18,6 +18,16 @@ namespace Fritz.Chatbot.Commands
 		private static Dictionary<int, (bool completed, string text)> _ToDos = new Dictionary<int, (bool, string)>();
 		private readonly IHubContext<ObsHub> _HubContext;
 
+		private readonly Dictionary<string, Func<string[], ToDoCommand, Task>> _Verbs = new Dictionary<string, Func<string[], ToDoCommand, Task>> {
+			{"add", AddTodo },
+			{"remove", RemoveTodo },
+			{"done", DoneTodo },
+			{"clear", ClearTodo },
+			{"active", Activate },
+			{"deactivate", Deactivate },
+			{"speed", SetSpeed }
+		};
+
 		public ToDoCommand(IHubContext<ObsHub> hubContext)
 		{
 			_HubContext = hubContext;
@@ -29,26 +39,9 @@ namespace Fritz.Chatbot.Commands
 			if (!(isBroadcaster || isModerator)) return;
 
 			var arrArgs = rhs.ToString().Split(' ');
-			if (arrArgs[0] == "add") {
-				var newKey = !_ToDos.Any() ? 1 : _ToDos.Max(t => t.Key) + 1;
-				_ToDos.Add(newKey, (false, rhs.ToString().Substring(4).Trim()));
-				await _HubContext.Clients.All.SendAsync("todo_new", newKey, _ToDos[newKey].text);
-			}
-			else if (arrArgs[0] == "remove" && int.TryParse(arrArgs[1], out var removeid) && _ToDos.Any(t => t.Key == removeid))
+			if (_Verbs.ContainsKey(arrArgs[0]))
 			{
-				_ToDos.Remove(removeid);
-				await _HubContext.Clients.All.SendAsync("todo_remove", removeid);
-			}
-			else if (arrArgs[0] == "done" && int.TryParse(arrArgs[1], out var id) && _ToDos.Any(t => t.Key == id))
-			{
-				var todo = _ToDos[id];
-				todo.completed = true;
-				_ToDos[id] = todo;
-				await _HubContext.Clients.All.SendAsync("todo_done", id);
-			}
-			else if (arrArgs[0] == "speed" && float.TryParse(arrArgs[1], out var speed))
-			{
-				await _HubContext.Clients.All.SendAsync("todo_speed", speed);
+				await _Verbs[arrArgs[0]](arrArgs, this);
 			}
 
 		}
@@ -57,6 +50,76 @@ namespace Fritz.Chatbot.Commands
 		{
 			throw new NotImplementedException();
 		}
+
+		private static async Task SetSpeed(string[] args, ToDoCommand cmd)
+		{
+			if (float.TryParse(args[1], out var speed))
+			{
+				await cmd._HubContext.Clients.All.SendAsync("todo_speed", speed);
+			}
+		}
+
+		private static async Task Deactivate(string[] args, ToDoCommand cmd)
+		{
+
+			await cmd._HubContext.Clients.All.SendAsync("todo_deactivate");
+
+		}
+
+		private static async Task Activate(string[] args, ToDoCommand cmd)
+		{
+
+			if (int.TryParse(args[1], out var id) && _ToDos.Any(t => t.Key == id)) {
+
+				await cmd._HubContext.Clients.All.SendAsync("todo_activate", id);
+
+			}
+
+		}
+
+		private static async Task ClearTodo(string[] args, ToDoCommand cmd)
+		{
+			if (int.TryParse(args[1], out var clearId) && _ToDos.Any(t => t.Key == clearId))
+			{
+				var todo = _ToDos[clearId];
+				todo.completed = false;
+				_ToDos[clearId] = todo;
+				await cmd._HubContext.Clients.All.SendAsync("todo_clear", clearId);
+			}
+		}
+
+		private static async Task DoneTodo(string[] args, ToDoCommand cmd)
+		{
+
+			if (int.TryParse(args[1], out var id) && _ToDos.Any(t => t.Key == id))
+			{
+				var todo = _ToDos[id];
+				todo.completed = true;
+				_ToDos[id] = todo;
+				await cmd._HubContext.Clients.All.SendAsync("todo_done", id);
+			}
+
+		}
+
+		private static async Task RemoveTodo(string[] args, ToDoCommand cmd)
+		{
+
+			if (int.TryParse(args[1], out var removeid) && _ToDos.Any(t => t.Key == removeid))
+			{
+				_ToDos.Remove(removeid);
+				await cmd._HubContext.Clients.All.SendAsync("todo_remove", removeid);
+			}
+
+		}
+
+		private static async Task AddTodo(string[] args, ToDoCommand cmd)
+		{
+			var newKey = !_ToDos.Any() ? 1 : _ToDos.Max(t => t.Key) + 1;
+			_ToDos.Add(newKey, (false, string.Join(' ', args).Substring(4).Trim()));
+			await cmd._HubContext.Clients.All.SendAsync("todo_new", newKey, _ToDos[newKey].text);
+
+		}
+
 
 		public static Dictionary<int, (bool completed, string text)> ToDos { get { return _ToDos; } }
 

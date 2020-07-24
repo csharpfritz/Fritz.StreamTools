@@ -22,6 +22,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
 		<PackageReference Include="NetCoreAudio" Version="1.5.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+		<PackageReference Include="system.reactive.linq" Version="4.4.1" />
   </ItemGroup>
 
   <ItemGroup>

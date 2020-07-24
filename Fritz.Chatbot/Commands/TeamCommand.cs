@@ -1,5 +1,6 @@
 ﻿using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
+using Fritz.Chatbot.Helpers;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace Fritz.Chatbot.Commands
 {
@@ -23,6 +26,11 @@ namespace Fritz.Chatbot.Commands
 		private HttpClient _HttpClient;
 		private readonly IHubContext<AttentionHub> _Context;
 		private ILogger _Logger;
+		private Subject<string> _TeammateNotifications = new Subject<string>();
+		/// <summary>
+		/// Handle to the teammates notification subscription. Dispose to stop the subscription
+		/// </summary>
+		private IDisposable _subscriptionHandle;
 
 		public string Name { get; } = "Team Detection";
 		public string Description { get; } = "Alert when a teammate joins the stream and starts chatting";
@@ -31,8 +39,7 @@ namespace Fritz.Chatbot.Commands
 		public TimeSpan? Cooldown { get; } = TimeSpan.FromSeconds(5);
 		public TimeSpan ShoutoutCooldown;
 		public string ShoutoutFormat;
-		public Queue<string> _TeammateNotifications = new Queue<string>();
-
+		
 		public TeamCommand(IConfiguration configuration, ILoggerFactory loggerFactory, IHubContext<AttentionHub> context, IHttpClientFactory httpClientFactory)
 		{
 			_TeamName = configuration["StreamServices:Twitch:Team"];
@@ -56,24 +63,14 @@ namespace Fritz.Chatbot.Commands
 
 			GetTeammates().GetAwaiter().GetResult();
 
-			Task.Run(SendNotificationsToWidget);
-
+			SubscribeToTeamNotifications();
 		}
 
-		private void SendNotificationsToWidget()
-		{
-
-			while (true) {
-
-				if (_TeammateNotifications.TryPeek(out var _)) {
-
-					_Context.Clients.All.SendAsync("Teammate", _TeammateNotifications.Dequeue());
-					Task.Delay(5000);
-
-				}
-
-			}
-
+		private void SubscribeToTeamNotifications() {
+			//when notifications appear, throttle them to 1 item per 5 seconds
+			_subscriptionHandle = _TeammateNotifications.Throttle(1, TimeSpan.FromSeconds(5)).Subscribe(notification => {
+				_Context.Clients.All.SendAsync("Teammate", notification);
+			});
 		}
 
 		public bool CanExecute(string userName, string fullCommandText)
@@ -95,7 +92,7 @@ namespace Fritz.Chatbot.Commands
 				await chatService.SendMessageAsync(ShoutoutFormat.Replace("{teammate}", userName));
 			}
 
-			_TeammateNotifications.Enqueue(userName);
+			_TeammateNotifications.OnNext(userName);
 
 		}
 

@@ -20,6 +20,7 @@ namespace Fritz.Chatbot.Commands
 		private static HashSet<string> _Teammates = new HashSet<string>();
 		private static Dictionary<string, DateTime> _TeammateCooldown = new Dictionary<string, DateTime>();
 		private string _TeamName;
+		private readonly string _BroadcasterChannel;
 		private HttpClient _HttpClient;
 		private readonly IHubContext<AttentionHub> _Context;
 		private ILogger _Logger;
@@ -36,6 +37,7 @@ namespace Fritz.Chatbot.Commands
 		public TeamCommand(IConfiguration configuration, ILoggerFactory loggerFactory, IHubContext<AttentionHub> context, IHttpClientFactory httpClientFactory)
 		{
 			_TeamName = configuration["StreamServices:Twitch:Team"];
+			_BroadcasterChannel = configuration["StreamServices:Twitch:Channel"];
 			ShoutoutCooldown = configuration.GetValue("StreamServices:Twitch:TeamCooldown", TimeSpan.FromHours(1));
 			ShoutoutFormat = configuration.GetValue("StreamServices:Twitch:TeamShoutoutFormat", "");
 			_Context = context;
@@ -80,6 +82,13 @@ namespace Fritz.Chatbot.Commands
 		{
 
 			var u = userName.ToLowerInvariant();
+
+			// Add check to make sure we don't notify if the chatter is the Twitch broadcaster
+			if (u.Equals(_BroadcasterChannel, StringComparison.InvariantCultureIgnoreCase))
+			{
+				return false;
+			}
+
 			var isTeammate = _Teammates.Contains(u);
 			var recentShoutout = _TeammateCooldown.ContainsKey(u) && (DateTime.UtcNow.Subtract(_TeammateCooldown[u]) < ShoutoutCooldown);
 

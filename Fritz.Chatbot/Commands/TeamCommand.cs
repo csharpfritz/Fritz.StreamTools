@@ -70,7 +70,7 @@ namespace Fritz.Chatbot.Commands
 				if (_TeammateNotifications.TryPeek(out var _)) {
 
 					_Context.Clients.All.SendAsync("Teammate", _TeammateNotifications.Dequeue());
-					Task.Delay(5000);
+					Task.Delay(5000).GetAwaiter().GetResult(); // TODO: This notification needs to go into a queue
 
 				}
 

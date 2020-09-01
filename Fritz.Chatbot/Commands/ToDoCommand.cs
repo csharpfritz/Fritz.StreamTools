@@ -20,6 +20,7 @@ namespace Fritz.Chatbot.Commands
 
 		private readonly Dictionary<string, Func<string[], ToDoCommand, Task>> _Verbs = new Dictionary<string, Func<string[], ToDoCommand, Task>> {
 			{"add", AddTodo },
+			{"replace", ReplaceTodo },
 			{"remove", RemoveTodo },
 			{"done", DoneTodo },
 			{"clear", ClearTodo },
@@ -100,6 +101,20 @@ namespace Fritz.Chatbot.Commands
 			}
 
 		}
+
+		private static async Task ReplaceTodo(string[] args, ToDoCommand cmd)
+		{
+			if (int.TryParse(args[1], out var replaceId) && _ToDos.Any(t => t.Key == replaceId))
+			{
+				var thisTodo = _ToDos[replaceId];
+				thisTodo.text = args[2];
+				_ToDos[replaceId] = thisTodo;
+				await cmd._HubContext.Clients.All.SendAsync("todo_replace", replaceId, args[2]);
+			}
+
+		}
+
+
 
 		private static async Task RemoveTodo(string[] args, ToDoCommand cmd)
 		{

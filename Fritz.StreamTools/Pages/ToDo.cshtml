@@ -63,6 +63,10 @@
 				if (this.debug) console.debug("Done ToDo", { id });
 				this.Complete(id);
 			});
+			this._hub.on('todo_undone', (id) => {
+				if (this.debug) console.debug("Undone ToDo", { id });
+				this.Incomplete(id);
+			});
 			this._hub.on('todo_replace', (id, text) => {
 				if (this.debug) console.debug("Replace ToDo", { id, text });
 				this.Replace(id, text);
@@ -109,6 +113,13 @@
 				if (el.length > 1) el[1].className = "far fa-check-square";
 
 				if (document.querySelectorAll(`li[data-id='${id}].active`)) Deactivate();
+
+			}
+
+			this.Incomplete = function (id) {
+				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
+				el[0].className = "far fa-square";
+				if (el.length > 1) el[1].className = "far fa-square";
 
 			}
 

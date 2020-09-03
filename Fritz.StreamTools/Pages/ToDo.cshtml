@@ -126,7 +126,7 @@
 			this.Replace = function (id, text) {
 				var el = document.querySelectorAll(`li[data-id='${id}'] > i`);
 				var regEx = /\s\d+\..*/g;
-				for (var e in el) {
+				for (var e of el) {
 					e.innerHTML = e.innerHTML.replace(regEx, ` ${id}. ${text}`);
 				}
 
@@ -141,8 +141,9 @@
 			this.Activate = function (id) {
 				Deactivate();
 				var el = document.querySelectorAll(`li[data-id='${id}']`);
-				el[0].classList.add("active");
-				if (el.length > 1) el[1].classList.remove("active");
+				for (var e of el) {
+					e.classList.add("active");
+				}
 			}
 
 			this.Deactivate = function () {

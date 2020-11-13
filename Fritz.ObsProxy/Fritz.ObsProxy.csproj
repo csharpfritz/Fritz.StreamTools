@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>dotnet-Fritz.ObsProxy-63F1EE89-A75A-469F-919F-8238E927CEB8</UserSecretsId>
   </PropertyGroup>
 

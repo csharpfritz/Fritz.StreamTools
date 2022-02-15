@@ -13,19 +13,8 @@ class AttentionHub {
 		this._hub = new signalR.HubConnectionBuilder()
 			.withUrl(url)
 			.withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
+			.withAutomaticReconnect([0, 2000, 10000, 15000, 20000, 30000, 30000, 30000, 30000, 30000, 45000, 60000 ])
 			.build();
-
-		this._hub.onclose(() => {
-			if (this.debug) console.debug("hub connection closed");
-
-			// Hub connection was closed for some reason
-			let interval = setInterval(() => {
-				this.start(groups).then(() => {
-					clearInterval(interval);
-					if (this.debug) console.debug("hub reconnected");
-				});
-			}, 5000);
-		});
 
 		this._hub.on("ClientConnected", connectionId => {
 			if (this.debug) console.debug(`Client connected: ${connectionId}`);

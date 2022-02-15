@@ -30,9 +30,9 @@
 	{
 		"outputFileName": "wwwroot/lib/signalr/signalr-client.js",
 			"inputFiles": [
-				"node_modules/@aspnet/signalr/dist/browser/signalr.min.js",
+				"node_modules/@microsoft/signalr/dist/browser/signalr.min.js",
 				"node_modules/msgpack5/dist/msgpack5.js",
-				"node_modules/@aspnet/signalr-protocol-msgpack/dist/browser/signalr-protocol-msgpack.js"
+				"node_modules/@microsoft/signalr-protocol-msgpack/dist/browser/signalr-protocol-msgpack.js"
 			],
 		"minify": {
 			"enabled": false

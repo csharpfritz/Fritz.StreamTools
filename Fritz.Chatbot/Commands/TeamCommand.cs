@@ -46,7 +46,7 @@ namespace Fritz.Chatbot.Commands
 			if (!string.IsNullOrEmpty(TwitchTokenConfig.Tokens?.access_token))
 			{
 				_HttpClient = httpClientFactory.CreateClient("TeamLookup");
-				_HttpClient.BaseAddress = new Uri($"https://api.twitch.tv/kraken/teams/");
+				_HttpClient.BaseAddress = new Uri($"https://api.twitch.tv/helix/teams");
 				_HttpClient.DefaultRequestHeaders.Add("Client-ID", configuration["StreamServices:Twitch:ClientId"]);
 				_HttpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.twitchtv.v5+json");
 
@@ -65,9 +65,11 @@ namespace Fritz.Chatbot.Commands
 		private void SendNotificationsToWidget()
 		{
 
-			while (true) {
+			while (true)
+			{
 
-				if (_TeammateNotifications.TryPeek(out var _)) {
+				if (_TeammateNotifications.TryPeek(out var _))
+				{
 
 					_Context.Clients.All.SendAsync("Teammate", _TeammateNotifications.Dequeue());
 					Task.Delay(5000).GetAwaiter().GetResult(); // TODO: This notification needs to go into a queue
@@ -111,53 +113,41 @@ namespace Fritz.Chatbot.Commands
 		private async Task GetTeammates()
 		{
 
-			var response = await _HttpClient.GetStringAsync(_TeamName);
+			var response = await _HttpClient.GetStringAsync($"?name={_TeamName}");
 			var team = JsonConvert.DeserializeObject<TeamResponse>(response);
 
-			_Teammates = team.users.Select(u => u.name).ToHashSet();
+			_Teammates = team.data.First().users.Select(u => u.user_name).ToHashSet();
 
 		}
 
 
-		internal class TeamResponse
+		public class TeamResponse
 		{
-			public int _id { get; set; }
-			public object background { get; set; }
-			public string banner { get; set; }
-			public DateTime created_at { get; set; }
-			public string display_name { get; set; }
-			public string info { get; set; }
-			public string logo { get; set; }
-			public string name { get; set; }
-			public DateTime updated_at { get; set; }
+			public TeamSummary[] data { get; set; }
+		}
+
+		public class TeamSummary
+		{
 			public User[] users { get; set; }
+			public object background_image_url { get; set; }
+			public object banner { get; set; }
+			public DateTime created_at { get; set; }
+			public DateTime updated_at { get; set; }
+			public string info { get; set; }
+			public string thumbnail_url { get; set; }
+			public string team_name { get; set; }
+			public string team_display_name { get; set; }
+			public string id { get; set; }
 		}
 
-
-		internal class User
+		public class User
 		{
-			public int _id { get; set; }
-			public string broadcaster_language { get; set; }
-			public DateTime created_at { get; set; }
-			public string display_name { get; set; }
-			public int followers { get; set; }
-			public string game { get; set; }
-			public string language { get; set; }
-			public string logo { get; set; }
-			public bool mature { get; set; }
-			public string name { get; set; }
-			public bool partner { get; set; }
-			public string profile_banner { get; set; }
-			public object profile_banner_background_color { get; set; }
-			public string status { get; set; }
-			public DateTime updated_at { get; set; }
-			public string url { get; set; }
-			public object video_banner { get; set; }
-			public int views { get; set; }
+			public string user_id { get; set; }
+			public string user_name { get; set; }
+			public string user_login { get; set; }
 		}
 
 
 	}
-
 
 }

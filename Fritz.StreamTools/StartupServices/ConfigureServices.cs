@@ -183,8 +183,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddRazorPages();
 
-			services.AddMvc()
-				.SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+			services.AddMvc();
 
 		}
 

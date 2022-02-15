@@ -48,14 +48,18 @@ namespace ConsoleChatbot
 
 			serviceCollection.AddHttpClient("ShoutoutCommand", c =>
 			{
-				c.BaseAddress = new Uri("https://api.twitch.tv/kraken/channels/");
 				c.DefaultRequestHeaders.Add("client-id", config["StreamServices:Twitch:ClientId"]);
 			});
 
 			FritzBot.RegisterCommands(serviceCollection);
+
+			var loggerService = LoggerFactory.Create(configure =>
+				configure.AddConsole(options => {
+					options.LogToStandardErrorThreshold = LogLevel.Information;
+				})
+			);
 			var svcProvider = serviceCollection.BuildServiceProvider();
-			var loggerFactory = svcProvider.GetService<ILoggerFactory>()
-				.AddConsole(LogLevel.Information);
+			var loggerFactory = svcProvider.GetService<ILoggerFactory>();
 
 			return new FritzBot(config, svcProvider, loggerFactory);
 

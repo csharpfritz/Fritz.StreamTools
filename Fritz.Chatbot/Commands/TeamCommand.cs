@@ -48,6 +48,7 @@ namespace Fritz.Chatbot.Commands
 				_HttpClient = httpClientFactory.CreateClient("TeamLookup");
 				_HttpClient.BaseAddress = new Uri($"https://api.twitch.tv/helix/teams");
 				_HttpClient.DefaultRequestHeaders.Add("Client-ID", configuration["StreamServices:Twitch:ClientId"]);
+				_HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {TwitchTokenConfig.Tokens.access_token}");
 				_HttpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.twitchtv.v5+json");
 
 			}
@@ -131,8 +132,8 @@ namespace Fritz.Chatbot.Commands
 			public User[] users { get; set; }
 			public object background_image_url { get; set; }
 			public object banner { get; set; }
-			public DateTime created_at { get; set; }
-			public DateTime updated_at { get; set; }
+			//public DateTimeOffset created_at { get; set; }
+			//public DateTimeOffset updated_at { get; set; }
 			public string info { get; set; }
 			public string thumbnail_url { get; set; }
 			public string team_name { get; set; }

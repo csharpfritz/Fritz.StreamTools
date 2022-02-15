@@ -117,7 +117,7 @@ namespace Fritz.Chatbot.Commands
 			var response = await _HttpClient.GetStringAsync($"?name={_TeamName}");
 			var team = JsonConvert.DeserializeObject<TeamResponse>(response);
 
-			_Teammates = team.data.First().users.Select(u => u.user_name).ToHashSet();
+			_Teammates = team.data.First().users.Select(u => u.user_login.ToLowerInvariant()).ToHashSet();
 
 		}
 

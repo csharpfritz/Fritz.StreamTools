@@ -2,10 +2,12 @@
 using Fritz.StreamTools.Hubs;
 using Fritz.Twitch;
 using Fritz.Twitch.PubSub;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -27,11 +29,11 @@ namespace Fritz.StreamTools.Services
 		public static short _OldManCount = 0;
 		private readonly Twitch.PubSub.Proxy _Proxy;
 		private readonly ConfigurationSettings _Configuration;
-		private readonly IHostEnvironment _HostEnvironment;
+		private readonly IWebHostEnvironment _HostEnvironment;
     private readonly ILogger _Logger;
     private readonly Dictionary<string, Action<IHubContext<AttentionHub, IAttentionHubClient>>> _ChannelPointActions = new Dictionary<string, Action<IHubContext<AttentionHub, IAttentionHubClient>>>();
 
-		public TwitchPubSubService(IServiceProvider serviceProvider, Twitch.PubSub.Proxy proxy, IHostEnvironment hostEnvironment, IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory)
+		public TwitchPubSubService(IServiceProvider serviceProvider, Twitch.PubSub.Proxy proxy, IWebHostEnvironment hostEnvironment, IOptions<ConfigurationSettings> settings, ILoggerFactory loggerFactory)
 		{
 			_ServiceProvider = serviceProvider;
 			_Proxy = proxy;
@@ -67,7 +69,7 @@ namespace Fritz.StreamTools.Services
 		private void IdentifyOldManAudio()
 		{
 
-			var oldManPath = Path.Combine(_HostEnvironment.ContentRootPath, "wwwroot", "contents", "oldman");
+			var oldManPath = Path.Combine(_HostEnvironment.WebRootPath, "contents", "oldman");
 			var di = new DirectoryInfo(oldManPath);
 
 			if (di.Exists && di.GetFiles().Any()) {

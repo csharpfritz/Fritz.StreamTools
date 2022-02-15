@@ -23,4 +23,5 @@ RUN dotnet publish -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
+COPY --from=publish /src/Fritz.StreamTools/wwwroot/. /src/Fritz.StreamTools/wwwroot
 ENTRYPOINT ["dotnet", "Fritz.StreamTools.dll"]

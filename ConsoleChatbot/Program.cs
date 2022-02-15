@@ -54,9 +54,11 @@ namespace ConsoleChatbot
 			FritzBot.RegisterCommands(serviceCollection);
 
 			var loggerService = LoggerFactory.Create(configure =>
-				configure.AddConsole(options => {
-					options.LogToStandardErrorThreshold = LogLevel.Information;
+				configure.AddSimpleConsole(options =>
+				{
+					options.IncludeScopes = true;
 				})
+				.SetMinimumLevel(LogLevel.Information)
 			);
 			var svcProvider = serviceCollection.BuildServiceProvider();
 			var loggerFactory = svcProvider.GetService<ILoggerFactory>();

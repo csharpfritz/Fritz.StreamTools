@@ -1,27 +1,26 @@
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
 EXPOSE 80
+EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY global.json .
-COPY Fritz.StreamTools/Fritz.StreamTools.csproj Fritz.StreamTools/
-COPY Fritz.StreamLib.Core/Fritz.StreamLib.Core.csproj Fritz.StreamLib.Core/
-COPY Fritz.Chatbot/Fritz.Chatbot.csproj Fritz.Chatbot/
-COPY Fritz.Twitch/Fritz.Twitch.csproj Fritz.Twitch/
-WORKDIR /src/Fritz.StreamTools
-RUN dotnet restore
-COPY Fritz.StreamTools/. .
-COPY Fritz.StreamLib.Core/. ../Fritz.StreamLib.Core
-COPY Fritz.Chatbot/. ../Fritz.Chatbot/.
-COPY Fritz.Twitch/. ../Fritz.Twitch/.
-RUN dotnet build -c Release -o /app --no-restore
+COPY ["Fritz.StreamTools/Fritz.StreamTools.csproj", "Fritz.StreamTools/"]
+COPY ["Fritz.Chatbot/Fritz.Chatbot.csproj", "Fritz.Chatbot/"]
+COPY ["Fritz.StreamLib.Core/Fritz.StreamLib.Core.csproj", "Fritz.StreamLib.Core/"]
+COPY ["Fritz.Twitch/Fritz.Twitch.csproj", "Fritz.Twitch/"]
+RUN dotnet restore "Fritz.StreamTools/Fritz.StreamTools.csproj"
+COPY . .
+WORKDIR "/src/Fritz.StreamTools"
+RUN dotnet build "Fritz.StreamTools.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish -c Release -o /app 
+RUN dotnet publish "Fritz.StreamTools.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app .
-COPY --from=publish /src/Fritz.StreamTools/wwwroot/. /src/Fritz.StreamTools/wwwroot
+COPY --from=publish /app/publish .
+ENV Logging__Console__FormatterName=Simple
 ENTRYPOINT ["dotnet", "Fritz.StreamTools.dll"]

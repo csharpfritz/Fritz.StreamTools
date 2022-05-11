@@ -1,6 +1,5 @@
 ﻿using Fritz.Chatbot.Commands;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Fritz.Chatbot;
 
 namespace ConsoleChatbot
 {

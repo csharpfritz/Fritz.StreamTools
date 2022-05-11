@@ -44,6 +44,12 @@ namespace Fritz.StreamTools.Services
 
 		}
 
+		internal void UpdateSentiment(double newSentiment, double oneMinuteSentiment, double fiveMinuteSentiment, double allSentiment ) {
+
+			FollowerContext.Clients.Group("sentiment").SendAsync("OnSentimentUpdated", newSentiment, oneMinuteSentiment, fiveMinuteSentiment, allSentiment);
+
+		}
+
 	}
 
 }

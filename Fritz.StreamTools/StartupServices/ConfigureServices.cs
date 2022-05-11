@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Fritz.Chatbot;
 using Fritz.StreamLib.Core;
 using Fritz.StreamTools.Hubs;
 using Fritz.StreamTools.Models;
@@ -40,13 +41,19 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddSingleton<IAttentionClient, AttentionHub>();
 
+			// Add the SentimentSink
+			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
+
+			services.AddSingleton<IHostedService, SentimentService>();
 			services.AddSingleton<IHostedService, FritzBot>();
+
 			services.AddSingleton(new GitHubClient(new ProductHeaderValue("Fritz.StreamTools")));
 	  	FritzBot.RegisterCommands(services);
 
 			services.AddLazyCache();
 
 			RegisterGitHubServices(services, configuration);
+
 
 		}
 
@@ -67,6 +74,9 @@ namespace Fritz.StreamTools.StartupServices
 				c.BaseAddress = new Uri("https://localhost:5001");
 				c.DefaultRequestHeaders.Add("Accept", "applications/json");
 			});
+
+			services.AddHttpClient("DiscoverDotNet");
+	  services.AddHttpClient("ImageDescriptor");
 
 			services.AddHttpClient("ShoutoutCommand", c =>
 			{

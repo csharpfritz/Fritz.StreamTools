@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -60,8 +60,9 @@ namespace Fritz.Twitch
 		~ChatClient()
 		{
 
-			Logger.LogError("GC the ChatClient");
-
+			try {
+				Logger?.LogError("GC the ChatClient");
+			} catch {}
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(false);
 		}
@@ -294,7 +295,9 @@ namespace Fritz.Twitch
 		protected virtual void Dispose(bool disposing)
 		{
 
-			Logger.LogWarning("Disposing of ChatClient");
+			try {
+				Logger?.LogWarning("Disposing of ChatClient");
+			} catch {}
 
 			if (!disposedValue)
 			{
@@ -303,7 +306,7 @@ namespace Fritz.Twitch
 					_Shutdown.Cancel();
 				}
 
-				_TcpClient.Dispose();
+				_TcpClient?.Dispose();
 				disposedValue = true;
 			}
 		}

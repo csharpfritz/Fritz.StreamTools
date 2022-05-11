@@ -14,6 +14,7 @@ namespace Fritz.StreamTools.Hubs
 		// Cheer 500 pharewings 12/18/2018
 		Task AlertFritz();
 		Task ClientConnected(string connectionId);
+		Task SummonScott();
 	}
 
 	public class AttentionHub : Hub<IAttentionHubClient>, IAttentionClient
@@ -27,5 +28,13 @@ namespace Fritz.StreamTools.Hubs
 		{
 			return this.Clients.Others.AlertFritz();
 		}
+
+		public Task SummonScott()
+		{
+
+			return this.Clients.Others.SummonScott();
+
+		}
+
 	}
 }

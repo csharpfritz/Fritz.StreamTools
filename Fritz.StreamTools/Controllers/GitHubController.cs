@@ -8,6 +8,10 @@ using System;
 using LazyCache;
 using Microsoft.Extensions.Logging;
 using Fritz.StreamTools.Services;
+using System.Collections.Generic;
+using System.Net.Http;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace Fritz.StreamTools.Controllers
 {
@@ -18,13 +22,15 @@ namespace Fritz.StreamTools.Controllers
 			GitHubRepository repository,
 			GithubyMcGithubFaceClient client,
 			ILogger<GitHubController> logger,
-			IOptions<GitHubConfiguration> githubConfiguration)
+			IOptions<GitHubConfiguration> githubConfiguration,
+			IHttpClientFactory httpClientFactory)
 		{
 			this.Cache = cache;
 			this.Logger = logger;
 			this.Client = client;
 			_gitHubRepository = repository;
 			_gitHubConfiguration = githubConfiguration.Value;
+			_httpClient = httpClientFactory.CreateClient("DiscoverDotNet");
 		}
 
 		public IAppCache Cache { get; }
@@ -34,6 +40,10 @@ namespace Fritz.StreamTools.Controllers
 		private readonly GitHubRepository _gitHubRepository;
 
 		private readonly GitHubConfiguration _gitHubConfiguration;
+
+		private readonly HttpClient _httpClient;
+
+		private static JsonSerializer _serializer = new JsonSerializer();
 
 		public async Task<IActionResult> ContributorsInformation(string repo, string userName, int count)
 		{
@@ -49,12 +59,33 @@ namespace Fritz.StreamTools.Controllers
 				});
 			}
 
-
+			var newsPosts = await GetNewsFromDiscoverDotNet();
+			var outViewModel = new TickerViewModel()
+			{
+				GitHubInformation = outModel.ToArray(),
+				News = newsPosts
+			};
 
 			ViewBag.Configuration = _gitHubConfiguration;
 
-			return View($"contributor_{_gitHubConfiguration.DisplayMode}", outModel.ToArray());
+			return View($"contributor_{_gitHubConfiguration.DisplayMode}", outViewModel);
 
+		}
+
+		private async Task<(string source, string color, IEnumerable<BlogPostModel> blogPosts)> GetNewsFromDiscoverDotNet()
+		{
+			IList<BlogPostModel> posts;
+			using(Stream response = await _httpClient.GetStreamAsync("https://discoverdot.net/data/news.json"))
+			{
+				using(StreamReader reader = new StreamReader(response))
+				{
+					using(JsonTextReader json = new JsonTextReader(reader))
+					{
+						posts = _serializer.Deserialize<IList<BlogPostModel>>(json);
+					}
+				}
+			}		
+			return ("Discover .NET", "#FFCCFF", posts.Take(5).ToArray());
 		}
 
 		public IActionResult Configuration()
@@ -145,4 +176,21 @@ namespace Fritz.StreamTools.Controllers
 			return Json(true);
 		}
 	}
+
+	public class TickerViewModel {
+
+		public IEnumerable<GitHubInformation> GitHubInformation { get; set; }
+
+		public (string source, string color, IEnumerable<BlogPostModel> blogPosts) News { get; set; }
+
+	}
+
+	public class BlogPostModel
+	{
+		public string Title { get; set; }
+		public string FeedTitle { get; set; }
+		public string Link { get; set; }
+		public DateTime Published { get; set; }
+	}
+
 }

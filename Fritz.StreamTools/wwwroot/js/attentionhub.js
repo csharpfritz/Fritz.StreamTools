@@ -2,6 +2,7 @@
 class AttentionHub {
 	constructor() {
 		this.onAlertFritz = null;
+		this.onSummonScott = null;
 		this.debug = true;
 		this._hub = null;
 	}
@@ -32,6 +33,11 @@ class AttentionHub {
 		this._hub.on("AlertFritz", () => {
 			if (this.debug) console.debug("AlertFritz");
 			if (this.onAlertFritz) this.onAlertFritz();
+		});
+
+		this._hub.on("SummonScott", () => {
+			if (this.debug) console.debug("Summoning Scott!");
+			if (this.onSummonScott) this.onSummonScott();
 		});
 
 		return this._hub.start();

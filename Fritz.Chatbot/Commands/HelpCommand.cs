@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fritz.StreamLib.Core;
-using Fritz.StreamTools.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fritz.Chatbot.Commands
@@ -28,7 +27,11 @@ namespace Fritz.Chatbot.Commands
 
 			if (rhs.IsEmpty)
 			{
-				var availableCommands = String.Join(" ", commands.Where(c => !string.IsNullOrEmpty(c.Trigger) && c.Trigger != "sleep").Select(c => $"!{c.Trigger.ToLower()}"));
+
+				var availableCommandArray = commands.Where(c => !string.IsNullOrEmpty(c.Trigger)).Select(c => $"!{c.Trigger.ToLower()}");
+				var textCommandArray = TextCommand._Commands.Select(kv => "!" + kv.Key.ToLower());
+
+				var availableCommands = string.Join(' ', availableCommandArray.Union(textCommandArray).OrderBy(s => s));
 
 				await chatService.SendMessageAsync($"Supported commands: {availableCommands}");
 				return;

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28306.52
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28527.54
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{520B1405-AC30-493A-8F04-6AA9B8FE2CDD}"
 EndProject
@@ -31,11 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Twitch", "Fritz.Twitc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleChatbot", "ConsoleChatbot\ConsoleChatbot.csproj", "{A9F1860F-163B-44AC-A935-C1B584D3CB8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker", "ErrorList\C#\SpellChecker.csproj", "{C46DF139-AEB6-4B38-A4BB-9FF06446AA8B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fritz.LiveCoding2", "Fritz.LiveCoding2\Fritz.LiveCoding2.csproj", "{DD21ECB3-960C-443C-855B-0AF543912637}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{34555889-871B-4656-B97D-F230A89621BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

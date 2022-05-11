@@ -38,6 +38,10 @@ namespace Fritz.Chatbot.Commands
 
 			var sb = new StringBuilder();
 			for (var i=0; i<repeatCount; i++) {
+				if (i!=0)
+				{
+					sb.Append(" ");
+				}
 				sb.Append(hypeText);
 			}
 

@@ -24,7 +24,7 @@ namespace Fritz.Chatbot.Commands
 		{
 
 			// Match the regular expression pattern against a text string.
-			return reCheck.IsMatch(fullCommandText);
+			return !ImageDescriptorCommand._InstagramCheck.IsMatch(fullCommandText) && reCheck.IsMatch(fullCommandText);
 
 		}
 

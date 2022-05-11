@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Fritz.StreamTools.Models;
 using Fritz.Chatbot.Commands;
 using Microsoft.Extensions.Logging;
+using Fritz.Chatbot;
 
 namespace Fritz.StreamTools.Hubs
 {

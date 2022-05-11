@@ -16,9 +16,8 @@ namespace Fritz.StreamTools.Models
 
 		internal void LoadDefaultSettings(FollowerCountConfiguration config)
 		{
-			this.BackgroundColor = string.IsNullOrWhiteSpace(this.BackgroundColor) ? config.BackgroundColor : "#000";
-			this.FontColor = string.IsNullOrWhiteSpace(this.FontColor) ? config.FontColor : "#32cd32";
-
+			this.BackgroundColor = string.IsNullOrWhiteSpace(this.BackgroundColor) ? config.BackgroundColor : this.BackgroundColor;
+			this.FontColor = string.IsNullOrWhiteSpace(this.FontColor) ? config.FontColor : this.FontColor;
 		}
 
 	}

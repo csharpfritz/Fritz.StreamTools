@@ -41,7 +41,4 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="wwwroot\" />
-	</ItemGroup>
 </Project>

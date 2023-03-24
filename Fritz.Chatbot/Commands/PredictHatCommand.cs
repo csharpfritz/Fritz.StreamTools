@@ -88,12 +88,12 @@ namespace Fritz.Chatbot.Commands
 
 					var guess1Data = (await _Repository.GetHatData(bestMatch.TagName));
 					var guess2Data = (await _Repository.GetHatData(result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().TagName));
-					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guess1Data.Name} or {guess2Data.Name}");
+					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guess1Data.Name} ({bestMatch.Probability.ToString("0.0%")}) or {guess2Data.Name} ({result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().Probability.ToString("0.0%")})");
 					return;
 
 				} else {
 					var guessData = (await _Repository.GetHatData(bestMatch.TagName));
-					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guessData.Name}");
+					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guessData.Name} ({bestMatch.Probability.ToString("0.0%")})");
 					return;
 				}
 

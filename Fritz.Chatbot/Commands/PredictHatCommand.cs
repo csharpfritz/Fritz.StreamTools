@@ -82,7 +82,22 @@ namespace Fritz.Chatbot.Commands
 			}
 
 			var bestMatch = result.Predictions.OrderByDescending(p => p.Probability).FirstOrDefault();
-			if (bestMatch == null || bestMatch.Probability < 0.7D) {
+			if (bestMatch.Probability < 0.7D && bestMatch.Probability > 0.5d) {
+
+				if (result.Predictions.Count(b => b.Probability > 0.4d) > 1) {
+
+					var guess1Data = (await _Repository.GetHatData(bestMatch.TagName));
+					var guess2Data = (await _Repository.GetHatData(result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().TagName));
+					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guess1Data.Name} or {guess2Data.Name}");
+					return;
+
+				} else {
+					var guessData = (await _Repository.GetHatData(bestMatch.TagName));
+					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guessData.Name}");
+					return;
+				}
+
+			} else if ((bestMatch?.Probability ?? 0) <= 0.4d)  {
 				await chatService.SendMessageAsync("csharpAngry 404 Hat Not Found!  Let's ask a moderator to !addhat so we can identify it next time");
 				// do we store the image?
 				return;

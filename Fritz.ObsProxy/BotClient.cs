@@ -74,7 +74,7 @@ namespace Fritz.ObsProxy
 
 			if (_Client != null)
 			{
-				await _Client?.DisposeAsync();
+				await _Client.DisposeAsync();
 			}
 
 		}

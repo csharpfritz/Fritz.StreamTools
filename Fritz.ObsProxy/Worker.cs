@@ -28,11 +28,17 @@ namespace Fritz.ObsProxy
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
 
-			await _ObsClient.Connect();
+			_ObsClient.Connect();
+
+			while (!_ObsClient.IsReady) {
+				await Task.Delay(100);
+				Console.WriteLine("Waiting to connect");
+			}
 
 			if (string.IsNullOrEmpty(_Configuration["ObsTest"]) || !bool.Parse(_Configuration["ObsTest"]))
 			{
 				await _BotClient.Connect();
+
 			} else {
 				var imgString = _ObsClient.TakeScreenshot();
 				var bytes = Convert.FromBase64String(imgString);

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,28 +12,21 @@
 		<PackageReference Include="FaunaDB.Client" Version="4.2.0" />
 		<PackageReference Include="Markdig" Version="0.27.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0-*" />
     <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction" Version="1.0.0" />
     <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0-*" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0-*" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0-*" />
 		<PackageReference Include="NetCoreAudio" Version="1.6.3" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fritz.StreamLib.Core\Fritz.StreamLib.Core.csproj" />
   </ItemGroup>
-
-  <!-- ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.Web.CodeGeneration.Utils">
-      <HintPath>..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.visualstudio.web.codegeneration.utils\2.1.6\lib\netstandard2.0\Microsoft.VisualStudio.Web.CodeGeneration.Utils.dll</HintPath>
-    </Reference>
-  </ItemGroup -->
 
   <ItemGroup>
     <None Update="hey_listen.wav">

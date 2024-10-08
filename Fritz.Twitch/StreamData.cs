@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
+using System.Text.Json.Nodes;
 
 namespace Fritz.Twitch
 {
@@ -22,19 +22,19 @@ namespace Fritz.Twitch
 
 		public string Language { get; set; }
 
-		public static explicit operator StreamData(JToken obj)
+		public static explicit operator StreamData(JsonNode obj)
 		{
 
 			return new StreamData
 			{
-				Id = obj["id"].Value<long>(),
-				UserId = obj["user_id"].Value<long>(),
-				GameId = obj["game_id"].Value<long>(),
-				Type = obj["type"].Value<string>(),
-				Title = obj["title"].Value<string>(),
-				ViewerCount = obj["viewer_count"].Value<int>(),
-				StartedAt = obj["started_at"].Value<DateTime>(),
-				Language = obj["language"].Value<string>()
+				Id = obj["id"].GetValue<long>(),
+				UserId = obj["user_id"].GetValue<long>(),
+				GameId = obj["game_id"].GetValue<long>(),
+				Type = obj["type"].GetValue<string>(),
+				Title = obj["title"].GetValue<string>(),
+				ViewerCount = obj["viewer_count"].GetValue<int>(),
+				StartedAt = obj["started_at"].GetValue<DateTime>(),
+				Language = obj["language"].GetValue<string>()
 			};
 
 		}

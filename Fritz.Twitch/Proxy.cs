@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -292,23 +292,23 @@ namespace Fritz.Twitch
 		internal static int ParseFollowerResult(string twitchString)
 		{
 
-			var jObj = JsonConvert.DeserializeObject<JObject>(twitchString);
+			var jObj = JsonNode.Parse(twitchString);
 
-			return jObj.Value<int>("total");
+			return jObj["total"].GetValue<int>();
 
 		}
 
 		internal static StreamData ParseStreamResult(string twitchString)
 		{
 
-			var jObj = JsonConvert.DeserializeObject<JObject>(twitchString);
+			var jObj = JsonNode.Parse(twitchString);
 
-			if (!jObj["data"].HasValues)
+			if (jObj["data"] is null)
 			{
 				return null;
 			}
 
-			var data = jObj.GetValue("data")[0];
+			var data = jObj["data"][0];
 
 			return (StreamData)data;
 

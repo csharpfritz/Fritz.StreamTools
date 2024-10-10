@@ -1,17 +1,17 @@
 ﻿using Fritz.StreamTools.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Octokit;
-using System.Threading.Tasks;
-using System.Linq;
-using System;
-using LazyCache;
-using Microsoft.Extensions.Logging;
 using Fritz.StreamTools.Services;
-using System.Collections.Generic;
-using System.Net.Http;
+using LazyCache;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Octokit;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Controllers
 {
@@ -59,11 +59,10 @@ namespace Fritz.StreamTools.Controllers
 				});
 			}
 
-			var newsPosts = await GetNewsFromDiscoverDotNet();
+			// var newsPosts = await GetNewsFromDiscoverDotNet();
 			var outViewModel = new TickerViewModel()
 			{
-				GitHubInformation = outModel.ToArray(),
-				News = newsPosts
+				GitHubInformation = outModel.ToArray()
 			};
 
 			ViewBag.Configuration = _gitHubConfiguration;
@@ -75,16 +74,12 @@ namespace Fritz.StreamTools.Controllers
 		private async Task<(string source, string color, IEnumerable<BlogPostModel> blogPosts)> GetNewsFromDiscoverDotNet()
 		{
 			IList<BlogPostModel> posts;
-			using(Stream response = await _httpClient.GetStreamAsync("https://discoverdot.net/data/news.json"))
+			using (Stream response = await _httpClient.GetStreamAsync("https://discoverdot.net/data/news.json"))
 			{
-				using(StreamReader reader = new StreamReader(response))
-				{
-					using(JsonTextReader json = new JsonTextReader(reader))
-					{
-						posts = _serializer.Deserialize<IList<BlogPostModel>>(json);
-					}
-				}
-			}		
+				using StreamReader reader = new StreamReader(response);
+				using JsonTextReader json = new JsonTextReader(reader);
+				posts = _serializer.Deserialize<IList<BlogPostModel>>(json);
+			}
 			return ("Discover .NET", "#FFCCFF", posts.Take(5).ToArray());
 		}
 
@@ -114,7 +109,8 @@ namespace Fritz.StreamTools.Controllers
 		}
 
 
-		public IActionResult Test(int value, string devName, string projectName) {
+		public IActionResult Test(int value, string devName, string projectName)
+		{
 
 			GitHubService.LastUpdate = DateTime.MinValue;
 
@@ -129,8 +125,8 @@ namespace Fritz.StreamTools.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-					_gitHubConfiguration.RepositoryName = configuration.RepositoryName;
-					_gitHubConfiguration.RepositoryOwner = configuration.RepositoryOwner;
+				_gitHubConfiguration.RepositoryName = configuration.RepositoryName;
+				_gitHubConfiguration.RepositoryOwner = configuration.RepositoryOwner;
 			}
 
 			return View(configuration);
@@ -177,7 +173,8 @@ namespace Fritz.StreamTools.Controllers
 		}
 	}
 
-	public class TickerViewModel {
+	public class TickerViewModel
+	{
 
 		public IEnumerable<GitHubInformation> GitHubInformation { get; set; }
 

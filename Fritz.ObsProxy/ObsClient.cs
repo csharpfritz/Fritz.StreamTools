@@ -113,7 +113,7 @@ public class ObsClient : IDisposable
 
 			// TODO: Crop appropriately for the camerasource
 			var memStream = new MemoryStream();
-			img.Clone(ctx => ctx.Crop(new Rectangle(450, 0, 900, 450))).SaveAsPng(memStream);
+			img.Clone(ctx => ctx.Crop(new Rectangle(450, 0, 900, 450))).SaveAsWebp(memStream);
 			memStream.Position = 0;
 
 			outString = Convert.ToBase64String(memStream.ToArray());

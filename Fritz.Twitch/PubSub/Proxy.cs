@@ -45,6 +45,11 @@ namespace Fritz.Twitch.PubSub
 		public async Task StartAsync(IEnumerable<TwitchTopic> topics, CancellationToken token)
 		{
 
+			if (string.IsNullOrEmpty(_Configuration.PubSubAuthToken)) {
+				_Logger.LogError("No token configured for Twitch Pubsub");
+				return;
+			}
+
 			_Topics = topics;
 			_Reconnect = false;
 
@@ -173,7 +178,7 @@ namespace Fritz.Twitch.PubSub
 			_PongTimer.Start();
 			_PingAcknowledged = false;
 
-			// TODO: handle the lack of returned PONG message 
+			// TODO: handle the lack of returned PONG message
 
 		}
 

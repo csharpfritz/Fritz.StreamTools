@@ -36,7 +36,9 @@ namespace Fritz.Chatbot.Commands
 
 		public bool CanExecute(string userName, string fullCommandText)
 		{
-			return fullCommandText.EndsWith("?");
+
+			return fullCommandText.Length >= 10 && fullCommandText.EndsWith("?");
+
 		}
 
 		public async Task Execute(IChatService chatService, string userName, string fullCommandText)
@@ -52,7 +54,7 @@ namespace Fritz.Chatbot.Commands
 		public async Task Query(IChatService chatService, string userName, string query)
 		{
 			var responseString = string.Empty;
-			query = WebUtility.UrlEncode(query);
+			// query = WebUtility.UrlEncode(query);
 
 			//Build the URI
 			var qnamakerUriBase = new Uri("https://fritzbotqna.azurewebsites.net/qnamaker");
@@ -92,6 +94,7 @@ namespace Fritz.Chatbot.Commands
 			QnAMakerResult response;
 			try
 			{
+
 				response = JsonConvert.DeserializeObject<QnAMakerResult>(responseString);
 
 				var thisAnswer = response.Answers.OrderByDescending(a => a.Score).FirstOrDefault();

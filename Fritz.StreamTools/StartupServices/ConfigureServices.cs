@@ -45,6 +45,7 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddSingleton<SignalrTagHelperOptions>(cfg => cfg.GetService<IOptions<SignalrTagHelperOptions>>().Value);
 
 			services.AddSingleton<IAttentionClient, AttentionHub>();
+			services.AddSingleton<ObsHub>();
 
 			// Add the SentimentSink
 			//services.AddSingleton<Fritz.Chatbot.Commands.SentimentSink>();
@@ -60,7 +61,6 @@ namespace Fritz.StreamTools.StartupServices
 
 			RegisterConfiguredServices(services, configuration);
 			RegisterGitHubServices(services, configuration);
-
 
 		}
 
@@ -99,7 +99,13 @@ namespace Fritz.StreamTools.StartupServices
 				c.DefaultRequestHeaders.Add("client-id", configuration["StreamServices:Twitch:ClientId"]);
 			});
 
+			services.AddTransient<TwitchTokenConfig>();
+
 			services.AddHostedService<GitHubService>();
+
+			services.AddSingleton<ScreenshotTrainingService>();
+			services.AddHostedService<ScreenshotTrainingService>(s => s.GetRequiredService<ScreenshotTrainingService>());
+			services.AddTransient<HatDescriptionRepository>();
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services, IConfiguration configuration)
@@ -177,8 +183,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddRazorPages();
 
-			services.AddMvc()
-				.SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+			services.AddMvc();
 
 		}
 

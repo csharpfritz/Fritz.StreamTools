@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28527.54
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33417.168
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{520B1405-AC30-493A-8F04-6AA9B8FE2CDD}"
 EndProject
@@ -31,6 +31,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.Twitch", "Fritz.Twitch\Fritz.Twitch.csproj", "{28D6D34A-3F6E-40B3-B62A-20F90D281C7D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleChatbot", "ConsoleChatbot\ConsoleChatbot.csproj", "{A9F1860F-163B-44AC-A935-C1B584D3CB8A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fritz.ObsProxy", "Fritz.ObsProxy\Fritz.ObsProxy.csproj", "{4BD07D64-570D-4E12-BA8F-F908B2482E6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +68,10 @@ Global
 		{A9F1860F-163B-44AC-A935-C1B584D3CB8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9F1860F-163B-44AC-A935-C1B584D3CB8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9F1860F-163B-44AC-A935-C1B584D3CB8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BD07D64-570D-4E12-BA8F-F908B2482E6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BD07D64-570D-4E12-BA8F-F908B2482E6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BD07D64-570D-4E12-BA8F-F908B2482E6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BD07D64-570D-4E12-BA8F-F908B2482E6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

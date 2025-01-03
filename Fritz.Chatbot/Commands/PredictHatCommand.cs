@@ -28,17 +28,17 @@ namespace Fritz.Chatbot.Commands
 
 		internal static string IterationName = "";
 		private ScreenshotTrainingService _TrainHat;
-		private readonly HatDescriptionRepository _Repository;
+		//private readonly HatDescriptionRepository _Repository;
 		private readonly IHubContext<ObsHub> _HubContext;
 
-		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service, HatDescriptionRepository repository, IHubContext<ObsHub> hubContext)
+		public PredictHatCommand(IConfiguration configuration, ScreenshotTrainingService service, IHubContext<ObsHub> hubContext)
 		{
 			_CustomVisionKey = configuration["AzureServices:HatDetection:Key"];
 			_AzureEndpoint = configuration["AzureServices:HatDetection:CustomVisionEndpoint"];
 			_TwitchChannel = configuration["StreamServices:Twitch:Channel"];
 			_AzureProjectId = Guid.Parse(configuration["AzureServices:HatDetection:ProjectId"]);
 			_TrainHat = service;
-			_Repository = repository;
+			//_Repository = repository;
 			_HubContext = hubContext;
 		}
 
@@ -86,13 +86,13 @@ namespace Fritz.Chatbot.Commands
 
 				if (result.Predictions.Count(b => b.Probability > 0.4d) > 1) {
 
-					var guess1Data = (await _Repository.GetHatData(bestMatch.TagName));
-					var guess2Data = (await _Repository.GetHatData(result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().TagName));
+					var guess1Data = new HatData("", ""); // (await _Repository.GetHatData(bestMatch.TagName));
+					var guess2Data = new HatData("", ""); // (await _Repository.GetHatData(result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().TagName));
 					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guess1Data.Name} ({bestMatch.Probability.ToString("0.0%")}) or {guess2Data.Name} ({result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().Probability.ToString("0.0%")})");
 					return;
 
 				} else {
-					var guessData = (await _Repository.GetHatData(bestMatch.TagName));
+					var guessData = new HatData("", ""); // (await _Repository.GetHatData(bestMatch.TagName));
 					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guessData.Name} ({bestMatch.Probability.ToString("0.0%")})");
 					return;
 				}
@@ -103,7 +103,7 @@ namespace Fritz.Chatbot.Commands
 				return;
 			}
 
-			var hatData = (await _Repository.GetHatData(bestMatch.TagName));
+			var hatData = new HatData("", ""); // (await _Repository.GetHatData(bestMatch.TagName));
 			var nameToReport = (hatData == null ? bestMatch.TagName : (string.IsNullOrEmpty(hatData.Name) ? bestMatch.TagName : hatData.Name));
 			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {nameToReport} hat csharpClip");
 			if (hatData != null && !string.IsNullOrEmpty(hatData.Description)) await chatService.SendMessageAsync(hatData.Description);
@@ -127,4 +127,7 @@ namespace Fritz.Chatbot.Commands
 
 		}
 	}
+
+	internal record HatData(string Name, string Description);
+
 }

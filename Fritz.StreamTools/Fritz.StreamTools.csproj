@@ -20,7 +20,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
-		<PackageReference Include="Bundgaard.MixerLib" Version="1.2.65" />
 		<PackageReference Include="LazyCache.AspNetCore" Version="2.4.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="8.0.10" />
 		<PackageReference Include="Microsoft.Azure.CognitiveServices.Language.TextAnalytics" Version="4.0.0" />

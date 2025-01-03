@@ -1,13 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>true</ImplicitUsings>
     <UserSecretsId>dotnet-Fritz.ObsProxy-63F1EE89-A75A-469F-919F-8238E927CEB8</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="obs-websocket-dotnet" Version="5.0.0.3" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
   </ItemGroup>

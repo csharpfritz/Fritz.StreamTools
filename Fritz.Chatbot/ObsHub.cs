@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Fritz.StreamTools.Hubs
 {
 
-	public class ObsHub : Hub<ITakeScreenshots> {
+	public class ObsHub : Hub<ITakeScreenshots>
+	{
 
 		public static int ConnectedCount = 0;
 		public static List<string> _ConnectionIds = new List<string>();
@@ -34,7 +34,8 @@ namespace Fritz.StreamTools.Hubs
 			await base.OnDisconnectedAsync(exception);
 		}
 
-		public async Task PostScreenshot(IAsyncEnumerable<string> stream) {
+		public async Task PostScreenshot(IAsyncEnumerable<string> stream)
+		{
 
 			var sb = new StringBuilder();
 			await foreach (var item in stream)
@@ -43,7 +44,7 @@ namespace Fritz.StreamTools.Hubs
 			}
 
 			Debug.WriteLine(sb.Length);
-			var cleanString = sb.ToString().Replace("data:image/png;base64,", "");
+			var cleanString = sb.ToString().Replace("data:image/webp;base64,", "");
 
 			var bytes = Convert.FromBase64String(cleanString);
 
@@ -58,13 +59,15 @@ namespace Fritz.StreamTools.Hubs
 		Task TakeScreenshot();
 	}
 
-	public class ScreenshotReceivedEventArgs : EventArgs {
+	public class ScreenshotReceivedEventArgs : EventArgs
+	{
 
 		public Stream Screenshot { get; set; }
 
 	}
 
-	public class ScreenshotSink {
+	public class ScreenshotSink
+	{
 
 		public static readonly ScreenshotSink Instance = new ScreenshotSink();
 
@@ -72,7 +75,8 @@ namespace Fritz.StreamTools.Hubs
 
 		public event EventHandler<ScreenshotReceivedEventArgs> ScreenshotReceived;
 
-		public void OnScreenshotReceived(byte[] imageData) {
+		public void OnScreenshotReceived(byte[] imageData)
+		{
 
 			var args = new ScreenshotReceivedEventArgs() { Screenshot = new MemoryStream(imageData) };
 			ScreenshotReceived?.Invoke(null, args);

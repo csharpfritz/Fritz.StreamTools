@@ -1,7 +1,5 @@
 ﻿using Fritz.StreamLib.Core;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Fritz.Chatbot.Commands
@@ -18,7 +16,7 @@ namespace Fritz.Chatbot.Commands
 
 			if (!(isModerator || isBroadcaster)) return;
 
-			PredictHatCommand.IterationName = string.Empty;
+			//PredictHatCommand.IterationName = string.Empty;
 			await chatService.SendMessageAsync("Reset the AI iteration and will detect the latest for Hat identification next time !hat is called");
 
 		}

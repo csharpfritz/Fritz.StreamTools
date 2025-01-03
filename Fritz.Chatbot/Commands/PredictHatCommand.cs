@@ -1,17 +1,10 @@
 ﻿using Fritz.StreamLib.Core;
+using Fritz.StreamTools.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction;
-using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction.Models;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training;
-using System.Net;
-using Microsoft.AspNetCore.SignalR;
-using Fritz.StreamTools.Hubs;
 
 namespace Fritz.Chatbot.Commands
 {
@@ -45,10 +38,6 @@ namespace Fritz.Chatbot.Commands
 		public async Task Execute(IChatService chatService, string userName, ReadOnlyMemory<char> rhs)
 		{
 
-			if (string.IsNullOrEmpty(IterationName)) {
-				await IdentifyIterationName();
-			}
-
 			var client = new CustomVisionPredictionClient()
 			{
 				ApiKey = _CustomVisionKey,
@@ -60,72 +49,9 @@ namespace Fritz.Chatbot.Commands
 
 			////////////////////////////
 
-			ImagePrediction result;
-			try
-			{
-				result = await client.DetectImageWithNoStoreAsync(_AzureProjectId, IterationName, obsImage);
-			} catch (CustomVisionErrorException ex) {
-
-				
-
-				if (ex.Response.StatusCode == HttpStatusCode.NotFound) {
-					await IdentifyIterationName();
-				}
-
-				await chatService.SendMessageAsync("Unable to detect Fritz's hat right now... please try again in 1 minute");
-				return;
-
-			}
-
-			if (DateTime.UtcNow.Subtract(result.Created).TotalSeconds > Cooldown.Value.TotalSeconds) {
-				await chatService.SendMessageAsync($"I previously predicted this hat about {DateTime.UtcNow.Subtract(result.Created).TotalSeconds} seconds ago");
-			}
-
-			var bestMatch = result.Predictions.OrderByDescending(p => p.Probability).FirstOrDefault();
-			if (bestMatch.Probability < 0.7D && bestMatch.Probability > 0.5d) {
-
-				if (result.Predictions.Count(b => b.Probability > 0.4d) > 1) {
-
-					var guess1Data = new HatData("", ""); // (await _Repository.GetHatData(bestMatch.TagName));
-					var guess2Data = new HatData("", ""); // (await _Repository.GetHatData(result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().TagName));
-					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guess1Data.Name} ({bestMatch.Probability.ToString("0.0%")}) or {guess2Data.Name} ({result.Predictions.OrderByDescending(p => p.Probability).Skip(1).First().Probability.ToString("0.0%")})");
-					return;
-
-				} else {
-					var guessData = new HatData("", ""); // (await _Repository.GetHatData(bestMatch.TagName));
-					await chatService.SendMessageAsync($"csharpGuess I'm not quite sure if this is {guessData.Name} ({bestMatch.Probability.ToString("0.0%")})");
-					return;
-				}
-
-			} else if ((bestMatch?.Probability ?? 0) <= 0.4d)  {
-				await chatService.SendMessageAsync("csharpAngry 404 Hat Not Found!  Let's ask a moderator to !addhat so we can identify it next time");
-				// do we store the image?
-				return;
-			}
-
-			var hatData = new HatData("", ""); // (await _Repository.GetHatData(bestMatch.TagName));
-			var nameToReport = (hatData == null ? bestMatch.TagName : (string.IsNullOrEmpty(hatData.Name) ? bestMatch.TagName : hatData.Name));
-			await chatService.SendMessageAsync($"csharpClip I think (with {bestMatch.Probability.ToString("0.0%")} certainty) Jeff is currently wearing his {nameToReport} hat csharpClip");
-			if (hatData != null && !string.IsNullOrEmpty(hatData.Description)) await chatService.SendMessageAsync(hatData.Description);
-
-			await _HubContext.Clients.All.SendAsync("hatDetected", bestMatch.Probability.ToString("0.0%"), bestMatch.TagName, nameToReport, hatData?.Description);
 
 		}
 
-		private async Task IdentifyIterationName()
-		{
-
-			var client = new CustomVisionTrainingClient() { 
-				ApiKey = _CustomVisionKey,
-				Endpoint = _AzureEndpoint
-			};
-
-			var iterations = await client.GetIterationsAsync(_AzureProjectId);
-			IterationName = iterations
-				.Where(i => !string.IsNullOrEmpty(i.PublishName) && i.Status == "Completed")
-				.OrderByDescending(i => i.LastModified).First().PublishName;
-
-		}
 	}
 
 	internal record HatData(string Name, string Description);

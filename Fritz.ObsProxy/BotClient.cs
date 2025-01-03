@@ -53,7 +53,7 @@ namespace Fritz.ObsProxy
 				}
 				else if (retryCount < 20)
 				{
-					_Logger.LogWarning($"Retrying connection {retryCount}");
+					_Logger.LogWarning($"Retrying connection to {_BotUrl} {retryCount}");
 					retryCount++;
 					await Task.Delay(100);
 					await StartAsync(retryCount);

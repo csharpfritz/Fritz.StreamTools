@@ -9,12 +9,12 @@
   </ItemGroup>
 
   <ItemGroup>
+		<PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
 		<PackageReference Include="Markdig" Version="0.39.1" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.1" />
-    <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.CustomVision.Training" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.0.1-preview.1.24570.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
@@ -23,8 +23,12 @@
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
 		<PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />
 		<PackageReference Include="NetCoreAudio" Version="2.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Text.Encodings.Web" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.AI" Version="9.0.1-preview.1.24570.5" />
+		<PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.0.1-preview.1.24570.5" />
+		<PackageReference Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,149 +1,163 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
-using OBS.WebSocket.NET;
-using OBS.WebSocket.NET.Types;
+﻿using OBSWebsocketDotNet;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Fritz.ObsProxy
+namespace Fritz.ObsProxy;
+
+
+public class ObsClient : IDisposable
 {
+	private bool _DisposedValue;
+	private static OBSWebsocket _OBS;
 
-	public class ObsClient : IDisposable
+	private readonly ILogger _Logger;
+	private readonly IConfiguration _Configuration;
+	private readonly string _IpAddress;
+	private readonly string _Password;
+
+	public bool IsReady { get; set; } = false;
+
+	public ObsClient(ILoggerFactory loggerFactory, IConfiguration configuration)
 	{
-		private bool _DisposedValue;
-		private ObsWebSocket _OBS;
+		_Logger = loggerFactory.CreateLogger("ObsClient");
+		_Configuration = configuration;
+		_IpAddress = string.IsNullOrEmpty(configuration["ObsIpAddress"]) ? "127.0.0.1:4455" : configuration["ObsIpAddress"];
+		_Password = configuration["ObsPassword"];
 
-		private readonly ILogger _Logger;
-		private readonly IConfiguration _Configuration;
-		private readonly string _IpAddress;
-
-		public ObsClient(ILoggerFactory loggerFactory, IConfiguration configuration)
+		if (_OBS == null)
 		{
-			_Logger = loggerFactory.CreateLogger("ObsClient");
-			_Configuration = configuration;
-			_IpAddress = string.IsNullOrEmpty(configuration["ObsIpAddress"]) ? "127.0.0.1:4444" : configuration["ObsIpAddress"];
-		}
-
-		/// <summary>
-		/// Establish a connection to OBS
-		/// </summary>
-		/// <param name="port"></param>
-		/// <returns></returns>
-		public Task Connect()
-		{
-
-			_OBS = new ObsWebSocket();
-			_OBS.Connect($"ws://{_IpAddress}", "");
-
-			return Task.CompletedTask;
-
-		}
-
-		public string ImageFolderLocation => _Configuration["ImageFolder"];
-
-		public string CameraSource => _Configuration["CameraSource"];
-
-
-		public string TakeScreenshot()
-		{
-
-			SourceScreenshotResponse response = null;
-			if (string.IsNullOrEmpty(ImageFolderLocation))
+			_OBS = new OBSWebsocket();
+			_OBS.Connected += _OBS_Connected;
+			_OBS.Disconnected += (s, e) =>
 			{
-				response = _OBS.Api.TakeSourceScreenshot(CameraSource, embedPictureFormat: "png");
-				var cleanString = response.ImageData.Replace("data:image/png;base64,", "");
-				var bytes = Convert.FromBase64String(cleanString);
-				_Logger.LogWarning($"Took screenshot from scene '{CameraSource}'");
-				return ProcessImage(CameraSource, bytes);
-			}
-			else
-			{
-
-				try
-				{
-					var imageFileName = ImageFolderLocation + "\\test.png";
-					response = _OBS.Api.TakeSourceScreenshot(CameraSource, embedPictureFormat: "png");
-					var cleanString = response.ImageData.Replace("data:image/png;base64,", "");
-					var bytes = Convert.FromBase64String(cleanString);
-					var outString = ProcessImage(CameraSource, bytes);
-					_Logger.LogWarning($"${DateTime.Now} Took screenshot from scene '{CameraSource}'");
-					return outString;
-
-				}
-				catch (Exception e)
-				{
-					_Logger.LogError(e, "Error while taking screenshot");
-					return null;
-				}
-
-			}
-
-			return response.ImageData;
-
+				OnDisconnect();
+			};
 		}
 
-		private string ProcessImage(string cameraSource, byte[] imageBytes)
+	}
+
+	/// <summary>
+	/// Establish a connection to OBS
+	/// </summary>
+	/// <param name="port"></param>
+	/// <returns></returns>
+	public void Connect()
+	{
+
+		Task.Run(() => _OBS.ConnectAsync($"ws://{_IpAddress}", _Password));
+
+	}
+
+	public static Action OnDisconnect { get; set; } = () => { };
+
+	private void _OBS_Connected(object sender, EventArgs e)
+	{
+
+		IsReady = true;
+		var versionInfo = _OBS.GetVersion();
+		Console.WriteLine($"Plugin Version: {versionInfo.PluginVersion}");
+	}
+
+	public string ImageFolderLocation => _Configuration["ImageFolder"];
+
+	public string CameraSource => _Configuration["CameraSource"];
+
+
+	public string TakeScreenshot()
+	{
+
+		Console.WriteLine($"IsConnected: {_OBS.IsConnected}");
+
+		try
 		{
+
+			// show the pre-screenshot countdown animation
+			var sceneName = _Configuration["OverlayScene"];
+			var sourceName = _Configuration["OverlayCountdownSource"];
+			var shutterSourceId = _OBS.GetSceneItemId(sceneName, sourceName, 0);
+			_OBS.SetSceneItemEnabled(sceneName, shutterSourceId, false);
+			_OBS.SetSceneItemEnabled(sceneName, shutterSourceId, true);
+			Task.Delay(3500).Wait();
+			_OBS.SetSceneItemEnabled(sceneName, shutterSourceId, false);
+
+			var imageFileName = System.IO.Path.GetTempFileName();
+			_OBS.SaveSourceScreenshot(CameraSource, "png", imageFileName);
 
 			var outString = string.Empty;
+			using (var tempFile = File.OpenRead(imageFileName))
+			{
 
-			using (var img = Image.Load(imageBytes)) {
-
-				// TODO: Crop appropriately for the camerasource
-				var memStream = new MemoryStream();
-				img.Clone(ctx => ctx.Crop(new Rectangle(450, 0, 900, 450))).SaveAsPng(memStream);
-				memStream.Position = 0;
-
-				outString = Convert.ToBase64String(memStream.ToArray());
-				memStream.Dispose();
+				outString = ProcessImage(CameraSource, tempFile);
 
 			}
-
+			File.Delete(imageFileName);
+			_Logger.LogWarning($"${DateTime.Now} Took screenshot from scene '{CameraSource}'");
 			return outString;
 
 		}
-
-
-		#region Dispose OBS Connection
-
-		protected virtual void Dispose(bool disposing)
+		catch (Exception e)
 		{
-			if (!_DisposedValue)
-			{
-				if (disposing)
-				{
-					// TODO: dispose managed state (managed objects)
-				}
-
-				_OBS.Disconnect();
-				_OBS = null;
-				_DisposedValue = true;
-			}
+			_Logger.LogError(e, "Error while taking screenshot");
+			return null;
 		}
-
-		~ObsClient()
-		{
-			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: false);
-		}
-
-		public void Dispose()
-		{
-			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
-			GC.SuppressFinalize(this);
-		}
-
-		#endregion
 
 	}
+
+	private string ProcessImage(string cameraSource, Stream image)
+	{
+
+		var outString = string.Empty;
+
+		using (var img = Image.Load(image))
+		{
+
+			// TODO: Crop appropriately for the camerasource
+			var memStream = new MemoryStream();
+			img.Clone(ctx => ctx.Crop(new Rectangle(450, 0, 900, 450))).SaveAsWebp(memStream);
+			memStream.Position = 0;
+
+			outString = Convert.ToBase64String(memStream.ToArray());
+			memStream.Dispose();
+
+		}
+
+		return outString;
+
+	}
+
+
+	#region Dispose OBS Connection
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!_DisposedValue)
+		{
+			if (disposing)
+			{
+				// TODO: dispose managed state (managed objects)
+			}
+
+			_OBS.Disconnect();
+			_OBS = null;
+			_DisposedValue = true;
+		}
+	}
+
+	~ObsClient()
+	{
+		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+		Dispose(disposing: false);
+	}
+
+	public void Dispose()
+	{
+		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+		Dispose(disposing: true);
+		GC.SuppressFinalize(this);
+	}
+
+	#endregion
+
+
 
 }

@@ -1,12 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -132,9 +131,9 @@ namespace Fritz.Twitch.PubSub
 		private void HandleMessage(string receivedMessage)
 		{
 
-			var jDoc = JObject.Parse(receivedMessage);
-			var messageType = jDoc["type"].Value<string>();
-			if (messageType == "RESPONSE" && jDoc["error"].Value<string>() != "")
+			var jDoc = JsonDocument.Parse(receivedMessage);
+			var messageType = jDoc.RootElement.GetProperty("type").GetString();
+			if (messageType == "RESPONSE" && jDoc.RootElement.GetProperty("error").GetString() != "")
 			{
 				throw new Exception("Unable to connect");
 			} else if (messageType == "RESPONSE") {
@@ -165,7 +164,7 @@ namespace Fritz.Twitch.PubSub
 			};
 
 			await _Socket.ConnectAsync(new Uri("wss://pubsub-edge.twitch.tv:443"), CancellationToken.None)
-				.ContinueWith(t => SendMessageOnSocket(JsonConvert.SerializeObject(message)));
+				.ContinueWith(t => SendMessageOnSocket(JsonSerializer.Serialize(message)));
 
 		}
 
@@ -245,16 +244,16 @@ namespace Fritz.Twitch.PubSub
 
 		private bool HandleChannelPointsMessage(string message) {
 
-			var jDoc = JObject.Parse(message);
+			var jDoc = JsonDocument.Parse(message);
 
-			if (jDoc["type"].Value<string>() == "MESSAGE" && jDoc["data"]["topic"].Value<string>().StartsWith("channel-points-channel-v1") ) {
+			if (jDoc.RootElement.GetProperty("type").GetString() == "MESSAGE" && jDoc.RootElement.GetProperty("data").GetProperty("topic").GetString().StartsWith("channel-points-channel-v1") ) {
 
-				var innerMessage = jDoc["data"]["message"].Value<string>();
+				var innerMessage = jDoc.RootElement.GetProperty("data").GetProperty("message").GetString();
 
 				PubSubRedemptionMessage messageObj = null;
 				try
 				{
-					messageObj = JsonConvert.DeserializeObject<PubSubRedemptionMessage>(innerMessage);
+					messageObj = JsonSerializer.Deserialize<PubSubRedemptionMessage>(innerMessage);
 				} catch (Exception e) {
 					_Logger.LogError(e, "Error while deserializing the message");
 					_Logger.LogInformation("Message contents: " + innerMessage);

@@ -17,9 +17,5 @@ namespace Fritz.Twitch.PubSub
 		public UnhandledPubSubMessageException(string message, Exception innerException) : base(message, innerException)
 		{
 		}
-
-		protected UnhandledPubSubMessageException(SerializationInfo info, StreamingContext context) : base(info, context)
-		{
-		}
 	}
 }

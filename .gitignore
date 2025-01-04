@@ -300,3 +300,4 @@ __pycache__/
 
 # Ignore mp3 files
 *.mp3
+*.wav

@@ -1,0 +1,82 @@
+﻿@page
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="width=device-width" />
+	<title>ToDo Widget</title>
+	<link rel="stylesheet" href="~/css/site.css" />
+	<style>
+
+	@@keyframes fadeIn {
+			0% {
+				opacity: 0;
+			}
+
+			100% {
+				opacity: 1;
+			}
+		}
+
+		@@keyframes fadeOut {
+			0% {
+				opacity: 1;
+			}
+
+			100% {
+				opacity: 0;
+			}
+		}
+
+		.fadeIn {
+			animation-name: fadeIn;
+			animation-duration: 1s;
+			animation-fill-mode: both;
+		}
+
+		.fadeOut {
+			animation-name: fadeOut;
+			animation-duration: 1s;
+			animation-fill-mode: both;
+		}	</style>
+	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+	<div id="d" class="todoWidget fadeOut" style="padding:10px">
+		<h4>Welcome <span id="teammate"></span> from @Configuration["StreamServices:Twitch:TeamDisplayName"]</h4>
+		<img height="240" style="margin: auto;" src="~/contents/img/teamlogo.png" />
+	</div>
+
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script src="~/js/attentionhub.js"></script>
+	<script>
+
+		var debug = false;
+		var audio = new Audio('@Url.Content(@"~/contents/teammate.wav")');
+		var widget = document.getElementById("d");
+
+		(function () {
+
+			this._hub = new AttentionHub();
+
+			this._hub.onTeammate = (name) => {
+				document.getElementById("teammate").innerText = name;
+				widget.classList.remove("fadeOut");
+				widget.classList.add("fadeIn");
+				audio.play();
+
+				window.setTimeout(function () {
+					widget.classList.remove("fadeIn");
+					widget.classList.add("fadeOut");
+				}, 3000);
+
+			};
+
+			this._hub.start();
+
+		})();
+	</script>
+</body>
+</html>

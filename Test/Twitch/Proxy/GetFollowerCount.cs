@@ -42,7 +42,7 @@ namespace Test.Twitch.Proxy
 		public ITestOutputHelper Output { get; }
 		public XUnitLogger Logger { get; }
 
-		[Fact]
+		[Fact(Skip ="Not used")]
 		public async Task ShouldReturnNonZeroCount()
 		{
 

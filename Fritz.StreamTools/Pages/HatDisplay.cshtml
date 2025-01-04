@@ -1,0 +1,108 @@
+﻿@page
+@{
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="width=device-width" />
+	<title>ToDo Widget</title>
+	<link rel="stylesheet" href="~/css/site.css" />
+	<style>
+
+	@@keyframes fadeIn {
+			0% {
+				opacity: 0;
+			}
+
+			100% {
+				opacity: 1;
+			}
+		}
+
+		@@keyframes fadeOut {
+			0% {
+				opacity: 1;
+			}
+
+			100% {
+				opacity: 0;
+			}
+		}
+
+		.fadeIn {
+			animation-name: fadeIn;
+			animation-duration: 1s;
+			animation-fill-mode: both;
+		}
+
+		.fadeOut {
+			animation-name: fadeOut;
+			animation-duration: 1s;
+			animation-fill-mode: both;
+		}	</style>
+	<script src="https://kit.fontawesome.com/8ac2e0bf60.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+	<div id="d" class="todoWidget fadeOut" style="padding:10px">
+		<h4>Jeff is wearing his <span id="hatName"></span> hat. (<span id="confidence"></span> accuracy)</h4>
+		<hr style="width: 200px" />
+		<h4 id="description" style="text-align: left;"></h4>
+	</div>
+
+	<script src="~/lib/signalr/signalr-client.js"></script>
+	<script>
+
+		var debug = false;
+		var detected = new Audio('@Url.Content(@"~/contents/hatDetected.mp3")');
+		var shutter = new Audio('@Url.Content(@"~/contents/shutter.mp3")');
+		var widget = document.getElementById("d");
+
+		(function () {
+
+			this._hub = new signalR.HubConnectionBuilder()
+				.withUrl("/obshub")
+				.withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
+				.build();
+
+			this._hub.onclose(() => {
+				if (debug) console.debug("hub connection closed");
+
+				// Hub connection was closed for some reason
+				let interval = setInterval(() => {
+					// Try to reconnect hub every 5 secs
+					this.start(groups).then(() => {
+						// Reconnect succeeded
+						clearInterval(interval);
+						if (this.debug) console.debug("hub reconnected");
+					});
+				}, 5000);
+			});
+
+			this._hub.on("shutter", () => {
+				shutter.play();
+			});
+
+			this._hub.on("hatDetected", (pct, tag, name, desc) => {
+				if (debug) console.debug(`Hat detected: ${pct} ${tag} ${name} ${desc}`, null);
+				document.getElementById("hatName").innerText = name;
+				document.getElementById("confidence").innerText = pct;
+				document.getElementById("description").innerText = desc;
+				widget.classList.remove("fadeOut");
+				widget.classList.add("fadeIn");
+				detected.play();
+
+				window.setTimeout(function () {
+					widget.classList.remove("fadeIn");
+					widget.classList.add("fadeOut");
+				}, 15000);
+
+			});
+
+			this._hub.start();
+
+		})();
+	</script>
+</body>
+</html>

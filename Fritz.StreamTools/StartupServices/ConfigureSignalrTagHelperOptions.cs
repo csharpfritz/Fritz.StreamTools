@@ -13,10 +13,10 @@ namespace Fritz.StreamTools.StartupServices
 	public class ConfigureSignalrTagHelperOptions : IConfigureOptions<SignalrTagHelperOptions>
 	{
 
-		private readonly IHostEnvironment Env;
+		private readonly IWebHostEnvironment Env;
 		private readonly ILogger Logger;
 
-		public ConfigureSignalrTagHelperOptions(IHostEnvironment env, ILogger<ConfigureSignalrTagHelperOptions> logger)
+		public ConfigureSignalrTagHelperOptions(IWebHostEnvironment env, ILogger<ConfigureSignalrTagHelperOptions> logger)
 		{
 
 			Env = env;
@@ -27,7 +27,7 @@ namespace Fritz.StreamTools.StartupServices
 		public void Configure(SignalrTagHelperOptions options)
 		{
 
-			var folder = new DirectoryInfo(Path.Combine(Env.ContentRootPath, "lib", "signalr"));
+			var folder = new DirectoryInfo(Path.Combine(Env.WebRootPath, "lib", "signalr"));
 
 			var fileInfo = folder.Exists
 				? folder.GetFiles("signalr-client-*.min.js").OrderByDescending(f => f.Name).FirstOrDefault()

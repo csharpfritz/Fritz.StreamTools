@@ -1,15 +1,6 @@
 ﻿using Fritz.StreamLib.Core;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 
 namespace Fritz.ObsProxy
 {
@@ -49,7 +40,9 @@ namespace Fritz.ObsProxy
 				try
 				{
 					await _Client.StartAsync();
-				} catch (Exception ex) {
+				}
+				catch (Exception ex)
+				{
 					// do nothing, we're gonna try again...
 				}
 
@@ -57,9 +50,10 @@ namespace Fritz.ObsProxy
 				{
 					_Logger.LogWarning("Connected to ObsHub");
 
-				} 
-				else if (retryCount < 20) {
-					_Logger.LogWarning($"Retrying connection {retryCount}");
+				}
+				else if (retryCount < 20)
+				{
+					_Logger.LogWarning($"Retrying connection to {_BotUrl} {retryCount}");
 					retryCount++;
 					await Task.Delay(100);
 					await StartAsync(retryCount);
@@ -74,7 +68,7 @@ namespace Fritz.ObsProxy
 
 			if (_Client != null)
 			{
-				await _Client?.DisposeAsync();
+				await _Client.DisposeAsync();
 			}
 
 		}
@@ -96,14 +90,14 @@ namespace Fritz.ObsProxy
 			{
 
 				var sr = new StringReader(imageData);
-				Debug.WriteLine($"ImageData ({imageData.Length}): " + imageData.Substring(imageData.Length-20,20));
+				Debug.WriteLine($"ImageData ({imageData.Length}): " + imageData.Substring(imageData.Length - 20, 20));
 
 				var buffer = new char[2000];
 				while (true)
 				{
 					var lengthRead = sr.ReadBlock(buffer, 0, 2000);
 					if (lengthRead == 0) { break; }
-					yield return new string(buffer,0, lengthRead);
+					yield return new string(buffer, 0, lengthRead);
 					buffer = new char[2000];
 				}
 				//After the for loop has completed and the local function exits the stream completion will be sent.

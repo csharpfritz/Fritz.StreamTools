@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Fritz.StreamLib.Core
@@ -46,7 +46,7 @@ namespace Fritz.StreamLib.Core
 				return;
 			}
 			var json = await result.Content.ReadAsStringAsync();
-			TwitchTokenConfig.Tokens = JsonConvert.DeserializeObject<TwitchTokenResponse>(json);
+			TwitchTokenConfig.Tokens = JsonSerializer.Deserialize<TwitchTokenResponse>(json);
 
 		}
 

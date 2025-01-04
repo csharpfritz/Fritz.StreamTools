@@ -105,7 +105,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddSingleton<ScreenshotTrainingService>();
 			services.AddHostedService<ScreenshotTrainingService>(s => s.GetRequiredService<ScreenshotTrainingService>());
-			services.AddTransient<HatDescriptionRepository>();
+
 		}
 
 		private static void AddStreamingServices(this IServiceCollection services, IConfiguration configuration)
@@ -117,9 +117,12 @@ namespace Fritz.StreamTools.StartupServices
 			services.AddStreamService<TwitchService>(configuration,
 				(c, l) => new TwitchService(c, l, provider.GetService<Fritz.Twitch.Proxy>(), provider.GetService<Fritz.Twitch.ChatClient>()),
 				c => string.IsNullOrEmpty(c["StreamServices:Twitch:ClientId"]));		// Test to disable
-			services.AddStreamService(configuration,
-				(c, l) => new MixerService(c, l),                                   // Factory
-				c => string.IsNullOrEmpty(c["StreamServices:Mixer:Channel"]));			// Test to disable
+
+			// Removed Mixer service
+			//services.AddStreamService(configuration,
+			//	(c, l) => new MixerService(c, l),                                   // Factory
+			//	c => string.IsNullOrEmpty(c["StreamServices:Mixer:Channel"]));			// Test to disable
+
 			services.AddStreamService(configuration,
 				(c, l) => new FakeService(c, l),                                                          // Factory
 				c => !bool.TryParse(c["StreamServices:Fake:Enabled"], out var enabled) || !enabled);			// Test to disable
@@ -183,8 +186,7 @@ namespace Fritz.StreamTools.StartupServices
 
 			services.AddRazorPages();
 
-			services.AddMvc()
-				.SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+			services.AddMvc();
 
 		}
 

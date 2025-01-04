@@ -1,26 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Fritz.ObsProxy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Fritz.ObsProxy
-{
-	public class Program
-	{
-		public static void Main(string[] args)
-		{
-			CreateHostBuilder(args).Build().Run();
-		}
-
-		public static IHostBuilder CreateHostBuilder(string[] args) =>
-				Host.CreateDefaultBuilder(args)
-						.ConfigureServices((hostContext, services) =>
-						{
+var host = Host.CreateDefaultBuilder(args)
+						.ConfigureServices((hostContext, services) => {
 							services.AddHostedService<Worker>();
 							services.AddSingleton<ObsClient>();
 							services.AddTransient<BotClient>();
 						});
-	}
-}
+
+var runningHost = host.Build();
+
+ObsClient.OnDisconnect = () => {
+	runningHost.StopAsync();
+};
+
+runningHost.Run();

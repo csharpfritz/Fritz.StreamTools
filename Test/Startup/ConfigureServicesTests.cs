@@ -101,19 +101,18 @@ namespace Test.Startup
 		{
 			get
 			{
-				yield return new object[]{ MakeFakeConfiguration("123456", "654321", true), new [] { typeof(TwitchService), typeof(MixerService), typeof(FakeService) } };
-				yield return new object[]{ MakeFakeConfiguration("", "654321", true), new [] { typeof(MixerService), typeof(FakeService) } };
-				yield return new object[]{ MakeFakeConfiguration("", "", true), new [] { typeof(FakeService) } };
-				yield return new object[]{ MakeFakeConfiguration("123456", "654321", false), new [] { typeof(TwitchService), typeof(MixerService) } };
+				yield return new object[] { MakeFakeConfiguration("123456", true), new[] { typeof(TwitchService), typeof(FakeService) } };
+				yield return new object[] { MakeFakeConfiguration("", true), new[] { typeof(FakeService) } };
+				yield return new object[] { MakeFakeConfiguration("123456", false), new[] { typeof(TwitchService) } };
 			}
 		}
 
-		private static Dictionary<string, string> MakeFakeConfiguration(string twitchClientId, string mixerClientId, bool enableFake)
+		private static Dictionary<string, string> MakeFakeConfiguration(string twitchClientId, bool enableFake)
 		{
 			return new Dictionary<string, string>
 			{
 				{"StreamServices:Twitch:ClientId", twitchClientId},
-				{"StreamServices:Mixer:Channel", mixerClientId},
+				//{"StreamServices:Mixer:Channel", mixerClientId},
 				{"StreamServices:Fake:Enabled", enableFake.ToString()},
 				{"FritzBot:ServerUrl", "http://localhost:80" },
 				{"AzureServices:HatDetection:ProjectId", Guid.NewGuid().ToString() }
